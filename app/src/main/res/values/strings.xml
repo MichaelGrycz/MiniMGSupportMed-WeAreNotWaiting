@@ -1,0 +1,273 @@
+<resources>
+    <string name="app_name">MGSupport CGM</string>
+    <string name="app_subtitle">780G · 770G · 680G BLE</string>
+    <string name="start_gatt_peripheral">Start GATT peripheral</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_history">History</string>
+    <string name="nav_pump">Pump</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Connection States (Human Friendly) -->
+    <string name="conn_connected">Connected</string>
+    <string name="conn_scanning">Searching…</string>
+    <string name="conn_connecting">Connecting…</string>
+    <string name="conn_authenticating">Authenticating…</string>
+    <string name="conn_reconnecting">Reconnecting…</string>
+    <string name="conn_auth_failed">Pairing rejected</string>
+    <string name="conn_disconnected">Disconnected</string>
+
+    <!-- Onboarding Banner on Dashboard -->
+    <string name="onboarding_title">No pump paired yet</string>
+    <string
+    name="onboarding_desc"
+  >Pair your MiniMed 780G / 770G / 680G pump in 3 simple steps to start live CGM &amp; insulin monitoring.</string>
+    <string name="onboarding_cta">Open Pairing Guide →</string>
+
+    <!-- Hero Glucose Card -->
+    <string name="label_glucose">SENSOR GLUCOSE (CGM)</string>
+    <string name="zone_in_range">IN TARGET RANGE</string>
+    <string name="zone_low">LOW GLUCOSE</string>
+    <string name="zone_urgent_low">URGENT LOW</string>
+    <string name="zone_high">HIGH GLUCOSE</string>
+    <string name="zone_urgent_high">URGENT HIGH</string>
+    <string name="zone_waiting">WAITING FOR DATA</string>
+    <string name="zone_sensor_updating">SENSOR UPDATING</string>
+    <string
+    name="sensor_updating_banner"
+  >Sensor update in progress. The pump is not sending a value right now, so the last known reading stays on screen.</string>
+
+    <string name="trend_double_up">Rising rapidly</string>
+    <string name="trend_single_up">Rising</string>
+    <string name="trend_forty_five_up">Rising slowly</string>
+    <string name="trend_flat">Steady</string>
+    <string name="trend_forty_five_down">Falling slowly</string>
+    <string name="trend_single_down">Falling</string>
+    <string name="trend_double_down">Falling rapidly</string>
+    <string name="trend_unknown">No trend</string>
+
+    <string name="time_just_now">Just now (%1$s)</string>
+    <string name="time_min_ago">%1$d min ago (%2$s)</string>
+    <string name="time_stale">Stale · %1$d min ago (%2$s)</string>
+
+    <!-- Interactive Chart & Controls -->
+    <string name="chart_section_title">Glucose Trend</string>
+    <string name="chart_hint">Pinch to zoom · Drag to pan · Tap point for details</string>
+    <string name="chart_empty_title">No glucose readings in this period</string>
+    <string name="chart_empty_subtitle">Connect your pump or select a wider time range</string>
+    <string name="btn_zoom_in">Zoom in</string>
+    <string name="btn_zoom_out">Zoom out</string>
+    <string name="btn_zoom_reset">Live 1:1</string>
+    <string name="zoom_active_format">Zoom %1$.1f×</string>
+
+    <!-- Time in Range & Analytics Strip -->
+    <string name="label_tir">Time in Range</string>
+    <string name="label_tir_breakdown">Low %1$d%% · In Range %2$d%% · High %3$d%%</string>
+    <string name="label_avg_glucose">Average</string>
+    <string name="label_gmi">GMI (eA1C)</string>
+    <string name="label_prediction">In 30 min</string>
+
+    <!-- Pump Telemetry Cards -->
+    <string name="section_pump_metrics">Pump Telemetry</string>
+    <string name="label_iob">Active Insulin (IOB)</string>
+    <string name="sub_iob">Bolus + auto-corrections</string>
+    <string name="label_basal">Current Basal</string>
+    <string name="sub_basal_auto">SmartGuard Auto</string>
+    <string name="sub_basal_manual">Manual Basal</string>
+    <string name="sub_basal_idle">Delivery rate</string>
+    <string name="label_reservoir">Reservoir</string>
+    <string name="sub_reservoir_max">Capacity: ~300 insulin units</string>
+    <string name="unit_insulin_amount">insulin units</string>
+    <string name="unit_insulin_rate">insulin units per hour</string>
+    <plurals name="insulin_units_label">
+        <item quantity="one">insulin unit</item>
+        <item quantity="other">insulin units</item>
+    </plurals>
+    <string name="label_battery">Pump Battery</string>
+    <string name="sub_battery_charging">Charging</string>
+    <string name="sub_battery_normal">AA lithium / alkaline</string>
+
+    <!-- History Tab -->
+    <string name="label_history">Pump Event History</string>
+    <string name="history_subtitle">Incremental log of boluses, basal changes, calibrations &amp; alerts</string>
+    <string name="filter_all">All</string>
+    <string name="filter_bolus">Boluses</string>
+    <string name="filter_basal">Basal</string>
+    <string name="filter_cgm">CGM / BG</string>
+    <string name="filter_alarms">Alarms</string>
+    <string name="history_count_format">Showing %1$d events (Total in DB: %2$d)</string>
+    <string name="btn_export_csv_full">Export Readings &amp; Events (CSV)</string>
+
+    <!-- Pump & How-To Guide Tab -->
+    <string name="pump_tab_title">Pump Connection &amp; Setup</string>
+    <string name="pump_status_card_title">Connection Status</string>
+    <string name="pump_paired_badge">Paired (%1$s)</string>
+    <string name="pump_unpaired_badge">Not paired</string>
+    <string name="btn_pair">Pair New Pump</string>
+    <string name="btn_reconnect">Reconnect</string>
+    <string name="btn_disconnect">Disconnect</string>
+    <string name="btn_unpair">Unpair Pump…</string>
+    <string name="unpair_confirm_title">Unpair pump?</string>
+    <string
+    name="unpair_confirm_msg"
+  >This will remove saved SAKE pairing keys for the current pump. You will need to pair again from the pump menu.</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_confirm_unpair">Unpair</string>
+
+    <!-- Comprehensive Step-by-Step How-To Guide -->
+    <string name="howto_title">How to Pair &amp; Use (Step-by-Step)</string>
+    <string name="howto_subtitle">Works with Medtronic MiniMed 780G, 770G and 680G via Bluetooth LE</string>
+
+    <string name="howto_step1_title">Prepare your MiniMed pump</string>
+    <string
+    name="howto_step1_desc"
+  >On your pump, open: Menu → Settings → Device Settings → Mobile Devices.\nImportant: A pump can only talk to ONE phone at a time. If it was paired with MiniMed Mobile before, delete the old phone on the pump and uninstall/stop the official app.</string>
+
+    <string name="howto_step2_title">Start pairing in this app</string>
+    <string
+    name="howto_step2_desc"
+  >Tap "Pair New Pump" above. Your phone will start broadcasting as a Bluetooth LE peripheral named Mobile 000001.</string>
+
+    <string name="howto_step3_title">Confirm on the pump screen</string>
+    <string
+    name="howto_step3_desc"
+  >On the pump, select "Pair New Device", wait until it finds Mobile 000001 and confirm. The encrypted SAKE handshake takes 5–10 seconds. Once connected, readings update every 15 seconds.</string>
+
+    <string name="howto_step4_title">Keep background monitoring alive 24/7</string>
+    <string
+    name="howto_step4_desc"
+  >Phones like Xiaomi, Realme, OPPO, Samsung or Huawei may kill background Bluetooth apps when the screen is off. Disable battery optimization for MGSupport CGM to ensure uninterrupted night alerts.</string>
+    <string name="btn_battery_settings">Open Battery Optimization Settings</string>
+
+    <string name="faq_title">FAQ &amp; Troubleshooting</string>
+    <string
+    name="faq_body"
+  >• Supported pumps: MiniMed 780G (MMT-1886, verified), 770G and 680G.\n• Older pumps (640G, Veo, Paradigm): Use sub-GHz radio, NOT Bluetooth — they cannot connect directly to a phone without hardware bridge.\n• Pairing rejected / Auth failed: Delete Mobile 000001 from the pump\'s Mobile Devices list, toggle Bluetooth off/on on the phone, and tap "Pair New Pump" again.\n• Safety guarantee: This app is 100% READ-ONLY. It cannot deliver boluses, change basal rates, or alter any pump setting.</string>
+
+    <!-- Settings Tab -->
+    <string name="settings_title">Preferences &amp; Alerts</string>
+    <string name="settings_units_title">Glucose Display Unit</string>
+    <string name="settings_units_desc">All readings are stored in mg/dL and converted on the fly.</string>
+    <string name="settings_lang_title">App Language</string>
+    <string name="label_thresholds">Sound &amp; Notification Alert Thresholds</string>
+    <string
+    name="thresholds_desc"
+  >High-priority alarm notifications trigger when glucose crosses these levels (debounced every 5 min).</string>
+
+    <string name="hint_urgent_low">Urgent low</string>
+    <string name="hint_low">Low target</string>
+    <string name="hint_high">High target</string>
+    <string name="hint_urgent_high">Urgent high</string>
+    <string name="btn_save_thresholds">Save Alert Thresholds</string>
+
+    <string name="settings_data_title">Local Database &amp; CSV Export</string>
+    <string name="db_stats_format">Stored locally: %1$d CGM readings · %2$d pump events</string>
+    <string name="btn_export_backup">Export Backup (CSV)</string>
+    <string name="btn_import_backup">Import Backup (CSV)</string>
+    <string name="backup_chooser">Save CSV backup</string>
+    <string name="backup_export_failed">Could not save backup: %1$s</string>
+    <string name="import_picker_title">Choose a CSV backup</string>
+    <string name="import_success">Imported: %1$d readings, %2$d events. Skipped duplicates: %3$d. Errors: %4$d.</string>
+    <string name="import_failed">Import failed: %1$s</string>
+    <string name="import_missing_file">file not found</string>
+
+    <!-- Hidden Diagnostics / Logs Section -->
+    <string name="diag_section_title">Diagnostics &amp; Technical Logs</string>
+    <string
+    name="diag_section_desc"
+  >BLE &amp; SAKE protocol logs are hidden by default. Expand only when troubleshooting connection issues.</string>
+    <string name="btn_show_logs">Show Diagnostic Logs</string>
+    <string name="btn_hide_logs">Hide Diagnostic Logs</string>
+    <string name="btn_copy_logs">Copy Logs</string>
+    <string name="btn_clear_logs">Clear</string>
+    <string name="logs_copied">Diagnostic logs copied to clipboard</string>
+    <string name="logs_empty">No diagnostic logs in current session.</string>
+
+    <string name="safety_disclaimer_title">Read-Only Medical Disclaimer</string>
+    <string
+    name="safety_disclaimer_body"
+  >MGSupport CGM is an open-source read-only companion tool (GPL-3.0). It never sends dosing commands to the pump. Do not use this app as a substitute for official medical advice or primary therapy decisions.</string>
+    <string name="credits_title">App credits</string>
+    <string name="credits_author">Created by MGSupport Michał Grycz</string>
+    <string name="credits_link">View MGSupport services</string>
+    <string name="credits_url">https://mgsupport.pl/uslugi/dedykowane-systemy-it-aplikacje-webowe</string>
+    <string name="license_title">License and sources</string>
+    <string
+    name="license_body"
+  >This app is licensed under GNU GPL 3.0. It is built on the OpenMinimed JavaPumpConnector project and the JavaSake library.</string>
+    <string name="license_link">Full GPL-3.0 license text</string>
+    <string name="source_link">Source code on request</string>
+    <string name="license_url">https://www.gnu.org/licenses/gpl-3.0.html</string>
+    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGSupport CGM%20source%20code</string>
+    <string name="credits_open_failed">Could not open the MGSupport page on this device.</string>
+
+    <!-- Legacy / Controller Strings -->
+    <string name="notif_channel_status">Pump status</string>
+    <string name="notif_connecting">Connecting to pump…</string>
+    <string name="notif_status_format">Status: %1$s</string>
+    <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
+    <string name="notif_waiting">Connected · waiting for reading</string>
+    <string name="notif_sensor_updating">Sensor updating · %1$s</string>
+    <string name="label_log">Log</string>
+    <string name="no_reading">Waiting for first pump reading…</string>
+    <string name="no_events">No pump events recorded in this filter yet.</string>
+
+    <string name="unit_mgdl">mg/dL</string>
+    <string name="unit_mmol">mmol/L</string>
+    <string name="roc_unit_mgdl">mg/dL/min</string>
+    <string name="roc_unit_mmol">mmol/L/min</string>
+
+    <string name="status_format">Status: %1$s</string>
+    <string name="reading_time_format">Reading: %1$s</string>
+    <string name="pump_format">Pump: %1$s</string>
+    <string name="roc_format">ROC: %1$s %2$s</string>
+    <string name="history_prefix">History: %1$s</string>
+
+    <string name="thresholds_saved">Alert thresholds saved</string>
+    <string name="thresholds_order_error">Order must be: urgentLow ≤ low &lt; high ≤ urgentHigh</string>
+    <string name="export_failed">CSV export failed: %1$s</string>
+    <string name="service_start_failed">Could not start background service: %1$s</string>
+    <string name="csv_chooser">Export CSV</string>
+
+    <string name="lang_auto">System</string>
+    <string name="lang_pl">Polski</string>
+    <string name="lang_en">English</string>
+    <string name="lang_de">Deutsch</string>
+    <string name="lang_zh">中文</string>
+
+    <string name="log_connection_state">Connection state: %1$s</string>
+    <string name="log_start_pairing">Start pairing — advertising as Mobile 000001</string>
+    <string name="log_reconnect">Reconnecting…</string>
+    <string name="log_disconnecting">Disconnecting…</string>
+    <string name="log_unpairing">Removing pairing…</string>
+    <string name="log_auto_reconnect">Auto-reconnect: retrying…</string>
+    <string name="log_pump">Pump: %1$s SN=%2$s</string>
+    <string name="log_history_cursor">History: start cursor = %1$s</string>
+    <string name="log_history_sync">History: +%1$d events (up to seq %2$s)</string>
+    <string name="log_auth_failed">Attestation/pairing rejected by the pump</string>
+    <string name="log_fault">Fault: %1$s</string>
+    <string
+    name="fault_peripheral_unsupported"
+  >This phone cannot advertise as a Bluetooth LE peripheral, so pairing with the pump is not possible.</string>
+    <string
+    name="fault_advertise_failed"
+  >Bluetooth advertising could not be started. Turn Bluetooth off and on, then try again.</string>
+    <string
+    name="fault_handshake_timeout"
+  >The pump connected but did not finish authentication. Try again with the phone close to the pump.</string>
+    <string
+    name="fault_auth_failed"
+  >The pump rejected authentication. Remove Mobile 000001 from the pump’s mobile devices list and pair again.</string>
+    <string
+    name="fault_bound_elsewhere"
+  >The pump connects and drops the link right away. This is usually a stale pairing: remove Mobile 000001 from the pump’s mobile devices list, remove the pump from Android Bluetooth settings, then try again.</string>
+    <string name="log_sensor_updating">CGM: sensor reports no value (warm-up or sensor update)</string>
+    <string name="log_sensor_ready">CGM: readings are back</string>
+    <string name="read_error">read error</string>
+
+    <string name="compat_supported">Android %1$d · BLE Peripheral Mode: Supported ✓</string>
+    <string name="compat_limited">Android %1$d · BLE Peripheral Mode: Unconfirmed (may still work)</string>
+    <string name="compat_unsupported">Android %1$d · BLE Peripheral Mode: Not supported ✗</string>
+    <string name="pump_model_format">Pump: %1$s (%2$s)</string>
+</resources>

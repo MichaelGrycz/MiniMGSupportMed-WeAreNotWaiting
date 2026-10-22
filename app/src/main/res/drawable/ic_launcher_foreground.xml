@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<vector
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="108dp"
+  android:height="108dp"
+  android:viewportWidth="108"
+  android:viewportHeight="108"
+>
+    <!-- Outer Telemetry Ring -->
+    <path
+    android:fillColor="#00000000"
+    android:pathData="M54,54m-26,0a26,26 0,1 1,52 0a26,26 0,1 1,-52 0"
+    android:strokeColor="#2206B6D4"
+    android:strokeWidth="3"
+  />
+    <!-- CGM Pulse Wave -->
+    <path
+    android:fillColor="#00000000"
+    android:pathData="M30,56h11l6,-16l8,28l7,-18l4,6h12"
+    android:strokeColor="#06B6D4"
+    android:strokeLineCap="round"
+    android:strokeLineJoin="round"
+    android:strokeWidth="4.5"
+  />
+    <!-- Live Status Dot -->
+    <path android:fillColor="#10B981" android:pathData="M78,56m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+</vector>

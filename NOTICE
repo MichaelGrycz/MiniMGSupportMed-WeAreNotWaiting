@@ -1,0 +1,37 @@
+MGSupport CGM
+Copyright (C) 2026 MGSupport Michał Grycz
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+The full license text is in the LICENSE file and at
+https://www.gnu.org/licenses/gpl-3.0.html
+
+This application is a derivative work. Parts of it are ported from, or modelled
+on, the following GPL-3.0 projects:
+
+  OpenMinimed JavaPumpConnector
+  https://github.com/OpenMinimed/JavaPumpConnector
+  Copyright (C) OpenMinimed contributors: palmarci (Pal Marci), drfubar,
+  Morten Fyhn Amundsen, Stenium
+
+  OpenMinimed JavaSake
+  https://github.com/OpenMinimed/JavaSake
+  (vendored in the JavaSake directory of this repository)
+
+  medtronic-bt-decrypt proof of concept by @planiitis
+
+The BLE advertising contract, GATT service and characteristic map, SAKE wire
+choreography and the pump read layer originate from those projects.
+
+MiniMed, MiniMed 780G, MiniMed 770G and MiniMed 680G are trademarks of
+Medtronic. This application is not affiliated with, endorsed by or supported by
+Medtronic. It is an independent, read-only companion tool.
+
+This application is not a medical device and does not replace medical advice.
