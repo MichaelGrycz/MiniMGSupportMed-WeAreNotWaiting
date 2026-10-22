@@ -54,6 +54,13 @@ class PumpDashboardActivity : AppCompatActivity() {
 
     private lateinit var controller: PumpController
     private val uiScope = MainScope()
+
+    private val updateChecker by lazy { UpdateChecker(this) }
+    private lateinit var updateVersionText: TextView
+    private lateinit var updateStatusText: TextView
+    private var updateChecking = false
+
+    private val updateCheckIntervalMs = 24L * 60 * 60 * 1000
     private val timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
 
     private var currentTab: Tab = Tab.DASHBOARD
@@ -375,6 +382,12 @@ class PumpDashboardActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.sourceLinkLabel).setOnClickListener {
             openUrl(getString(R.string.source_url))
         }
+
+        updateVersionText = findViewById(R.id.updateVersionText)
+        updateStatusText = findViewById(R.id.updateStatusText)
+        updateVersionText.text = getString(R.string.updates_current, BuildConfig.VERSION_NAME)
+        findViewById<Button>(R.id.btnCheckUpdates).setOnClickListener { checkForUpdates(manual = true) }
+        maybeAutoCheckForUpdates()
         findViewById<Button>(R.id.btnSaveThresholds).setOnClickListener { saveThresholds() }
         findViewById<Button>(R.id.btnExport).setOnClickListener { exportCsv() }
         findViewById<Button>(R.id.btnExportBackup).setOnClickListener { exportBackupCsv() }
@@ -416,6 +429,67 @@ class PumpDashboardActivity : AppCompatActivity() {
         logsContainer.visibility = if (logsExpanded) View.VISIBLE else View.GONE
         btnToggleLogs.text =
             getString(if (logsExpanded) R.string.btn_hide_logs else R.string.btn_show_logs)
+    }
+
+    private fun showUpdateStatus(text: String) {
+        updateStatusText.text = text
+        updateStatusText.visibility = View.VISIBLE
+    }
+
+    /** Once a day, silently look for a newer release; the dialog only appears when one exists. */
+    private fun maybeAutoCheckForUpdates() {
+        val prefs = getSharedPreferences("updates", MODE_PRIVATE)
+        val last = prefs.getLong("lastCheck", 0L)
+        if (System.currentTimeMillis() - last < updateCheckIntervalMs) return
+        prefs.edit().putLong("lastCheck", System.currentTimeMillis()).apply()
+        checkForUpdates(manual = false)
+    }
+
+    private fun checkForUpdates(manual: Boolean) {
+        if (updateChecking) return
+        updateChecking = true
+        if (manual) showUpdateStatus(getString(R.string.updates_checking))
+        uiScope.launch {
+            val result = updateChecker.latest()
+            updateChecking = false
+            when (result) {
+                is UpdateCheck.Found -> {
+                    if (manual) updateStatusText.visibility = View.GONE
+                    updateChecker.notifyAvailable(result.update)
+                    showUpdateDialog(result.update)
+                }
+                UpdateCheck.None -> if (manual) showUpdateStatus(getString(R.string.updates_none))
+                UpdateCheck.Failed -> if (manual) showUpdateStatus(getString(R.string.updates_failed))
+            }
+        }
+    }
+
+    private fun showUpdateDialog(update: AvailableUpdate) {
+        val notes = update.notes.ifBlank { getString(R.string.updates_no_notes) }.take(1200)
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.updates_dialog_title, update.version))
+            .setMessage(notes)
+            .setNegativeButton(R.string.updates_later, null)
+            .setPositiveButton(R.string.updates_download) { _, _ -> downloadAndInstall(update) }
+            .show()
+    }
+
+    private fun downloadAndInstall(update: AvailableUpdate) {
+        showUpdateStatus(getString(R.string.updates_downloading))
+        uiScope.launch {
+            val apk = updateChecker.download(update)
+            if (apk == null) {
+                showUpdateStatus(getString(R.string.updates_download_failed))
+                return@launch
+            }
+            updateStatusText.visibility = View.GONE
+            try {
+                updateChecker.install(apk)
+            } catch (_: Exception) {
+                Toast.makeText(this@PumpDashboardActivity, R.string.updates_install_failed, Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
     }
 
     private fun confirmUnpair() {

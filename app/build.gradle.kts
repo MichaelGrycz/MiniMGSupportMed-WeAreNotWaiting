@@ -13,8 +13,8 @@ android {
         applicationId = "pl.mgsupport.cgm"
         minSdk = 24
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.0-beta9"
+        versionCode = 11
+        versionName = "1.0-beta10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

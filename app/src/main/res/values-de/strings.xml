@@ -257,4 +257,21 @@
     <string name="compat_limited">Android %1$d · BLE Peripheral: Unbestätigt</string>
     <string name="compat_unsupported">Android %1$d · BLE Peripheral: Nicht unterstützt ✗</string>
     <string name="pump_model_format">Pumpe: %1$s (%2$s)</string>
+
+    <string name="updates_title">Updates</string>
+    <string name="updates_current">Installierte Version: %1$s</string>
+    <string name="updates_check">Nach Updates suchen</string>
+    <string name="updates_checking">Wird geprüft…</string>
+    <string name="updates_none">Du hast die neueste Version.</string>
+    <string name="updates_failed">Prüfung fehlgeschlagen. Später erneut versuchen.</string>
+    <string name="updates_available_title">Update verfügbar</string>
+    <string name="updates_available_body">Version %1$s steht zum Download bereit.</string>
+    <string name="updates_dialog_title">Version %1$s verfügbar</string>
+    <string name="updates_download">Herunterladen und installieren</string>
+    <string name="updates_later">Später</string>
+    <string name="updates_downloading">Update wird geladen…</string>
+    <string name="updates_download_failed">Download fehlgeschlagen.</string>
+    <string name="updates_install_failed">Installationsprogramm konnte nicht geöffnet werden. Erlaube die Installation aus dieser Quelle und versuche es erneut.</string>
+    <string name="updates_channel">App-Updates</string>
+    <string name="updates_no_notes">Keine Änderungshinweise.</string>
 </resources>

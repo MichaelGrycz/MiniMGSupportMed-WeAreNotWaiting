@@ -193,7 +193,7 @@
     <string name="safety_disclaimer_title">Informacja o bezpieczeństwie (Tylko odczyt)</string>
     <string
     name="safety_disclaimer_body"
-  >MGSupport CGM to otwartoźródłowe narzędzie pomocnicze (GPL-3.0) działające wyłącznie w trybie odczytu. Aplikacja nigdy nie wysyła poleceń dawkowania do pompy. Nie zastępuje zaleceń lekarskich.</string>
+  >MGSupport CGM to otwartoźródłowe narzędzie pomocnicze (GPL-3.0) działające wyłącznie w trybie odczytu. Aplikacja nigdy nie wysyła poleceń dawkowania do pompy. Jedyny ruch sieciowy to sprawdzenie aktualizacji na GitHubie, bez wysyłania danych z telefonu. Nie zastępuje zaleceń lekarskich.</string>
     <string name="credits_title">Wykonanie aplikacji</string>
     <string name="credits_author">Wykonał: MGSupport Michał Grycz</string>
     <string name="credits_link">Zobacz usługi MGSupport</string>
@@ -276,4 +276,21 @@
     <string name="compat_limited">Android %1$d · Tryb BLE Peripheral: Niepotwierdzony (może działać)</string>
     <string name="compat_unsupported">Android %1$d · Tryb BLE Peripheral: Nieobsługiwany ✗</string>
     <string name="pump_model_format">Pompa: %1$s (%2$s)</string>
+
+    <string name="updates_title">Aktualizacje</string>
+    <string name="updates_current">Zainstalowana wersja: %1$s</string>
+    <string name="updates_check">Sprawdź aktualizacje</string>
+    <string name="updates_checking">Sprawdzam…</string>
+    <string name="updates_none">Masz najnowszą wersję.</string>
+    <string name="updates_failed">Nie udało się sprawdzić. Spróbuj później.</string>
+    <string name="updates_available_title">Dostępna aktualizacja</string>
+    <string name="updates_available_body">Nowa wersja %1$s jest do pobrania.</string>
+    <string name="updates_dialog_title">Dostępna wersja %1$s</string>
+    <string name="updates_download">Pobierz i zainstaluj</string>
+    <string name="updates_later">Później</string>
+    <string name="updates_downloading">Pobieram aktualizację…</string>
+    <string name="updates_download_failed">Pobieranie nie udało się.</string>
+    <string name="updates_install_failed">Nie udało się otworzyć instalatora. Zezwól na instalowanie aplikacji z tego źródła i spróbuj ponownie.</string>
+    <string name="updates_channel">Aktualizacje aplikacji</string>
+    <string name="updates_no_notes">Brak opisu zmian.</string>
 </resources>
