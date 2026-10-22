@@ -4,17 +4,17 @@ plugins {
 }
 
 android {
-    namespace = "pl.mgsupport.cgm"
+    namespace = "pl.mgsupport.mglycemia"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "pl.mgsupport.cgm"
+        applicationId = "pl.mgsupport.mglycemia"
         minSdk = 24
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.0-beta11"
+        versionCode = 13
+        versionName = "1.0-beta12"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

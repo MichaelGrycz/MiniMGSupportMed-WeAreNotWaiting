@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MGSupport CGM</string>
+    <string name="app_name">MGlikemia</string>
     <string name="app_subtitle">780G · 770G · 680G BLE</string>
     <string name="start_gatt_peripheral">Uruchom GATT peripheral</string>
 
@@ -140,7 +140,7 @@
     <string name="howto_step4_title">Zabezpiecz pracę w tle 24/7 (Bateria)</string>
     <string
     name="howto_step4_desc"
-  >Telefony Xiaomi, Realme, OPPO, Samsung czy Huawei potrafią usypiać aplikacje Bluetooth po zgaszeniu ekranu. Wyłącz optymalizację baterii dla MGSupport CGM, aby odczyty i alarmy nocne działały bez przerw.</string>
+  >Telefony Xiaomi, Realme, OPPO, Samsung czy Huawei potrafią usypiać aplikacje Bluetooth po zgaszeniu ekranu. Wyłącz optymalizację baterii dla MGlikemia, aby odczyty i alarmy nocne działały bez przerw.</string>
 
     <string name="faq_title">Częste pytania i rozwiązywanie problemów</string>
     <string
@@ -193,7 +193,7 @@
     <string name="safety_disclaimer_title">Informacja o bezpieczeństwie (Tylko odczyt)</string>
     <string
     name="safety_disclaimer_body"
-  >MGSupport CGM to otwartoźródłowe narzędzie pomocnicze (GPL-3.0) działające wyłącznie w trybie odczytu. Aplikacja nigdy nie wysyła poleceń dawkowania do pompy. Jedyny ruch sieciowy to sprawdzenie aktualizacji na GitHubie, bez wysyłania danych z telefonu. Nie zastępuje zaleceń lekarskich.</string>
+  >MGlikemia to otwartoźródłowe narzędzie pomocnicze (GPL-3.0) działające wyłącznie w trybie odczytu. Aplikacja nigdy nie wysyła poleceń dawkowania do pompy. Jedyny ruch sieciowy to sprawdzenie aktualizacji na GitHubie, bez wysyłania danych z telefonu. Nie zastępuje zaleceń lekarskich.</string>
     <string name="credits_title">Wykonanie aplikacji</string>
     <string name="credits_author">Wykonał: MGSupport Michał Grycz</string>
     <string name="credits_link">Zobacz usługi MGSupport</string>
@@ -205,7 +205,7 @@
     <string name="license_link">Pełny tekst licencji GPL-3.0</string>
     <string name="source_link">Kod źródłowy na żądanie</string>
     <string name="license_url">https://www.gnu.org/licenses/gpl-3.0.html</string>
-    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGSupport CGM%20-%20kod%20zrodlowy</string>
+    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGlikemia%20-%20kod%20zrodlowy</string>
     <string name="credits_open_failed">Nie można otworzyć strony MGSupport na tym urządzeniu.</string>
 
     <!-- Zachowane klucze dla kontrolera -->

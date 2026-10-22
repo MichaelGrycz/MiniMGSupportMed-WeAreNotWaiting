@@ -19,7 +19,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MGSupportCGM"
+rootProject.name = "MGLycemia"
 include(":app")
 
 includeBuild("JavaSake")

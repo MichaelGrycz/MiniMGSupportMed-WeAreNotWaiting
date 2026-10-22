@@ -530,7 +530,7 @@
                         </LinearLayout>
 
                         <!-- Custom Interactive Canvas Chart -->
-                        <pl.mgsupport.cgm.GlucoseChartView
+                        <pl.mgsupport.mglycemia.GlucoseChartView
               android:id="@+id/chart"
               android:layout_width="match_parent"
               android:layout_height="250dp"

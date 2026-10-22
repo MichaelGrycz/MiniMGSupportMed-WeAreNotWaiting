@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MGSupport CGM</string>
+    <string name="app_name">MGlycemia</string>
     <string name="app_subtitle">780G · 770G · 680G BLE</string>
     <string name="start_gatt_peripheral">Start GATT peripheral</string>
 
@@ -137,7 +137,7 @@
     <string name="howto_step4_title">Keep background monitoring alive 24/7</string>
     <string
     name="howto_step4_desc"
-  >Phones like Xiaomi, Realme, OPPO, Samsung or Huawei may kill background Bluetooth apps when the screen is off. Disable battery optimization for MGSupport CGM to ensure uninterrupted night alerts.</string>
+  >Phones like Xiaomi, Realme, OPPO, Samsung or Huawei may kill background Bluetooth apps when the screen is off. Disable battery optimization for MGlycemia to ensure uninterrupted night alerts.</string>
     <string name="btn_battery_settings">Open Battery Optimization Settings</string>
 
     <string name="faq_title">FAQ &amp; Troubleshooting</string>
@@ -187,7 +187,7 @@
     <string name="safety_disclaimer_title">Read-Only Medical Disclaimer</string>
     <string
     name="safety_disclaimer_body"
-  >MGSupport CGM is an open-source read-only companion tool (GPL-3.0). It never sends dosing commands to the pump. Do not use this app as a substitute for official medical advice or primary therapy decisions.</string>
+  >MGlycemia is an open-source read-only companion tool (GPL-3.0). It never sends dosing commands to the pump. Do not use this app as a substitute for official medical advice or primary therapy decisions.</string>
     <string name="credits_title">App credits</string>
     <string name="credits_author">Created by MGSupport Michał Grycz</string>
     <string name="credits_link">View MGSupport services</string>
@@ -199,7 +199,7 @@
     <string name="license_link">Full GPL-3.0 license text</string>
     <string name="source_link">Source code on request</string>
     <string name="license_url">https://www.gnu.org/licenses/gpl-3.0.html</string>
-    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGSupport CGM%20source%20code</string>
+    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGlycemia%20source%20code</string>
     <string name="credits_open_failed">Could not open the MGSupport page on this device.</string>
 
     <!-- Legacy / Controller Strings -->

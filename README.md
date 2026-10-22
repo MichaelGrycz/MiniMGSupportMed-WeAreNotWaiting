@@ -1,4 +1,4 @@
-# MGSupport CGM
+# MGlycemia
 
 Niezależna aplikacja na Androida do podglądu glikemii z pomp Medtronic MiniMed
 780G, 770G i 680G. Telefon jest urządzeniem peryferyjnym BLE, pompa łączy się do

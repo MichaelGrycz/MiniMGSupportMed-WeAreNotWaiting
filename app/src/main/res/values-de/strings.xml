@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MGSupport CGM</string>
+    <string name="app_name">MGlycemia</string>
     <string name="app_subtitle">780G · 770G · 680G BLE</string>
     <string name="start_gatt_peripheral">GATT-Peripherie starten</string>
 
@@ -128,7 +128,7 @@
     <string name="howto_step3_title">Auf der Pumpe bestätigen</string>
     <string name="howto_step3_desc">Wählen Sie auf der Pumpe „Neues Gerät koppeln“ und bestätigen Sie. Wenn das Telefon die Bluetooth-Kopplungsanfrage zeigt, tippen Sie auf „Koppeln“.</string>
     <string name="howto_step4_title">Hintergrundbetrieb sicherstellen</string>
-    <string name="howto_step4_desc">Deaktivieren Sie die Akku-Optimierung für MGSupport CGM.</string>
+    <string name="howto_step4_desc">Deaktivieren Sie die Akku-Optimierung für MGlycemia.</string>
     <string name="btn_battery_settings">Akku-Einstellungen</string>
 
     <string name="faq_title">FAQ &amp; Fehlerbehebung</string>
@@ -146,7 +146,7 @@
     <string name="license_link">Vollständiger GPL-3.0-Lizenztext</string>
     <string name="source_link">Quellcode auf Anfrage</string>
     <string name="license_url">https://www.gnu.org/licenses/gpl-3.0.html</string>
-    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGSupport CGM%20Quellcode</string>
+    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGlycemia%20Quellcode</string>
     <string name="credits_open_failed">Die MGSupport-Seite kann auf diesem Gerät nicht geöffnet werden.</string>
 
     <!-- Settings Tab -->
@@ -188,7 +188,7 @@
     <string name="safety_disclaimer_title">Medizinischer Haftungsausschluss (Read-Only)</string>
     <string
     name="safety_disclaimer_body"
-  >MGSupport CGM ist ein Open-Source-Begleittool (GPL-3.0) nur zum Lesen. Keine Dosierungsbefehle.</string>
+  >MGlycemia ist ein Open-Source-Begleittool (GPL-3.0) nur zum Lesen. Keine Dosierungsbefehle.</string>
 
     <string name="notif_channel_status">Pumpenstatus</string>
     <string name="notif_connecting">Verbinde mit Pumpe…</string>

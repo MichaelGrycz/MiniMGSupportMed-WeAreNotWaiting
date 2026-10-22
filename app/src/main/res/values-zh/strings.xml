@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MGSupport CGM</string>
+    <string name="app_name">MGlycemia</string>
     <string name="app_subtitle">780G · 770G · 680G 蓝牙</string>
     <string name="start_gatt_peripheral">启动 GATT 外设</string>
 
@@ -139,7 +139,7 @@
     <string name="license_link">GPL-3.0 许可证全文</string>
     <string name="source_link">按请求提供源代码</string>
     <string name="license_url">https://www.gnu.org/licenses/gpl-3.0.html</string>
-    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGSupport CGM%20source</string>
+    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGlycemia%20source</string>
     <string name="credits_open_failed">无法在此设备上打开 MGSupport 页面。</string>
 
     <!-- Settings Tab -->
@@ -177,7 +177,7 @@
     <string name="logs_empty">当前会话无日志。</string>
 
     <string name="safety_disclaimer_title">只读医疗免责声明</string>
-    <string name="safety_disclaimer_body">MGSupport CGM 是开源只读伴侣工具 (GPL-3.0)，绝不向泵发送给药指令。</string>
+    <string name="safety_disclaimer_body">MGlycemia 是开源只读伴侣工具 (GPL-3.0)，绝不向泵发送给药指令。</string>
 
     <string name="notif_channel_status">泵状态</string>
     <string name="notif_connecting">正在连接泵…</string>
