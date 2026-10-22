@@ -4,8 +4,8 @@
 Usage: update_page.py <astro-file> <version> <notes>
 
 Bumps the version shown on the page, follows it in the APK file name, and
-prepends a new entry to the `releaseNotes` array. The entry that used to be
-marked "Najnowsza" loses that badge.
+prepends a new entry to the `releaseNotes` array. Historical entries keep their
+own version numbers.
 """
 
 import datetime
@@ -33,8 +33,9 @@ PL_MONTHS = {
 with io.open(PATH, encoding="utf-8") as handle:
     src = handle.read()
 
-# 1. Version shown on the page.
-src = re.sub(r"1\.0-beta\d+", VERSION, src)
+# 1. Version in the page copy only. The negative lookbehind keeps the numbers
+#    inside the changelog entries untouched.
+src = re.sub(r"(?<!version: ')1\.0-beta\d+", VERSION, src)
 
 # 2. APK file name follows the version.
 src = re.sub(r"MGLycemia-[0-9][^'\"]*\.apk", "MGLycemia-%s.apk" % VERSION, src)
@@ -45,10 +46,11 @@ marker = "const releaseNotes = [\n"
 if marker not in src:
     sys.exit("releaseNotes array not found in %s" % PATH)
 
-if ("version: '%s'," % VERSION) in src:
+first_entry = re.search(r"releaseNotes = \[\s*\{\s*version: '([^']+)'", src)
+if first_entry and first_entry.group(1) == VERSION:
     with io.open(PATH, "w", encoding="utf-8") as handle:
         handle.write(src)
-    print("page: %s already listed, only the copy was updated" % VERSION)
+    print("page: %s already on top, only the copy was updated" % VERSION)
     sys.exit(0)
 
 items = [
@@ -74,8 +76,7 @@ entry = (
 )
 
 head, rest = src.split(marker, 1)
-# The previous newest entry loses its badge.
-rest = rest.replace("    tag: 'Najnowsza',\n", "", 1)
+rest = rest.replace("    tag: 'Najnowsza',\n", "", 1)  # previous newest loses the badge
 
 with io.open(PATH, "w", encoding="utf-8") as handle:
     handle.write(head + marker + entry + rest)
