@@ -106,3 +106,5 @@ android.gitignore hosted with ❤ by GitHub
 # Local only: notes contain the pump serial, run.sh has local paths
 /PROJECT_NOTES.md
 /run.sh
+/MGLycemia-*.apk
+/MGSupportCGM-*.apk
