@@ -14,7 +14,18 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 shift || true
-NOTES="${*:-Wydanie $VERSION.}"
+NOTES="${*:-Aktualizacja techniczna, bez zmian w interfejsie.}"
+
+# The notes land in the public changelog on mgsupport.pl, so they have to read
+# like a user-facing change list, not like a commit message.
+case "$NOTES" in
+  *commit*|*skrypt*|*build*|*repo*|*tag*|*GATT*|*CCCD*|*release.sh*|*submodu*)
+    echo "UWAGA: notatki wyglądają technicznie, a trafią na publiczną stronę."
+    printf '  %s
+' "$NOTES"
+    echo "  Napisz je językiem użytkownika, np. \"Poprawka parowania na Samsungach.\""
+    ;;
+esac
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
