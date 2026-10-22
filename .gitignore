@@ -97,14 +97,11 @@ view raw
 android.gitignore hosted with ❤ by GitHub
 
 
-# Local build artifacts and generated demo data
-/demo_year_backup.csv
-/app_*.png
-/pump_tab.png
-/MiniMGSupportMed-*.apk
+# Release artifacts and scratch files
+/*.apk
+/*.png
 
-# Local only: notes contain the pump serial, run.sh has local paths
-/PROJECT_NOTES.md
-/run.sh
-/MGLycemia-*.apk
-/MGSupportCGM-*.apk
+# Local only: working notes and machine-specific helpers
+/docs/local/
+/tools/local/
+/tools/demo/demo_year_backup.csv

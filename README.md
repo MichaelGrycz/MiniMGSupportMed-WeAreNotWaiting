@@ -1,4 +1,4 @@
-# MGlycemia
+# MGlikemia / MGlycemia
 
 Niezależna aplikacja na Androida do podglądu glikemii z pomp Medtronic MiniMed
 780G, 770G i 680G. Telefon jest urządzeniem peryferyjnym BLE, pompa łączy się do
@@ -6,6 +6,8 @@ niego i wysyła dane, które aplikacja odczytuje i zapisuje lokalnie.
 
 Aplikacja jest **tylko do odczytu**. Nie wysyła do pompy żadnych poleceń i nie
 zmienia jej ustawień. Nie jest wyrobem medycznym.
+
+Nazwa: **MGlikemia** po polsku, **MGlycemia** w pozostałych językach.
 
 ## Co potrafi
 
@@ -15,6 +17,7 @@ zmienia jej ustawień. Nie jest wyrobem medycznym.
 - TIR, średnia, GMI, pasmo min/max
 - progi alertów glikemii
 - eksport i import CSV (backup i przenoszenie danych między telefonami)
+- automatyczne aktualizacje z wydań na GitHubie
 - interfejs po polsku, angielsku, niemiecku i chińsku
 
 ## Wymagania
@@ -22,6 +25,10 @@ zmienia jej ustawień. Nie jest wyrobem medycznym.
 - Android 7.0 lub nowszy
 - Bluetooth LE
 - pompa MiniMed 780G, 770G albo 680G
+
+## Pobieranie
+
+https://mgsupport.pl/pobierz/minimgsupportmed
 
 ## Budowanie
 
@@ -40,13 +47,30 @@ APK trafia do `app/build/outputs/apk/debug/app-debug.apk`.
 JavaSake jest dołączony do repozytorium jako zwykły katalog (nie submoduł), więc
 build nie wymaga dostępu do zewnętrznych repozytoriów.
 
+## Wydawanie nowej wersji
+
+```bash
+tools/release.sh 1.0-beta14 "Co się zmieniło"
+```
+
+Szczegóły: [docs/RELEASE.md](docs/RELEASE.md).
+
+## Dokumentacja
+
+- [Architektura](docs/ARCHITECTURE.md): komponenty, przepływ danych, baza, CSV
+- [Parowanie i diagnostyka BLE](docs/BLE-PAIRING.md): protokół, błędy, znane problemy
+- [Wydawanie wersji](docs/RELEASE.md): skrypt, publikacja, GitHub Releases
+- [Prywatność](docs/PRIVACY.md): jakie dane zostają na telefonie
+- [Historia zmian](CHANGELOG.md)
+
 ## Identyfikacja
 
-- `applicationId`: `pl.mgsupport.cgm`
-- kod: `pl.mgsupport.cgm` oraz `pl.mgsupport.cgm.core`
+- `applicationId`: `pl.mgsupport.mglycemia`
+- kod: `pl.mgsupport.mglycemia` oraz `pl.mgsupport.mglycemia.core`
+- repozytorium: https://github.com/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting
 
 ## Licencja
 
-GNU GPL 3.0. Szczegóły i informacja o projektach, z których kod pochodzi, są w
-pliku [NOTICE](NOTICE). MiniMed jest znakiem towarowym Medtronic; projekt nie jest
+GNU GPL 3.0. Informacja o projektach, z których kod pochodzi, jest w pliku
+[NOTICE](NOTICE). MiniMed jest znakiem towarowym Medtronic; projekt nie jest
 powiązany z Medtronic.
