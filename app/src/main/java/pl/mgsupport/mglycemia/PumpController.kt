@@ -1,6 +1,7 @@
 package pl.mgsupport.mglycemia
 
 import android.content.Context
+import android.net.Uri
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import pl.mgsupport.mglycemia.core.ble.connection.AndroidMedtronicGattLink
@@ -63,6 +64,7 @@ data class PumpUiState(
     val rocMgDlPerMin: Double? = null,
     val predicted30: Int? = null,
     val historyLines: List<String> = emptyList(),
+    val insulinEvents: List<ChartInsulinEvent> = emptyList(),
     val readingsCount: Int = 0,
     val eventsCount: Int = 0,
     val thresholds: Thresholds = Thresholds(),
@@ -70,6 +72,7 @@ data class PumpUiState(
     val languageTag: String? = null,
     val log: String = "",
     val lastError: String? = null,
+    val backupStatus: BackupStatus = BackupStatus(),
 ) {
     companion object {
         const val WINDOW_1H = 1 * 60 * 60 * 1000L
@@ -122,6 +125,16 @@ class PumpController(context: Context) {
 
     private val alerts = AlertManager(appContext)
     private val historyPresenter = HistoryPresenter()
+    private val durableBackup = DurableBackup(appContext, store)
+
+    suspend fun selectBackupFolder(uri: Uri) = durableBackup.selectFolder(uri)
+    suspend fun backupNow() = durableBackup.backupNow()
+    suspend fun restoreBackupFolder(uri: Uri): ImportResult {
+        val result = durableBackup.restoreFromFolder(uri)
+        refreshChart()
+        return result
+    }
+    fun disableBackup() = durableBackup.disable()
 
     init {
         // Raw BLE events (GATT disconnect status, re-advertise attempts) go to the technical log so a
@@ -153,6 +166,11 @@ class PumpController(context: Context) {
     private var historyCursor: Int? = null
 
     init {
+        scope.launch {
+            durableBackup.state.collect { bs ->
+                _state.update { it.copy(backupStatus = bs) }
+            }
+        }
         scope.launch {
             manager.connectionState.collect { cs ->
                 _state.update {
@@ -319,8 +337,10 @@ class PumpController(context: Context) {
                 val now = System.currentTimeMillis()
                 val w = _state.value.windowMillis
                 val pts = store.queryGlucose(now - w, now, 1500)
+                val events = store.queryInsulinEvents(now - w, now)
                 val rCount = store.countReadings()
-                _state.update { it.copy(glucoseHistory = pts, readingsCount = rCount) }
+                val eCount = store.countEvents()
+                _state.update { it.copy(glucoseHistory = pts, insulinEvents = events, readingsCount = rCount, eventsCount = eCount) }
                 recomputeDerived()
             }
     }

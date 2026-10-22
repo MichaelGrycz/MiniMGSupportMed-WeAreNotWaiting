@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Typeface
@@ -13,10 +14,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.provider.DocumentsContract
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -26,6 +29,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
@@ -39,6 +44,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -111,6 +117,28 @@ class PumpDashboardActivity : AppCompatActivity() {
     // Chart & Analytics Views
     private lateinit var chart: GlucoseChartView
     private lateinit var btnZoomReset: TextView
+    private lateinit var folderBackupSwitch: SwitchCompat
+    private lateinit var folderBackupStatus: TextView
+    private lateinit var folderBackupResult: TextView
+    private var updatingBackupSwitch = false
+    private var backupBusy = false
+    private var pendingViewport: ChartViewport? = null
+
+    private val fullscreenChart = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            ChartUi.readViewport(result.data?.getBundleExtra(ChartUi.VIEWPORT))?.let { viewport ->
+                controller.setWindow(viewport.windowMillis)
+                ChartUi.render(chart, controller.state.value)
+                chart.restoreViewport(viewport)
+            }
+        }
+    }
+    private val chooseBackupFolder = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) handleBackupFolder(result.data, restore = false)
+    }
+    private val restoreBackupFolder = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) handleBackupFolder(result.data, restore = true)
+    }
     private lateinit var windowButtons: Map<Long, TextView>
     private lateinit var barBelow: View
     private lateinit var barInRange: View
@@ -168,7 +196,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         setContentView(R.layout.activity_pump_dashboard)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rootLayout)) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
@@ -176,6 +204,8 @@ class PumpDashboardActivity : AppCompatActivity() {
         controller = (application as PumpApp).controller
 
         bindViews()
+        pendingViewport = ChartUi.readViewport(savedInstanceState)
+        pendingViewport?.let { controller.setWindow(it.windowMillis) }
         setupListeners()
         prefillThresholds(controller.state.value.thresholds)
 
@@ -203,6 +233,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_SELECTED_TAB, currentTab.name)
         outState.putBoolean(KEY_LOGS_EXPANDED, logsExpanded)
+        ChartUi.writeViewport(outState, chart.viewport())
     }
 
     private fun bindViews() {
@@ -244,6 +275,10 @@ class PumpDashboardActivity : AppCompatActivity() {
         rocText = findViewById(R.id.rocText)
 
         chart = findViewById(R.id.chart)
+        ensureChartBackupPanels()
+        folderBackupSwitch = findViewById(R.id.switchFolderBackup)
+        folderBackupStatus = findViewById(R.id.backupFolderStatus)
+        folderBackupResult = findViewById(R.id.backupFolderResult)
         btnZoomReset = findViewById(R.id.btnZoomReset)
         windowButtons =
             mapOf(
@@ -311,6 +346,151 @@ class PumpDashboardActivity : AppCompatActivity() {
         logText = findViewById(R.id.logText)
     }
 
+    /** Older tablet resources share the same IDs; add the new panels without duplicating that layout. */
+    private fun ensureChartBackupPanels() {
+        val chartParent = chart.parent as LinearLayout
+        if (findViewById<View>(R.id.btnChartEvents) == null) {
+            val extra = layoutInflater.inflate(R.layout.view_chart_extras, chartParent, false)
+            chartParent.addView(extra, chartParent.indexOfChild(chart) + 1)
+        }
+        chart.layoutParams = chart.layoutParams.apply { height = dp(440) }
+        if (findViewById<View>(R.id.backupFolderPanel) == null) {
+            val stats = findViewById<TextView>(R.id.dbStatsText)
+            val parent = stats.parent as LinearLayout
+            parent.addView(layoutInflater.inflate(R.layout.view_backup_folder, parent, false), parent.indexOfChild(stats) + 1)
+        }
+        for (id in listOf(R.id.btnZoomIn, R.id.btnZoomOut, R.id.btnZoomReset)) {
+            val control = findViewById<View>(id)
+            control.minimumWidth = dp(48)
+            control.layoutParams = control.layoutParams.apply {
+                height = dp(48)
+                if (width > 0 && width < dp(48)) width = dp(48)
+            }
+        }
+        // Eight 48dp targets cannot fit a narrow phone in a weighted row.
+        val rangeRow = findViewById<View>(R.id.btn1h).parent as LinearLayout
+        if (rangeRow.parent is LinearLayout) {
+            val parent = rangeRow.parent as LinearLayout
+            val index = parent.indexOfChild(rangeRow)
+            val params = rangeRow.layoutParams
+            parent.removeView(rangeRow)
+            val scroll = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false }
+            scroll.addView(rangeRow)
+            parent.addView(scroll, index, params)
+        }
+        for (id in ChartUi.windows.values) {
+            val control = findViewById<View>(id)
+            control.layoutParams = (control.layoutParams as LinearLayout.LayoutParams).apply {
+                weight = 0f
+                width = dp(52)
+                height = dp(48)
+            }
+        }
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()
+
+    private fun setupFolderBackupListeners() {
+        folderBackupSwitch.setOnCheckedChangeListener { _, checked ->
+            if (!updatingBackupSwitch) {
+                renderFolderBackup(controller.state.value.backupStatus)
+                if (checked) confirmBackupFolder(restore = false)
+                else runFolderBackup { controller.disableBackup(); null }
+            }
+        }
+        findViewById<View>(R.id.btnChooseBackupFolder).setOnClickListener { confirmBackupFolder(restore = false) }
+        findViewById<View>(R.id.btnRestoreBackupFolder).setOnClickListener { confirmBackupFolder(restore = true) }
+        findViewById<View>(R.id.btnBackupFolderNow).setOnClickListener {
+            runFolderBackup { controller.backupNow(); null }
+        }
+    }
+
+    private fun confirmBackupFolder(restore: Boolean) {
+        if (backupBusy) return
+        val privacy = getString(R.string.backup_folder_disclosure)
+        AlertDialog.Builder(this)
+            .setTitle(if (restore) R.string.backup_folder_restore else R.string.backup_folder_title)
+            .setMessage(if (restore) getString(R.string.backup_folder_restore_disclosure, privacy) else privacy)
+            .setNegativeButton(R.string.btn_cancel, null)
+            .setPositiveButton(R.string.backup_folder_continue) { _, _ ->
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        putExtra(DocumentsContract.EXTRA_INITIAL_URI,
+                            DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:Documents"))
+                    }
+                }
+                try {
+                    if (restore) restoreBackupFolder.launch(intent) else chooseBackupFolder.launch(intent)
+                } catch (_: ActivityNotFoundException) {
+                    showFolderBackupResult(getString(R.string.backup_folder_picker_missing))
+                }
+            }.show()
+    }
+
+    private fun handleBackupFolder(data: Intent?, restore: Boolean) {
+        val uri = data?.data ?: return
+        val flags = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        val required = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        if (flags and required != required || data.flags and Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION == 0) {
+            showFolderBackupResult(getString(R.string.backup_folder_permission))
+            return
+        }
+        runFolderBackup {
+            contentResolver.takePersistableUriPermission(uri, flags)
+            if (restore) controller.restoreBackupFolder(uri)
+            else { controller.selectBackupFolder(uri); null }
+        }
+    }
+
+    private fun runFolderBackup(operation: suspend () -> ImportResult?) {
+        if (backupBusy) return
+        backupBusy = true
+        folderBackupResult.visibility = View.GONE
+        renderFolderBackup(controller.state.value.backupStatus)
+        uiScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) { operation() }
+                if (result != null) showFolderBackupResult(getString(R.string.backup_folder_restored,
+                    result.readingsImported, result.eventsImported, result.readingsSkipped, result.errors))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Backend status carries the actionable failure; never expose a raw URI or stack trace.
+                showFolderBackupResult(getString(R.string.backup_folder_failed))
+            } finally {
+                backupBusy = false
+                renderFolderBackup(controller.state.value.backupStatus)
+            }
+        }
+    }
+
+    private fun showFolderBackupResult(message: String) {
+        folderBackupResult.text = message
+        folderBackupResult.visibility = View.VISIBLE
+    }
+
+    private fun renderFolderBackup(status: BackupStatus) {
+        updatingBackupSwitch = true
+        folderBackupSwitch.isChecked = status.enabled
+        updatingBackupSwitch = false
+        folderBackupSwitch.isEnabled = !backupBusy
+        findViewById<View>(R.id.btnChooseBackupFolder).isEnabled = !backupBusy
+        findViewById<View>(R.id.btnRestoreBackupFolder).isEnabled = !backupBusy
+        findViewById<View>(R.id.btnBackupFolderNow).isEnabled = !backupBusy && status.enabled
+        folderBackupStatus.text = buildList {
+            add(getString(if (status.enabled) R.string.backup_folder_enabled else R.string.backup_folder_disabled))
+            add(status.folderLabel?.let { getString(R.string.backup_folder_label, it) }
+                ?: getString(R.string.backup_folder_none))
+            add(status.lastSuccessMs?.let {
+                getString(R.string.backup_folder_saved, java.text.DateFormat.getDateTimeInstance().format(java.util.Date(it)))
+            } ?: getString(R.string.backup_folder_never))
+            status.error?.let { add(getString(R.string.backup_folder_error, it)) }
+            if (backupBusy) add(getString(R.string.backup_folder_busy))
+        }.joinToString("\n")
+    }
+
     private fun setupListeners() {
         // Bottom Navigation
         navBtnDashboard.setOnClickListener { switchTab(Tab.DASHBOARD) }
@@ -328,7 +508,13 @@ class PumpDashboardActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnZoomOut).setOnClickListener { chart.zoomOut() }
         btnZoomReset.setOnClickListener { chart.resetView() }
 
+        ChartUi.attachEventControls(this, chart)
+        findViewById<View>(R.id.btnChartFullscreen).setOnClickListener {
+            val viewport = Bundle().also { ChartUi.writeViewport(it, chart.viewport()) }
+            fullscreenChart.launch(Intent(this, FullscreenChartActivity::class.java).putExtra(ChartUi.VIEWPORT, viewport))
+        }
         chart.onViewportChanged = { zoom, active ->
+            ChartUi.updateEventControls(this, chart)
             if (active) {
                 btnZoomReset.setBackgroundResource(R.drawable.bg_chip_active)
                 btnZoomReset.setTextColor(ContextCompat.getColor(this, R.color.accent_primary_bright))
@@ -344,7 +530,9 @@ class PumpDashboardActivity : AppCompatActivity() {
 
         for ((windowMs, btn) in windowButtons) {
             btn.setOnClickListener { controller.setWindow(windowMs) }
+            btn.contentDescription = getString(R.string.chart_window_description, btn.text)
         }
+        setupFolderBackupListeners()
 
         // History Filter Pills
         for ((filter, btn) in filterButtons) {
@@ -739,17 +927,12 @@ class PumpDashboardActivity : AppCompatActivity() {
 
         // 3. Interactive Chart & Time Window Selector
         updateWindowChips(s.windowMillis)
-        chart.setWindow(s.windowMillis)
-        chart.setData(
-            points = s.glucoseHistory,
-            targetLow = s.thresholds.low,
-            targetHigh = s.thresholds.high,
-            urgentLow = s.thresholds.urgentLow,
-            urgentHigh = s.thresholds.urgentHigh,
-            unit = s.unit,
-            exactMinMgDl = s.minGlucoseMgDl,
-            exactMaxMgDl = s.maxGlucoseMgDl,
-        )
+        ChartUi.render(chart, s)
+        pendingViewport?.let { viewport ->
+            pendingViewport = null
+            if (viewport.windowMillis == s.windowMillis) chart.restoreViewport(viewport)
+        }
+        renderFolderBackup(s.backupStatus)
 
         // 4. Time in Range & Analytics KPIs
         val tir = s.tirPercent
@@ -960,6 +1143,7 @@ class PumpDashboardActivity : AppCompatActivity() {
 
     private fun updateWindowChips(selectedWindow: Long) {
         for ((windowMs, btn) in windowButtons) {
+            btn.isSelected = windowMs == selectedWindow
             styleChip(btn, windowMs == selectedWindow)
         }
     }

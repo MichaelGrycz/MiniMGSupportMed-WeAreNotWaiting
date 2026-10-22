@@ -20,6 +20,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".FullscreenChartActivity" android:exported="false" />
+
         <service
       android:name=".PumpForegroundService"
       android:exported="false"

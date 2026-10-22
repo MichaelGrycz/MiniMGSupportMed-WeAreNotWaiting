@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/backupFolderPanel" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:orientation="vertical" android:paddingTop="16dp">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/backup_folder_title" android:textColor="@color/text_primary"
+        android:textSize="15sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/backup_folder_disclosure" android:textColor="@color/text_secondary"
+        android:textSize="13sp" android:layout_marginTop="8dp" />
+    <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchFolderBackup"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+        android:layout_marginTop="8dp" android:text="@string/backup_folder_enable"
+        android:textColor="@color/text_primary" app:showText="false" />
+    <TextView android:id="@+id/backupFolderStatus" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textColor="@color/text_secondary"
+        android:textSize="13sp" android:accessibilityLiveRegion="polite" />
+    <TextView android:id="@+id/backupFolderResult" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textColor="@color/text_primary"
+        android:textSize="13sp" android:visibility="gone" android:accessibilityLiveRegion="polite" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnChooseBackupFolder"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+        android:text="@string/backup_folder_choose" android:textColor="@color/text_primary"
+        app:strokeColor="@color/border_highlight" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnBackupFolderNow"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+        android:text="@string/backup_folder_now" android:textColor="@color/text_primary"
+        app:strokeColor="@color/border_highlight" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnRestoreBackupFolder"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+        android:text="@string/backup_folder_restore" android:textColor="@color/accent_primary_bright"
+        app:strokeColor="@color/accent_primary" />
+</LinearLayout>

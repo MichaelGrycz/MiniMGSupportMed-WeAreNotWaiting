@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fullscreenChartRoot" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:orientation="vertical" android:background="@color/bg_base">
+    <Button android:id="@+id/btnCloseChart" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/chart_close" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:fillViewport="true" android:clipToPadding="false" android:padding="12dp">
+        <include layout="@layout/view_chart_panel" />
+    </ScrollView>
+</LinearLayout>

@@ -4,9 +4,11 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import java.io.BufferedReader
+import pl.mgsupport.mglycemia.core.domain.model.HistoryLogRecord
 import java.io.File
 import java.io.InputStream
+import java.io.OutputStream
+import java.util.UUID
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -45,6 +47,8 @@ data class ImportResult(
     val readingsSkipped: Int,
     val eventsImported: Int,
     val errors: Int,
+    val historyRecordsImported: Int = 0,
+    val appAlertsImported: Int = 0,
 )
 
 /**
@@ -54,8 +58,8 @@ data class ImportResult(
  * CSV export produces `readings.csv` / `events.csv` in the app-specific external directory, which
  * needs no storage permission and can be shared via FileProvider.
  */
-class ReadingStore(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, DB_NAME, null, DB_VERSION) {
+class ReadingStore(context: Context, databaseName: String = DB_NAME) :
+    SQLiteOpenHelper(context.applicationContext, databaseName, null, DB_VERSION) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -87,10 +91,119 @@ class ReadingStore(context: Context) :
             """.trimIndent()
         )
         db.execSQL("CREATE INDEX idx_events_ts ON events(ts_ms)")
+        addHistorySchema(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // v1: initial schema.
+        // SQLiteOpenHelper wraps this additive migration in a transaction. No legacy row is dropped.
+        if (oldVersion < 2) addHistorySchema(db)
+    }
+
+    private fun addHistorySchema(db: SQLiteDatabase) {
+        // Stable identity preserves even legacy samples sharing a timestamp on backup round-trips.
+        db.execSQL("ALTER TABLE readings ADD COLUMN backup_id TEXT")
+        db.execSQL("UPDATE readings SET backup_id = lower(hex(randomblob(16))) WHERE backup_id IS NULL")
+        db.execSQL("CREATE UNIQUE INDEX idx_readings_backup_id ON readings(backup_id)")
+        db.execSQL(
+            """
+            CREATE TABLE history_records (
+              source_id TEXT NOT NULL,
+              seq INTEGER NOT NULL,
+              type_id INTEGER NOT NULL,
+              pump_time_seconds INTEGER NOT NULL,
+              raw_bytes_b64 TEXT NOT NULL,
+              PRIMARY KEY(source_id, seq)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE app_alerts (
+              id TEXT PRIMARY KEY NOT NULL,
+              ts_ms INTEGER NOT NULL,
+              glucose INTEGER NOT NULL,
+              text TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX idx_app_alerts_ts ON app_alerts(ts_ms)")
+    }
+
+    /** Returns only after the entire raw batch commits; callers may advance their cursor afterwards. */
+    fun insertHistoryRecords(sourceId: String, records: List<HistoryLogRecord>) {
+        require(sourceId.isNotBlank()) { "A stable pump/log source ID is required" }
+        if (records.isEmpty()) return
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            for (record in records) insertHistoryRow(db, StoredHistoryRecord(sourceId, record))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** Maximum persisted sequence, compared as the wire's unsigned 32-bit value. Not a gap tracker. */
+    fun latestHistorySequence(sourceId: String): Int? = readableDatabase.rawQuery(
+        "SELECT seq FROM history_records WHERE source_id = ? ORDER BY (seq & 4294967295) DESC LIMIT 1",
+        arrayOf(sourceId),
+    ).use { if (it.moveToFirst()) it.getInt(0) else null }
+
+    fun queryInsulinEvents(fromMs: Long, toMs: Long): List<ChartInsulinEvent> {
+        // Include anchors and P1/P2 outside the requested window and across earlier download batches.
+        val records = ArrayList<StoredHistoryRecord>()
+        readableDatabase.rawQuery(
+            "SELECT source_id, seq, type_id, pump_time_seconds, raw_bytes_b64 FROM history_records", null,
+        ).use { c ->
+            while (c.moveToNext()) records += StoredHistoryRecord(
+                c.getString(0), HistoryLogRecord(c.getInt(1), c.getString(4), c.getInt(2), c.getLong(3)),
+            )
+        }
+        return HistoryTimeline.project(records, fromMs, toMs)
+    }
+
+    fun insertAppAlert(timestampMs: Long, glucoseMgDl: Int, text: String) {
+        insertAlertRow(writableDatabase, AppAlertRow(UUID.randomUUID().toString(), timestampMs, glucoseMgDl, text))
+    }
+
+    fun queryAppAlerts(fromMs: Long, toMs: Long): List<AppAlertRow> = readableDatabase.rawQuery(
+        "SELECT id, ts_ms, glucose, text FROM app_alerts WHERE ts_ms BETWEEN ? AND ? ORDER BY ts_ms, id",
+        arrayOf(fromMs.toString(), toMs.toString()),
+    ).use { c ->
+        buildList { while (c.moveToNext()) add(AppAlertRow(c.getString(0), c.getLong(1), c.getInt(2), c.getString(3))) }
+    }
+
+    private fun insertHistoryRow(db: SQLiteDatabase, stored: StoredHistoryRecord): Boolean {
+        val r = stored.record
+        val cv = ContentValues().apply {
+            put("source_id", stored.sourceId); put("seq", r.sequenceNumber); put("type_id", r.eventTypeId)
+            put("pump_time_seconds", r.pumpTimeSeconds); put("raw_bytes_b64", r.rawBytesB64)
+        }
+        val inserted = db.insertWithOnConflict("history_records", null, cv, SQLiteDatabase.CONFLICT_IGNORE) != -1L
+        if (!inserted) {
+            db.rawQuery(
+                "SELECT type_id, pump_time_seconds, raw_bytes_b64 FROM history_records WHERE source_id = ? AND seq = ?",
+                arrayOf(stored.sourceId, r.sequenceNumber.toString()),
+            ).use { c ->
+                check(c.moveToFirst() && c.getInt(0) == r.eventTypeId && c.getLong(1) == r.pumpTimeSeconds && c.getString(2) == r.rawBytesB64) {
+                    "Conflicting raw history identity; use a new source ID after a pump log reset"
+                }
+            }
+        }
+        return inserted
+    }
+
+    private fun insertAlertRow(db: SQLiteDatabase, row: AppAlertRow): Boolean {
+        val cv = ContentValues().apply {
+            put("id", row.id); put("ts_ms", row.timestampMs); put("glucose", row.glucoseMgDl); put("text", row.text)
+        }
+        val inserted = db.insertWithOnConflict("app_alerts", null, cv, SQLiteDatabase.CONFLICT_IGNORE) != -1L
+        if (!inserted) db.rawQuery("SELECT ts_ms, glucose, text FROM app_alerts WHERE id = ?", arrayOf(row.id)).use { c ->
+            check(c.moveToFirst() && c.getLong(0) == row.timestampMs && c.getInt(1) == row.glucoseMgDl && c.getString(2) == row.text) {
+                "Conflicting app alert identity"
+            }
+        }
+        return inserted
     }
 
     fun insertReading(r: ReadingRow) {
@@ -129,6 +242,7 @@ class ReadingStore(context: Context) :
 
         val cv =
             ContentValues().apply {
+                put("backup_id", UUID.randomUUID().toString())
                 put("ts_ms", r.tsMs)
                 r.glucoseMgDl?.let { put("glucose", it) }
                 r.trend?.let { put("trend", it) }
@@ -140,7 +254,7 @@ class ReadingStore(context: Context) :
                 r.battery?.let { put("battery", it) }
                 r.batteryCharging?.let { put("battery_charging", if (it) 1 else 0) }
             }
-        db.insert("readings", null, cv)
+        db.insertOrThrow("readings", null, cv)
     }
 
     fun insertEvents(rows: List<EventRow>) {
@@ -373,252 +487,107 @@ class ReadingStore(context: Context) :
         return listOf(readingsFile, eventsFile)
     }
 
-    /**
-     * Writes a single-file backup containing both readings and pump events.
-     * The format is one CSV with a `record_type` discriminator and stable column names.
-     */
+    /** Single-file v2 backup: all samples, legacy events, raw history, sources and app alerts. */
     fun exportBackupCsv(dir: File): File {
-        if (!dir.exists()) dir.mkdirs()
-        val file = File(dir, "minimed_backup.csv")
-        val iso = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC"))
-        file.bufferedWriter(Charsets.UTF_8).use { w ->
-            w.write(
-                "record_type,timestamp_iso,epoch_ms,glucose_mgdl,glucose_mmol,trend,roc_mgdl_min," +
-                    "iob_u,basal_u_h,basal_automated,reservoir_u,battery_pct,battery_charging," +
-                    "sequence,type_id,text\n"
-            )
-            readableDatabase
-                .rawQuery(
-                    "SELECT ts_ms, glucose, trend, roc, iob, basal, basal_auto, reservoir, battery, battery_charging " +
-                        "FROM readings ORDER BY ts_ms ASC",
-                    null,
-                )
-                .use { c ->
-                    while (c.moveToNext()) {
-                        val ts = c.getLong(0)
-                        val glucose = if (c.isNull(1)) null else c.getInt(1)
-                        w.write(
-                            listOf(
-                                    "reading",
-                                    iso.format(Instant.ofEpochMilli(ts)),
-                                    ts.toString(),
-                                    glucose?.toString() ?: "",
-                                    glucose?.let { String.format(java.util.Locale.US, "%.2f", it / 18.0156) } ?: "",
-                                    c.getString(2) ?: "",
-                                    if (c.isNull(3)) "" else c.getDouble(3).toString(),
-                                    if (c.isNull(4)) "" else c.getFloat(4).toString(),
-                                    if (c.isNull(5)) "" else c.getFloat(5).toString(),
-                                    if (c.isNull(6)) "" else c.getInt(6).toString(),
-                                    if (c.isNull(7)) "" else c.getFloat(7).toString(),
-                                    if (c.isNull(8)) "" else c.getInt(8).toString(),
-                                    if (c.isNull(9)) "" else c.getInt(9).toString(),
-                                    "",
-                                    "",
-                                    "",
-                                )
-                                .joinToString(",", transform = ::csvEscape)
-                        )
-                        w.write("\n")
-                    }
-                }
-            readableDatabase
-                .rawQuery("SELECT seq, type_id, ts_ms, text FROM events ORDER BY seq ASC", null)
-                .use { c ->
-                    while (c.moveToNext()) {
-                        val ts = c.getLong(2)
-                        w.write(
-                            listOf(
-                                    "event",
-                                    iso.format(Instant.ofEpochMilli(ts)),
-                                    ts.toString(),
-                                    "", "", "", "", "", "", "", "", "", "",
-                                    c.getInt(0).toString(),
-                                    c.getInt(1).toString(),
-                                    c.getString(3) ?: "",
-                                )
-                                .joinToString(",", transform = ::csvEscape)
-                        )
-                        w.write("\n")
-                    }
-                }
+        check(dir.isDirectory || dir.mkdirs()) { "Cannot create backup directory" }
+        return File(dir, "minimed_backup.csv").also { file ->
+            file.outputStream().use { exportBackupCsv(it) }
         }
-        return file
     }
 
-    /**
-     * Imports [input] as a single-file CSV backup and merges it into the local database.
-     * Existing reading timestamps are skipped, events with the same sequence are replaced.
-     */
-    fun importBackupCsv(input: InputStream): ImportResult {
-        val rows = parseCsv(input.bufferedReader(Charsets.UTF_8))
-        if (rows.size < 2) return ImportResult(0, 0, 0, 0)
-        val header =
-            rows.first().map {
-                it.trim().trimStart('\uFEFF').lowercase(java.util.Locale.US)
-            }
-        val columns = header.withIndex().associate { it.value to it.index }
-        fun value(row: List<String>, name: String): String =
-            columns[name]?.let { row.getOrNull(it)?.trim() ?: "" } ?: ""
-
-        var readingsImported = 0
-        var readingsSkipped = 0
-        var eventsImported = 0
-        var errors = 0
+    /** Streams a consistent snapshot. The caller owns and must successfully close [output]. */
+    fun exportBackupCsv(output: OutputStream, createdMs: Long = System.currentTimeMillis()) {
         val db = writableDatabase
-        val existingTimestamps = HashSet<Long>()
-        db.rawQuery("SELECT ts_ms FROM readings", null).use { c ->
-            while (c.moveToNext()) existingTimestamps.add(c.getLong(0))
-        }
-        fun importReadingRow(row: List<String>) {
-            val ts =
-                value(row, "epoch_ms").toLongOrNull()
-                    ?: run {
-                        errors++
-                        return
-                    }
-            val glucoseText = value(row, "glucose_mgdl")
-            val glucose = glucoseText.toIntOrNull()
-            if (glucoseText.isNotEmpty() && (glucose == null || glucose !in 20..500)) {
-                errors++
-                return
-            }
-            if (!existingTimestamps.add(ts)) {
-                readingsSkipped++
-                return
-            }
-            val cv =
-                ContentValues().apply {
-                    put("ts_ms", ts)
-                    glucose?.let { put("glucose", it) }
-                    value(row, "trend").takeIf { it.isNotEmpty() }?.let { put("trend", it) }
-                    value(row, "roc_mgdl_min").toDoubleOrNull()?.let { put("roc", it) }
-                    value(row, "iob_u").toFloatOrNull()?.let { put("iob", it) }
-                    value(row, "basal_u_h").toFloatOrNull()?.let { put("basal", it) }
-                    value(row, "basal_automated").toBooleanFlag()?.let {
-                        put("basal_auto", if (it) 1 else 0)
-                    }
-                    value(row, "reservoir_u").toFloatOrNull()?.let { put("reservoir", it) }
-                    value(row, "battery_pct").toIntOrNull()?.let { put("battery", it) }
-                    value(row, "battery_charging").toBooleanFlag()?.let {
-                        put("battery_charging", if (it) 1 else 0)
-                    }
-                }
-            db.insert("readings", null, cv)
-            readingsImported++
-        }
-
-        fun importEventRow(row: List<String>) {
-            val seq = value(row, "sequence").toIntOrNull()
-            val ts = value(row, "epoch_ms").toLongOrNull()
-            if (seq == null || ts == null) {
-                errors++
-                return
-            }
-            val cv =
-                ContentValues().apply {
-                    put("seq", seq)
-                    put("ts_ms", ts)
-                    put("type_id", value(row, "type_id").toIntOrNull() ?: 0)
-                    put("text", value(row, "text"))
-                }
-            db.insertWithOnConflict("events", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
-            eventsImported++
-        }
-
-        val hasBackup = "record_type" in columns
-        val hasReadings = "glucose_mgdl" in columns && "epoch_ms" in columns
-        val hasEvents = "sequence" in columns && "type_id" in columns && "epoch_ms" in columns
-
-        db.beginTransaction()
+        db.beginTransactionNonExclusive()
         try {
-            for (row in rows.drop(1)) {
-                if (row.all { it.isBlank() }) continue
-                when {
-                    hasBackup ->
-                        when (value(row, "record_type").lowercase(java.util.Locale.US)) {
-                            "reading" -> importReadingRow(row)
-                            "event" -> importEventRow(row)
-                            else -> errors++
-                        }
-                    hasReadings -> importReadingRow(row)
-                    hasEvents -> importEventRow(row)
-                    else -> errors++
-                }
+            val csv = BackupCsv.Encoder(output.bufferedWriter(Charsets.UTF_8), createdMs)
+            db.rawQuery(
+                "SELECT ts_ms, glucose, trend, roc, iob, basal, basal_auto, reservoir, battery, battery_charging, backup_id " +
+                    "FROM readings ORDER BY ts_ms, id", null,
+            ).use { c ->
+                while (c.moveToNext()) csv.write(BackupRow.Reading(c.getString(10), readingFromCursor(c)))
             }
+            db.rawQuery("SELECT seq, ts_ms, type_id, text FROM events ORDER BY seq", null).use { c ->
+                while (c.moveToNext()) csv.write(BackupRow.Event(EventRow(c.getInt(0), c.getLong(1), c.getInt(2), c.getString(3).orEmpty())))
+            }
+            db.rawQuery(
+                "SELECT source_id, seq, type_id, pump_time_seconds, raw_bytes_b64 FROM history_records ORDER BY source_id, (seq & 4294967295)", null,
+            ).use { c ->
+                while (c.moveToNext()) csv.write(BackupRow.History(StoredHistoryRecord(
+                    c.getString(0), HistoryLogRecord(c.getInt(1), c.getString(4), c.getInt(2), c.getLong(3)),
+                )))
+            }
+            db.rawQuery("SELECT id, ts_ms, glucose, text FROM app_alerts ORDER BY ts_ms, id", null).use { c ->
+                while (c.moveToNext()) csv.write(BackupRow.Alert(AppAlertRow(c.getString(0), c.getLong(1), c.getInt(2), c.getString(3))))
+            }
+            csv.finish()
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
         }
-        return ImportResult(readingsImported, readingsSkipped, eventsImported, errors)
     }
 
-    private fun csvEscape(value: String): String =
-        if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
-            "\"" + value.replace("\"", "\"\"") + "\""
-        } else {
-            value
-        }
-
-    private fun String.toBooleanFlag(): Boolean? =
-        when (lowercase(java.util.Locale.US)) {
-            "1", "true", "yes" -> true
-            "0", "false", "no" -> false
-            else -> null
-        }
-
-    private fun parseCsv(reader: BufferedReader): List<List<String>> {
-        val rows = ArrayList<List<String>>()
-        val row = ArrayList<String>()
-        val field = StringBuilder()
-        var inQuotes = false
-        var ch = reader.read()
-        while (ch != -1) {
-            val c = ch.toChar()
-            if (inQuotes) {
-                if (c == '"') {
-                    val next = reader.read()
-                    if (next == '"'.code) {
-                        field.append('"')
-                        ch = reader.read()
-                        continue
+    /**
+     * Merges legacy readings.csv/events.csv/v1 backups and v2. V2 reading IDs preserve multiple
+     * samples at the same timestamp; legacy files keep timestamp deduplication. No CGM poll collapse
+     * occurs during import. Truncated/corrupt v2 files roll back the ENTIRE import, including cursors.
+     * Streams remain owned by the caller. Invalid legacy rows are counted in [ImportResult.errors].
+     */
+    fun importBackupCsv(input: InputStream): ImportResult {
+        var readingsImported = 0
+        var readingsSkipped = 0
+        var eventsImported = 0
+        var historyImported = 0
+        var alertsImported = 0
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val info = BackupCsv.read(input.reader(Charsets.UTF_8)) { row ->
+                when (row) {
+                    is BackupRow.Reading -> {
+                        val exists = if (row.id != null) db.rawQuery(
+                            "SELECT 1 FROM readings WHERE backup_id = ? LIMIT 1", arrayOf(row.id),
+                        ).use { it.moveToFirst() } else db.rawQuery(
+                            "SELECT 1 FROM readings WHERE ts_ms = ? LIMIT 1", arrayOf(row.value.tsMs.toString()),
+                        ).use { it.moveToFirst() }
+                        if (exists) readingsSkipped++ else {
+                            val cv = readingValues(row.value).apply { put("backup_id", row.id ?: UUID.randomUUID().toString()) }
+                            db.insertOrThrow("readings", null, cv)
+                            readingsImported++
+                        }
                     }
-                    inQuotes = false
-                    ch = next
-                    continue
-                }
-                field.append(c)
-                ch = reader.read()
-            } else {
-                when (c) {
-                    '"' -> {
-                        inQuotes = true
-                        ch = reader.read()
+                    is BackupRow.Event -> {
+                        val cv = ContentValues().apply {
+                            put("seq", row.value.seq); put("ts_ms", row.value.tsMs)
+                            put("type_id", row.value.typeId); put("text", row.value.text)
+                        }
+                        check(db.insertWithOnConflict("events", null, cv, SQLiteDatabase.CONFLICT_REPLACE) != -1L)
+                        eventsImported++
                     }
-                    ',' -> {
-                        row.add(field.toString())
-                        field.setLength(0)
-                        ch = reader.read()
-                    }
-                    '\n' -> {
-                        row.add(field.toString())
-                        field.setLength(0)
-                        rows.add(row.toList())
-                        row.clear()
-                        ch = reader.read()
-                    }
-                    '\r' -> ch = reader.read()
-                    else -> {
-                        field.append(c)
-                        ch = reader.read()
-                    }
+                    is BackupRow.History -> if (insertHistoryRow(db, row.value)) historyImported++
+                    is BackupRow.Alert -> if (insertAlertRow(db, row.value)) alertsImported++
                 }
             }
+            db.setTransactionSuccessful()
+            return ImportResult(readingsImported, readingsSkipped, eventsImported, info.errors, historyImported, alertsImported)
+        } finally {
+            db.endTransaction()
         }
-        if (field.isNotEmpty() || row.isNotEmpty()) {
-            row.add(field.toString())
-            rows.add(row.toList())
-        }
-        return rows
+    }
+
+    private fun readingFromCursor(c: android.database.Cursor) = ReadingRow(
+        c.getLong(0), if (c.isNull(1)) null else c.getInt(1), c.getString(2),
+        if (c.isNull(3)) null else c.getDouble(3), if (c.isNull(4)) null else c.getFloat(4),
+        if (c.isNull(5)) null else c.getFloat(5), if (c.isNull(6)) null else c.getInt(6) != 0,
+        if (c.isNull(7)) null else c.getFloat(7), if (c.isNull(8)) null else c.getInt(8),
+        if (c.isNull(9)) null else c.getInt(9) != 0,
+    )
+
+    private fun readingValues(r: ReadingRow) = ContentValues().apply {
+        put("ts_ms", r.tsMs); put("glucose", r.glucoseMgDl); put("trend", r.trend); put("roc", r.roc)
+        put("iob", r.iob); put("basal", r.basal); put("basal_auto", r.basalAuto?.let { if (it) 1 else 0 })
+        put("reservoir", r.reservoir); put("battery", r.battery)
+        put("battery_charging", r.batteryCharging?.let { if (it) 1 else 0 })
     }
 
     private fun downsample(points: List<Pair<Long, Int>>, maxPoints: Int): List<Pair<Long, Int>> {
@@ -642,6 +611,6 @@ class ReadingStore(context: Context) :
 
     private companion object {
         const val DB_NAME = "minimed.db"
-        const val DB_VERSION = 1
+        const val DB_VERSION = 2
     }
 }

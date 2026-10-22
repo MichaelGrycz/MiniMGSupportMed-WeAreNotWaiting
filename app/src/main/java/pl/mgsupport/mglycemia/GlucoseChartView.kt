@@ -150,6 +150,17 @@ class GlucoseChartView @JvmOverloads constructor(
     private val areaPath = Path()
 
     private var samples: List<Sample> = emptyList()
+    private var insulinEvents: List<ChartInsulinEvent> = emptyList()
+    private val eventPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val eventHits = mutableListOf<Pair<RectF, List<ChartInsulinEvent>>>()
+    private var markerCache: List<ChartEventGroup> = emptyList()
+    private var markerCacheKey: Triple<Long, Long, Int>? = null
+    var onInsulinEventsSelected: ((List<ChartInsulinEvent>) -> Unit)? = null
+
+    init {
+        contentDescription = context.getString(R.string.chart_canvas_description)
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+    }
 
     /** Exact min/max over the whole window, straight from the store (not the downsampled curve). */
     private var exactMinMgDl: Int? = null
@@ -163,7 +174,7 @@ class GlucoseChartView @JvmOverloads constructor(
 
     // Interactive viewport state:
     // zoomFactor = 1.0f means full windowMillis is shown.
-    // panOffsetMs = 0L means right edge is anchored to the latest reading.
+    // Both series share the latest timestamp, including insulin after the last glucose reading.
     private var zoomFactor = 1.0f
     private var panOffsetMs = 0L
     private var selectedSample: Sample? = null
@@ -196,13 +207,14 @@ class GlucoseChartView @JvmOverloads constructor(
                 override fun onDown(e: MotionEvent): Boolean = true
 
                 override fun onSingleTapUp(e: MotionEvent): Boolean {
-                    selectNearestAt(e.x)
+                    if (!selectEventAt(e.x, e.y)) selectNearestAt(e.x)
+                    performClick()
                     return true
                 }
 
                 override fun onLongPress(e: MotionEvent) {
                     parent?.requestDisallowInterceptTouchEvent(true)
-                    selectNearestAt(e.x)
+                    if (!selectEventAt(e.x, e.y)) selectNearestAt(e.x)
                 }
 
                 override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -224,7 +236,7 @@ class GlucoseChartView @JvmOverloads constructor(
                     if (abs(distanceX) > abs(distanceY) * 0.8f || zoomFactor > 1.01f) {
                         parent?.requestDisallowInterceptTouchEvent(true)
                         val plotW = plotRect.width()
-                        if (plotW > 1f && samples.size >= 2) {
+                        if (plotW > 1f && hasData()) {
                             val visDuration = visibleDurationMs()
                             val deltaMs = ((distanceX / plotW) * visDuration).toLong()
                             // Dragging finger right (distanceX < 0) moves back in time (increases panOffsetMs).
@@ -249,7 +261,13 @@ class GlucoseChartView @JvmOverloads constructor(
         unit: GlucoseUnit = GlucoseUnit.MGDL,
         exactMinMgDl: Int? = null,
         exactMaxMgDl: Int? = null,
+        insulinEvents: List<ChartInsulinEvent> = emptyList(),
     ) {
+        if (this.insulinEvents != insulinEvents) {
+            this.insulinEvents = insulinEvents.sortedWith(compareBy({ it.timestampMs }, { it.id }))
+            markerCacheKey = null
+            eventHits.clear()
+        }
         this.exactMinMgDl = exactMinMgDl
         this.exactMaxMgDl = exactMaxMgDl
         this.targetLow = targetLow
@@ -274,6 +292,7 @@ class GlucoseChartView @JvmOverloads constructor(
                     if (matchIdx > 0) samples[matchIdx].value - samples[matchIdx - 1].value else null
             }
         }
+        notifyViewportChanged()
         invalidate()
     }
 
@@ -312,7 +331,7 @@ class GlucoseChartView @JvmOverloads constructor(
     fun isZoomedOrPanned(): Boolean = zoomFactor > 1.02f || panOffsetMs > 30_000L || selectedSample != null
 
     private fun applyZoomAtFocus(scale: Float, focusX: Float) {
-        if (samples.isEmpty()) return
+        if (!hasData()) return
         val oldVis = visibleDurationMs()
         val maxZoom = max(2f, (windowMillis.toFloat() / MIN_VISIBLE_MILLIS.toFloat())).coerceAtMost(MAX_ZOOM)
         val newZoom = (zoomFactor * scale).coerceIn(1.0f, maxZoom)
@@ -326,7 +345,7 @@ class GlucoseChartView @JvmOverloads constructor(
         val plotW = plotRect.width().coerceAtLeast(1f)
         val focusFraction = ((focusX - plotRect.left) / plotW).coerceIn(0f, 1f)
         // Keep the timestamp at focusX anchored
-        val oldTimeEnd = samples.last().time - panOffsetMs
+        val oldTimeEnd = latestTimestamp() - panOffsetMs
         val oldTimeStart = oldTimeEnd - oldVis
         val anchorTime = oldTimeStart + (focusFraction * oldVis).toLong()
 
@@ -334,7 +353,7 @@ class GlucoseChartView @JvmOverloads constructor(
         val newVis = visibleDurationMs()
         val newTimeStart = anchorTime - (focusFraction * newVis).toLong()
         val newTimeEnd = newTimeStart + newVis
-        val rawPan = samples.last().time - newTimeEnd
+        val rawPan = latestTimestamp() - newTimeEnd
         panOffsetMs = if (zoomFactor <= 1.01f) 0L else rawPan.coerceIn(0L, maxPanOffsetMs(newVis))
         notifyViewportChanged()
         invalidate()
@@ -343,18 +362,67 @@ class GlucoseChartView @JvmOverloads constructor(
     private fun visibleDurationMs(): Long =
         (windowMillis.toDouble() / zoomFactor.toDouble())
             .toLong()
-            .coerceIn(MIN_VISIBLE_MILLIS, windowMillis)
+            .coerceIn(min(MIN_VISIBLE_MILLIS, windowMillis), windowMillis)
 
-    private fun maxPanOffsetMs(visDuration: Long): Long {
-        if (samples.size < 2) return 0L
-        val totalSpan = max(windowMillis, samples.last().time - samples.first().time)
-        return max(0L, totalSpan - visDuration / 2L)
+    private fun maxPanOffsetMs(visDuration: Long): Long = max(0L, windowMillis - visDuration)
+
+    private fun hasData() = samples.isNotEmpty() || insulinEvents.isNotEmpty()
+
+    private fun latestTimestamp(): Long = InsulinChartGeometry.latestTimestamp(
+        samples.lastOrNull()?.time, insulinEvents.lastOrNull()?.timestampMs,
+    ) ?: 0L
+
+    fun visibleTimeRange(): LongRange {
+        val end = latestTimestamp() - panOffsetMs
+        return (end - visibleDurationMs())..end
+    }
+
+    fun visibleInsulinEvents(): List<ChartInsulinEvent> {
+        val range = visibleTimeRange()
+        return insulinEvents.filter { it.timestampMs in range }
+    }
+
+    fun panEarlier() = panBy(visibleDurationMs() / 2)
+
+    fun panLater() = panBy(-visibleDurationMs() / 2)
+
+    private fun panBy(delta: Long) {
+        panOffsetMs = (panOffsetMs + delta).coerceIn(0L, maxPanOffsetMs(visibleDurationMs()))
+        notifyViewportChanged()
+        invalidate()
+    }
+
+    internal fun viewport(): ChartViewport = ChartViewport(windowMillis, zoomFactor, panOffsetMs)
+
+    internal fun restoreViewport(viewport: ChartViewport) {
+        setWindow(viewport.windowMillis)
+        val maxZoom = max(2f, windowMillis.toFloat() / MIN_VISIBLE_MILLIS).coerceAtMost(MAX_ZOOM)
+        zoomFactor = if (viewport.zoom.isFinite()) viewport.zoom.coerceIn(1f, maxZoom) else 1f
+        panOffsetMs = viewport.panOffsetMs.coerceIn(0L, maxPanOffsetMs(visibleDurationMs()))
+        notifyViewportChanged()
+        invalidate()
+    }
+
+    private fun selectEventAt(x: Float, y: Float): Boolean {
+        val hit = eventHits.filter { it.first.contains(x, y) }
+            .minByOrNull { abs(it.first.centerX() - x) + abs(it.first.centerY() - y) }
+            ?: return false
+        selectedSample = null
+        selectedDeltaMgDl = null
+        onInsulinEventsSelected?.invoke(hit.second)
+        invalidate()
+        return true
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
     }
 
     private fun selectNearestAt(touchX: Float) {
         if (samples.isEmpty() || plotRect.width() <= 0f) return
         val visDuration = visibleDurationMs()
-        val timeEnd = samples.last().time - panOffsetMs
+        val timeEnd = latestTimestamp() - panOffsetMs
         val timeStart = timeEnd - visDuration
         val fraction = ((touchX - plotRect.left) / plotRect.width()).coerceIn(0f, 1f)
         val targetTime = timeStart + (fraction * visDuration).toLong()
@@ -406,7 +474,7 @@ class GlucoseChartView @JvmOverloads constructor(
     private fun selectPointWhileDragging(touchX: Float) {
         if (samples.isEmpty() || plotRect.width() <= 0f) return
         val visDuration = visibleDurationMs()
-        val timeEnd = samples.last().time - panOffsetMs
+        val timeEnd = latestTimestamp() - panOffsetMs
         val timeStart = timeEnd - visDuration
         val fraction = ((touchX - plotRect.left) / plotRect.width()).coerceIn(0f, 1f)
         val targetTime = timeStart + (fraction * visDuration).toLong()
@@ -444,7 +512,8 @@ class GlucoseChartView @JvmOverloads constructor(
         canvas.drawRoundRect(cardRect, dp(12f), dp(12f), bgPaint)
         canvas.drawRoundRect(cardRect, dp(12f), dp(12f), borderPaint)
 
-        if (samples.isEmpty()) {
+        eventHits.clear()
+        if (!hasData()) {
             val centerY = height / 2f
             canvas.drawText(
                 context.getString(R.string.chart_empty_title),
@@ -463,14 +532,14 @@ class GlucoseChartView @JvmOverloads constructor(
 
         plotRect.set(
             paddingLeft + dp(GUTTER_DP),
-            paddingTop + dp(TOP_INSET_DP),
+            paddingTop + dp(TOP_INSET_DP + EVENT_LANES_HEIGHT_DP),
             width - paddingRight - dp(RIGHT_INSET_DP),
             height - paddingBottom - dp(BOTTOM_INSET_DP),
         )
         if (plotRect.width() <= 0f || plotRect.height() <= 0f) return
 
         val visDuration = visibleDurationMs()
-        val timeEnd = samples.last().time - panOffsetMs
+        val timeEnd = latestTimestamp() - panOffsetMs
         val timeStart = timeEnd - visDuration
         val timeSpan = max(1L, timeEnd - timeStart)
 
@@ -479,8 +548,8 @@ class GlucoseChartView @JvmOverloads constructor(
 
         // Caption shows the exact min/max from the database; the axis is scaled to the drawn curve
         // so long windows do not collapse into a thin strip because of a single outlier.
-        val axisMin = refSamples.minOf { it.value }
-        val axisMax = refSamples.maxOf { it.value }
+        val axisMin = refSamples.minOfOrNull { it.value } ?: DEFAULT_Y_FLOOR
+        val axisMax = refSamples.maxOfOrNull { it.value } ?: DEFAULT_Y_CEILING
         // Exact figures describe the whole window, so only use them at full range / no panning.
         val wholeWindow = zoomFactor <= 1.05f && panOffsetMs == 0L
         val dataMin = if (wholeWindow) exactMinMgDl ?: axisMin else axisMin
@@ -550,6 +619,12 @@ class GlucoseChartView @JvmOverloads constructor(
                     else -> Paint.Align.CENTER
                 }
             canvas.drawText(formatAxisTime(gt, visDuration), gx, timeBaseline, captionPaint)
+        }
+
+        drawInsulinEvents(canvas, timeStart, timeEnd, ::xFor)
+        if (visible.isEmpty()) {
+            canvas.drawText(context.getString(R.string.chart_no_glucose),
+                plotRect.centerX(), plotRect.centerY(), emptySubPaint)
         }
 
         // 4. Glucose curve + gradient area fill + colored dots
@@ -647,7 +722,7 @@ class GlucoseChartView @JvmOverloads constructor(
         captionPaint.textAlign = Paint.Align.RIGHT
         val unitSuffix = if (unit == GlucoseUnit.MMOL) "mmol/L" else "mg/dL"
         val zoomTag = if (zoomFactor > 1.05f) String.format(Locale.US, " · %.1f×", zoomFactor) else ""
-        canvas.drawText(
+        if (samples.isNotEmpty()) canvas.drawText(
             "min ${formatValue(dataMin)} · max ${formatValue(dataMax)} $unitSuffix$zoomTag",
             plotRect.right,
             plotRect.top - dp(7f),
@@ -670,6 +745,62 @@ class GlucoseChartView @JvmOverloads constructor(
 
                 drawTooltip(canvas, sx, sel)
             }
+        }
+    }
+
+    private fun drawInsulinEvents(canvas: Canvas, start: Long, end: Long, xFor: (Long) -> Float) {
+        val laneLabels = intArrayOf(R.string.chart_lane_bolus, R.string.chart_lane_auto,
+            R.string.chart_lane_basal, R.string.chart_lane_unknown)
+        val colors = intArrayOf(0xFF38BDF8.toInt(), 0xFF22D3EE.toInt(),
+            0xFF818CF8.toInt(), 0xFFF59E0B.toInt())
+        for (lane in ChartEventLane.entries) {
+            val y = paddingTop + dp(26f + lane.ordinal * 48f)
+            captionPaint.textAlign = Paint.Align.RIGHT
+            canvas.drawText(context.getString(laneLabels[lane.ordinal]), plotRect.left - dp(6f),
+                y + dp(4f), captionPaint)
+            canvas.drawLine(plotRect.left, y, plotRect.right, y, gridPaint)
+        }
+        // Buckets are screen-space groups, never summed or scaled insulin doses.
+        val columns = (plotRect.width() / dp(56f)).toInt().coerceAtLeast(1)
+        val key = Triple(start, end, columns)
+        if (markerCacheKey != key) {
+            markerCache = InsulinChartGeometry.group(insulinEvents, start, end, columns)
+            markerCacheKey = key
+        }
+        for (group in markerCache) {
+            val x = xFor(group.timestampMs)
+            val y = paddingTop + dp(26f + group.lane.ordinal * 48f)
+            eventPaint.color = colors[group.lane.ordinal]
+            eventPaint.style = Paint.Style.FILL
+            val r = dp(5f)
+            when (group.lane) {
+                ChartEventLane.BOLUS -> {
+                    val triangle = Path().apply {
+                        moveTo(x, y - r); lineTo(x - r, y + r); lineTo(x + r, y + r); close()
+                    }
+                    canvas.drawPath(triangle, eventPaint)
+                }
+                ChartEventLane.AUTOMATIC -> canvas.drawCircle(x, y, r, eventPaint)
+                ChartEventLane.BASAL -> canvas.drawRect(x - r, y - r, x + r, y + r, eventPaint)
+                ChartEventLane.UNKNOWN -> {
+                    eventPaint.style = Paint.Style.STROKE
+                    eventPaint.strokeWidth = dp(1.5f)
+                    val diamond = Path().apply {
+                        moveTo(x, y - r); lineTo(x + r, y); lineTo(x, y + r)
+                        lineTo(x - r, y); close()
+                    }
+                    canvas.drawPath(diamond, eventPaint)
+                }
+            }
+            if (group.events.size > 1) {
+                captionPaint.textAlign = when {
+                    x < plotRect.left + dp(24f) -> Paint.Align.LEFT
+                    x > plotRect.right - dp(24f) -> Paint.Align.RIGHT
+                    else -> Paint.Align.CENTER
+                }
+                canvas.drawText("×${group.events.size}", x, y + dp(20f), captionPaint)
+            }
+            eventHits += RectF(x - dp(24f), y - dp(24f), x + dp(24f), y + dp(24f)) to group.events
         }
     }
 
@@ -750,7 +881,8 @@ class GlucoseChartView @JvmOverloads constructor(
         val boxW = max(w1, w2) + dp(18f)
         val boxH = dp(38f)
 
-        val left = (sx - boxW / 2f).coerceIn(plotRect.left + dp(2f), plotRect.right - boxW - dp(2f))
+        val left = (sx - boxW / 2f).coerceIn(plotRect.left + dp(2f),
+            max(plotRect.left + dp(2f), plotRect.right - boxW - dp(2f)))
         val top = plotRect.top + dp(4f)
         tooltipRect.set(left, top, left + boxW, top + boxH)
 
@@ -810,8 +942,9 @@ class GlucoseChartView @JvmOverloads constructor(
         const val Y_PADDING_RATIO = 0.1f
 
         const val DEFAULT_WIDTH_DP = 320f
-        const val DEFAULT_HEIGHT_DP = 250f
-        const val GUTTER_DP = 40f
+        const val DEFAULT_HEIGHT_DP = 440f
+        const val EVENT_LANES_HEIGHT_DP = 192f
+        const val GUTTER_DP = 48f
         const val TOP_INSET_DP = 24f
         const val RIGHT_INSET_DP = 14f
         const val BOTTOM_INSET_DP = 22f
@@ -821,5 +954,46 @@ class GlucoseChartView @JvmOverloads constructor(
         const val COLOR_HIGH_AMBER = 0xFFF59E0B.toInt()
         const val COLOR_URGENT_ORANGE = 0xFFF97316.toInt()
         const val COLOR_LOW_RED = 0xFFEF4444.toInt()
+    }
+}
+
+internal data class ChartViewport(val windowMillis: Long, val zoom: Float, val panOffsetMs: Long)
+
+internal enum class ChartEventLane { BOLUS, AUTOMATIC, BASAL, UNKNOWN }
+
+internal data class ChartEventGroup(
+    val lane: ChartEventLane,
+    val timestampMs: Long,
+    val events: List<ChartInsulinEvent>,
+)
+
+/** Pure geometry shared by drawing and JVM regression tests. No inferred doses or event kinds. */
+internal object InsulinChartGeometry {
+    fun latestTimestamp(glucose: Long?, insulin: Long?): Long? = when {
+        glucose == null -> insulin
+        insulin == null -> glucose
+        else -> maxOf(glucose, insulin)
+    }
+
+    fun lane(kind: InsulinEventKind): ChartEventLane = when (kind) {
+        InsulinEventKind.MANUAL_BOLUS, InsulinEventKind.CORRECTION,
+        InsulinEventKind.MEAL_BOLUS, InsulinEventKind.MEAL_CORRECTION -> ChartEventLane.BOLUS
+        InsulinEventKind.AUTOMATIC_BOLUS -> ChartEventLane.AUTOMATIC
+        InsulinEventKind.AUTO_BASAL -> ChartEventLane.BASAL
+        InsulinEventKind.UNKNOWN_BOLUS -> ChartEventLane.UNKNOWN
+    }
+
+    fun group(events: List<ChartInsulinEvent>, start: Long, end: Long, columns: Int): List<ChartEventGroup> {
+        if (end <= start || columns <= 0) return emptyList()
+        val span = end.toDouble() - start.toDouble()
+        return events.asSequence().filter { it.timestampMs in start..end }
+            .sortedWith(compareBy({ it.timestampMs }, { it.id }))
+            .groupBy {
+                val column = (((it.timestampMs.toDouble() - start.toDouble()) / span) * columns)
+                    .toInt().coerceIn(0, columns - 1)
+                lane(it.kind) to column
+            }.map { (key, members) ->
+                ChartEventGroup(key.first, members[members.size / 2].timestampMs, members)
+            }
     }
 }

@@ -533,7 +533,7 @@
                         <pl.mgsupport.mglycemia.GlucoseChartView
               android:id="@+id/chart"
               android:layout_width="match_parent"
-              android:layout_height="250dp"
+              android:layout_height="440dp"
               android:layout_marginTop="10dp"
             />
 
@@ -679,6 +679,8 @@
                 android:textStyle="bold"
               />
                         </LinearLayout>
+
+                        <include layout="@layout/view_chart_extras" />
 
                         <!-- Visual Time-in-Range Bar -->
                         <LinearLayout
@@ -2425,6 +2427,8 @@
               android:textColor="@color/text_secondary"
               android:textSize="12.5sp"
             />
+
+                        <include layout="@layout/view_backup_folder" />
 
                         <com.google.android.material.button.MaterialButton
               android:id="@+id/btnExport"
