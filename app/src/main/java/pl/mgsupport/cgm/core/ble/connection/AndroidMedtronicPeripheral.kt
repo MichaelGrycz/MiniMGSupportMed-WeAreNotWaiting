@@ -347,7 +347,13 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     peer = device
-                    listener?.onDiagnostic("GATT link up, status=$status")
+                    val bond =
+                        when (device.bondState) {
+                            BluetoothDevice.BOND_BONDED -> "bonded"
+                            BluetoothDevice.BOND_BONDING -> "bonding"
+                            else -> "none"
+                        }
+                    listener?.onDiagnostic("GATT link up, status=$status, bond=$bond")
                     listener?.onPumpConnected(device.address)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
@@ -406,13 +412,14 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             descriptor: BluetoothGattDescriptor,
         ) {
             listener?.onDiagnostic("descriptor read ${short(descriptor.uuid)}")
-            // Android peripherals get no auto-response, so any descriptor read the pump issues (the
-            // SAKE CCCD around subscribe is the only descriptor this GATT table exposes) stalls unless
-            // we answer it. The descriptor's stored value (default 0x0000 = notifications off) is the
-            // correct reply for any descriptor, so this stays intentionally ungated -- unlike the CCCD
-            // write handler below (issue #844; JavaPumpConnector's BlePeripheralDevice answers the same).
+            // The CCCD read has to reflect the subscription state the pump itself wrote. Answering a
+            // fixed 0x0000 makes the pump believe notifications were never enabled and it drops the
+            // link right after this read (seen on a Galaxy S24: read 2902, then link down).
+            val isSakeCccd = descriptor.uuid == MedtronicProtocol.CCCD_UUID &&
+                descriptor.characteristic?.uuid == MedtronicProtocol.SAKE_CHARACTERISTIC_UUID
+            val reply = if (isSakeCccd) sakeCccdValue else (descriptor.value ?: byteArrayOf(0x00, 0x00))
             @Suppress("DEPRECATION")
-            respondWithStoredBlob(device, requestId, offset, descriptor.value ?: byteArrayOf(0x00, 0x00))
+            respondWithStoredBlob(device, requestId, offset, reply)
         }
 
         override fun onDescriptorWriteRequest(
@@ -428,6 +435,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             val isSakeCccd = descriptor.uuid == MedtronicProtocol.CCCD_UUID &&
                 descriptor.characteristic?.uuid == MedtronicProtocol.SAKE_CHARACTERISTIC_UUID
             if (isSakeCccd && value.size >= 2) {
+                sakeCccdValue = value.copyOf(2)
                 when {
                     (value[0].toInt() and 0x01) != 0 -> {
                         Timber.d("Pump subscribed to SAKE notifications")
@@ -454,6 +462,8 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             Timber.d("Central negotiated MTU=%d (ignored; PDUs stay <= %d bytes)", mtu, PduFramer.MAX_PDU_SIZE)
         }
     }
+
+    private var sakeCccdValue = byteArrayOf(0x00, 0x00)
 
     private fun short(uuid: java.util.UUID): String = uuid.toString().substring(4, 8)
 

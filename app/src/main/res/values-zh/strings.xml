@@ -119,7 +119,7 @@
     <string name="howto_step2_title">在此应用中开始配对</string>
     <string name="howto_step2_desc">点击上方的“配对新泵”。手机将开始以“Mobile 000001”广播 BLE。</string>
     <string name="howto_step3_title">在泵屏幕上确认</string>
-    <string name="howto_step3_desc">在泵上选择“配对新设备”，等待找到“Mobile 000001”并确认。</string>
+    <string name="howto_step3_desc">在泵上选择“配对新设备”，等待找到“Mobile 000001”并确认。手机出现蓝牙配对请求时，点击“配对”。</string>
     <string name="howto_step4_title">保持后台持续运行</string>
     <string name="howto_step4_desc">关闭应用的电池优化，确保持续夜间报警。</string>
     <string name="btn_battery_settings">电池设置</string>

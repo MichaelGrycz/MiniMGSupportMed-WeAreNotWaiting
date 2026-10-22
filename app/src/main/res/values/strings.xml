@@ -132,7 +132,7 @@
     <string name="howto_step3_title">Confirm on the pump screen</string>
     <string
     name="howto_step3_desc"
-  >On the pump, select "Pair New Device", wait until it finds Mobile 000001 and confirm. The encrypted SAKE handshake takes 5–10 seconds. Once connected, readings update every 15 seconds.</string>
+  >On the pump, select "Pair New Device", wait until it finds Mobile 000001 and confirm. When the phone shows the Bluetooth pairing request, tap Pair. The encrypted SAKE handshake takes 5–10 seconds. Once connected, readings update every 15 seconds.</string>
 
     <string name="howto_step4_title">Keep background monitoring alive 24/7</string>
     <string

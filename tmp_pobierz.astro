@@ -1,0 +1,569 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import type { Page } from '../../components/types';
+
+const apkPath = '/pobierz/MGSupportCGM-1.0-beta9.apk';
+const apkSize = '10,3 MB';
+
+const page: Page = {
+  id: 'pobierz-minimgsupportmed',
+  path: '/pobierz/minimgsupportmed',
+  lang: 'pl',
+  kind: 'download',
+  title: 'MGSupport CGM 1.0-beta9 – pobierz APK | MGSupport',
+  description:
+    'MGSupport CGM pokazuje glikemię z MiniMed 780G, 770G i 680G na Androidzie. Tylko odczyt, bez konta i serwera. Pobierz APK 10,3 MB.',
+  heading: 'MGSupport CGM',
+  intro:
+    'Podgląd glikemii z MiniMed 780G, 770G i 680G prosto na Androidzie. Aplikacja tylko odczytuje dane z pompy — nic nie wysyła i nie zmienia w niej ustawień.',
+  body: '',
+  alternates: { pl: '/pobierz/minimgsupportmed' },
+};
+
+const specs = [
+  { key: 'Wersja', value: '1.0-beta9 (testowa)' },
+  { key: 'Rozmiar pliku', value: apkSize },
+  { key: 'System', value: 'Android 7.0 lub nowszy' },
+  { key: 'Obsługiwane pompy', value: 'MiniMed 780G, 770G, 680G' },
+  { key: 'Połączenie', value: 'Bluetooth LE' },
+  { key: 'Konto i serwer', value: 'Nie są wymagane' },
+];
+
+const steps = [
+  {
+    title: 'Pobierz i otwórz plik',
+    text: 'Pobierz APK na telefon i otwórz go z listy pobranych plików. Instalacja odbywa się poza Sklepem Google Play.',
+  },
+  {
+    title: 'Zatwierdź instalację',
+    text: 'Android pokaże ostrzeżenie Play Protect o instalacji z nieznanego źródła. Wybierz „Zainstaluj mimo to”.',
+  },
+  {
+    title: 'Połącz pompę',
+    text: 'Przy pierwszym uruchomieniu zezwól na Bluetooth i powiadomienia. W zakładce Pompa wybierz „Paruj nową pompę”.',
+  },
+];
+
+const notes = [
+  {
+    title: 'Wymagania',
+    text: 'Android 7.0 lub nowszy i Bluetooth LE. Aplikacja nie sprawdza modelu telefonu, więc działa też na sprzęcie, którego nie przyjmuje oficjalna MiniMed Mobile.',
+  },
+  {
+    title: 'Bezpieczeństwo',
+    text: 'Aplikacja nic nie wysyła do pompy i nie zmienia w niej ustawień. To nie jest wyrób medyczny i nie zastępuje zaleceń lekarza.',
+  },
+  {
+    title: 'Twoje dane',
+    text: 'Zostają w telefonie. Nie ma konta ani serwera. Historię przeniesiesz między telefonami przez eksport i import pliku CSV.',
+  },
+];
+
+const shots = [
+  { src: '/pobierz/MiniMGSupportMed_7dni.png', alt: 'Widok 7 dni z wykresem glikemii w MGSupport CGM' },
+  { src: '/pobierz/MiniMGSupportMed_rok.png', alt: 'Widok roczny z pasmem glikemii w MGSupport CGM' },
+];
+const releaseNotes = [
+  {
+    version: '1.0-beta9',
+    date: '23 października 2026',
+    tag: 'Najnowsza',
+    items: [
+      'Odczyt deskryptora CCCD zwraca teraz stan subskrypcji zapisany przez pompę, a nie stałe zera. Log pokazuje też stan powiązania Bluetooth przy każdym połączeniu.',
+      'Instrukcja parowania mówi wprost: gdy telefon pokaże okno „Żądanie powiązania Bluetooth”, trzeba kliknąć „Powiąż”. Bez tego pompa traci połączenie i pokazuje „Nie znaleziono urządzenia”.',
+    ],
+  },
+  {
+    version: '1.0-beta8',
+    date: '23 października 2026',
+    items: [
+      'Nowa nazwa: MGSupport CGM. Poprzednia brzmiała zbyt blisko znaku towarowego Medtronic.',
+      'Nowy identyfikator aplikacji: pl.mgsupport.cgm. To znowu osobna instalacja, więc dane przeniesiesz przez eksport i import CSV.',
+      'Kod źródłowy jest publiczny na licencji GPL-3.0. Link jest w Ustawieniach w karcie „Licencja i źródła”.',
+    ],
+  },
+  {
+    version: '1.0-beta7',
+    date: '22 października 2026',
+    items: [
+      'Nowy identyfikator aplikacji: pl.mgsupport.minimedsupport. To osobna instalacja, więc starą wersję trzeba odinstalować po przeniesieniu danych przez CSV.',
+      'Projekt nie jest już zależny od repozytorium OpenMinimed: biblioteka JavaSake jest częścią naszego kodu, a nie submodułem.',
+      'W Ustawieniach doszła karta „Licencja i źródła” z tekstem GPL-3.0, informacją o projektach bazowych i kontaktem po kod źródłowy.',
+    ],
+  },
+  {
+    version: '1.0-beta6',
+    date: '22 października 2026',
+    items: [
+      'Przyciski „Połącz ponownie” i „Rozłącz” na zakładce Pompa są teraz pełnej szerokości. Tekst nie ucina się już na węższych ekranach.',
+      'Zakładka Pompa czyta się lepiej w całości: każdy przycisk ma własny wiersz i stałą wysokość.',
+    ],
+  },
+  {
+    version: '1.0-beta5',
+    date: '22 października 2026',
+    items: [
+      'Aplikacja nie zatrzymuje już rozgłaszania w tej samej chwili, w której pompa się łączy. Na Samsungach to potrafiło ubić świeże połączenie tuż po zestawieniu.',
+      'Pełna diagnostyka GATT w logu: odczyty i zapisy charakterystyk, deskryptory, MTU oraz nazwa adaptera Bluetooth.',
+      'Czytelne komunikaty błędów parowania zamiast nazw technicznych typu BOUND_ELSEWHERE_SUSPECTED.',
+    ],
+  },
+  {
+    version: '1.0-beta4',
+    date: '22 października 2026',
+    items: [
+      'Aktualizacja sensora jest widoczna w aplikacji: niebieski pasek informacyjny zamiast czerwonego błędu.',
+      'Plakietka przy glukozie zmienia się na „AKTUALIZACJA SENSORA”, a ostatni znany odczyt zostaje na ekranie.',
+      'Powiadomienie w pasku statusu także pokazuje, że trwa aktualizacja sensora.',
+    ],
+  },
+  {
+    version: '1.0-beta3',
+    date: '22 października 2026',
+    items: [
+      'Kliknięcie w powiadomienie otwiera aplikację, a nie tylko zwija panel powiadomień.',
+      'Aktualizacja i rozgrzewanie sensora nie pokazują już błędu „SG 0 poza zakresem”. Na ekranie zostaje ostatnia znana wartość.',
+      'W logu technicznym pojawia się jedna linia o braku odczytu zamiast czterech błędów na minutę.',
+    ],
+  },
+  {
+    version: '1.0-beta2',
+    date: '22 października 2026',
+    items: [
+      'Pompa dostaje poprawne wartości Device Information, zgodne z referencyjną implementacją OpenMinimed.',
+      'Po zerwaniu połączenia w trakcie parowania aplikacja wraca do rozgłaszania zamiast zamykać serwer GATT.',
+      'Log techniczny pokazuje status rozłączenia GATT i numer próby ponowienia.',
+    ],
+  },
+  {
+    version: '1.0-beta1',
+    date: '22 października 2026',
+    items: [
+      'Pierwsza wersja testowa: podgląd glikemii, IOB, bazy, baterii i zbiornika.',
+      'Wykresy od godziny do roku, TIR, średnia i GMI.',
+      'Eksport i import CSV oraz interfejs po polsku, angielsku, niemiecku i chińsku.',
+    ],
+  },
+];
+
+---
+
+<SiteLayout page={page}>
+  <div class="download-view">
+    <section class="section-sm download-hero">
+      <div class="container download-hero-grid">
+        <div class="download-hero-copy">
+          <div class="download-badges">
+            <span class="badge badge-cyan">Wersja testowa</span>
+            <span class="badge badge-subtle">Android 7.0+</span>
+          </div>
+
+          <h1 class="download-title">
+            MGSupport CGM <span class="download-version">1.0-beta9</span>
+          </h1>
+
+          <p class="download-lead">{page.intro}</p>
+
+          <div class="download-actions">
+            <a class="btn btn-primary download-cta" href={apkPath} download>
+              Pobierz APK
+              <span class="download-cta-meta">{apkSize}</span>
+            </a>
+            <a class="btn btn-secondary" href="#instalacja">Jak zainstalować</a>
+            <a class="btn btn-secondary" href="#zmiany">Historia zmian</a>
+          </div>
+
+          <p class="download-fineprint">
+            Niezależne narzędzie napisane w MGSupport. Nie jest wyrobem medycznym i nie zastępuje zaleceń lekarza.
+          </p>
+        </div>
+
+        <aside class="card download-spec-card" aria-label="Najważniejsze informacje o aplikacji">
+          <p class="download-spec-head">W skrócie</p>
+          <dl class="download-specs">
+            {specs.map((spec) => (
+              <div class="download-spec">
+                <dt>{spec.key}</dt>
+                <dd>{spec.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-sm download-section" id="instalacja">
+      <div class="container">
+        <header class="section-header">
+          <span class="badge badge-cyan section-badge">Instalacja</span>
+          <h2 class="section-title">Trzy kroki do pierwszego odczytu</h2>
+          <p class="section-subtitle">Cała instalacja zajmuje kilka minut i nie wymaga zakładania konta.</p>
+        </header>
+
+        <ol class="download-steps">
+          {steps.map((step, index) => (
+            <li class="card download-step">
+              <span class="download-step-num">{String(index + 1).padStart(2, '0')}</span>
+              <h3 class="download-step-title">{step.title}</h3>
+              <p class="download-step-text">{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="section-sm download-section">
+      <div class="container">
+        <header class="section-header">
+          <span class="badge badge-cyan section-badge">Podgląd</span>
+          <h2 class="section-title">Jak to wygląda na telefonie</h2>
+          <p class="section-subtitle">Widok dobowy z wykresem i widok roczny z pasmem glikemii.</p>
+        </header>
+
+        <div class="download-shots">
+          {shots.map((shot) => (
+            <figure class="download-shot">
+              <img
+                src={shot.src}
+                alt={shot.alt}
+                width="1272"
+                height="2800"
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
+          ))}
+        </div>
+        <p class="download-caption">Zrzuty ekranu na danych demonstracyjnych, nie na czyichś wynikach.</p>
+      </div>
+    </section>
+
+    <section class="section-sm download-section">
+      <div class="container">
+        <div class="download-notes">
+          {notes.map((note) => (
+            <article class="card download-note">
+              <h2 class="download-note-title">{note.title}</h2>
+              <p class="download-note-text">{note.text}</p>
+            </article>
+          ))}
+        </div>
+
+        <p class="download-made">
+          Aplikację napisałem w MGSupport. Jeśli potrzebujesz podobnego narzędzia,{' '}
+          <a href="/uslugi/dedykowane-systemy-it-aplikacje-webowe">zobacz systemy IT i aplikacje webowe</a>.
+        </p>
+      </div>
+    </section>
+    <section class="section-sm download-section" id="zmiany">
+      <div class="container">
+        <header class="section-header">
+          <span class="badge badge-cyan section-badge">Aktualizacje</span>
+          <h2 class="section-title">Historia wersji</h2>
+          <p class="section-subtitle">
+            Wersje testowe z listą zmian. Najnowsza na górze, starsze zostają dla porządku.
+          </p>
+        </header>
+
+        <ol class="download-releases">
+          {releaseNotes.map((release) => (
+            <li class="card download-release">
+              <div class="download-release-head">
+                <h3 class="download-release-version">{release.version}</h3>
+                <span class="download-release-date">{release.date}</span>
+                {release.tag && <span class="badge badge-cyan">{release.tag}</span>}
+              </div>
+              <ul class="download-release-list">
+                {release.items.map((item) => <li>{item}</li>)}
+              </ul>
+            </li>
+          ))}
+        </ol>
+
+        <p class="download-caption">
+          Aktualnie do pobrania: <a href={apkPath}>MGSupportCGM-1.0-beta9.apk</a>.
+          Wersje testowe mogą zmieniać interfejs bez zapowiedzi.
+        </p>
+      </div>
+    </section>
+  </div>
+</SiteLayout>
+
+<style>
+  .download-hero {
+    padding-top: 3rem;
+    padding-bottom: 1rem;
+  }
+
+  .download-hero-grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .download-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .download-title {
+    font-size: clamp(1.65rem, 4.5vw, 2.8rem);
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+
+  .download-version {
+    display: inline-block;
+    margin-left: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.5em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+  }
+
+  .download-lead {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 56ch;
+    margin-bottom: 1.75rem;
+  }
+
+  .download-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .download-cta {
+    gap: 0.6rem;
+    padding-inline: 1.75rem;
+  }
+
+  .download-cta-meta {
+    font-size: 0.82rem;
+    font-weight: 500;
+    opacity: 0.75;
+  }
+
+  .download-fineprint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    max-width: 52ch;
+  }
+
+  .download-spec-card {
+    padding: 1.5rem 1.5rem 1.25rem;
+  }
+
+  .download-spec-head {
+    margin: 0 0 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-cyan);
+  }
+
+  .download-specs {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+  }
+
+  .download-spec {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .download-spec:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .download-spec dt {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .download-spec dd {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .download-section {
+    border-top: 1px solid var(--border-subtle);
+    scroll-margin-top: 96px;
+  }
+
+  .download-steps {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .download-step {
+    padding: 1.5rem;
+  }
+
+  .download-step-num {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    letter-spacing: 0.08em;
+  }
+
+  .download-step-title {
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .download-step-text {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .download-shots {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: center;
+  }
+
+  .download-shot {
+    margin: 0;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .download-shot img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-md);
+  }
+
+  .download-caption {
+    margin: 1.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .download-notes {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .download-note {
+    padding: 1.5rem;
+  }
+
+  .download-note-title {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .download-note-text {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .download-made {
+    margin: 2.5rem 0 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .download-made a {
+    color: var(--accent-cyan);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (min-width: 768px) {
+    .download-steps,
+    .download-notes {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .download-shots {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 900px) {
+    .download-hero {
+      padding-top: 4rem;
+    }
+
+    .download-hero-grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      gap: 3.5rem;
+      align-items: center;
+    }
+  }
+  .download-releases {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .download-release {
+    padding: 1.35rem 1.5rem;
+  }
+
+  .download-release-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .download-release-version {
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+
+  .download-release-date {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .download-release-list {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding-left: 1.15rem;
+  }
+
+  .download-release-list li {
+    line-height: 1.55;
+    color: var(--text-secondary);
+  }
+
+  .download-caption a {
+    color: var(--accent-cyan);
+  }
+</style>

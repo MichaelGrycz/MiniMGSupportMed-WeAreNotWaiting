@@ -135,7 +135,7 @@
     <string name="howto_step3_title">Potwierdź na ekranie pompy</string>
     <string
     name="howto_step3_desc"
-  >Na pompie wybierz „Paruj nowe urządzenie”, poczekaj aż znajdzie „Mobile 000001” i zatwierdź. Szyfrowany handshake SAKE potrwa 5–10 sekund. Po połączeniu odczyty odświeżają się automatycznie co 15 sekund.</string>
+  >Na pompie wybierz „Paruj nowe urządzenie”, poczekaj aż znajdzie „Mobile 000001” i zatwierdź. Gdy telefon pokaże okno „Żądanie powiązania Bluetooth”, kliknij „Powiąż”. Szyfrowany handshake SAKE potrwa 5–10 sekund. Po połączeniu odczyty odświeżają się automatycznie co 15 sekund.</string>
 
     <string name="howto_step4_title">Zabezpiecz pracę w tle 24/7 (Bateria)</string>
     <string

@@ -126,7 +126,7 @@
     name="howto_step2_desc"
   >Tippen Sie auf „Neue Pumpe koppeln“. Das Telefon sendet als „Mobile 000001“.</string>
     <string name="howto_step3_title">Auf der Pumpe bestätigen</string>
-    <string name="howto_step3_desc">Wählen Sie auf der Pumpe „Neues Gerät koppeln“ und bestätigen Sie.</string>
+    <string name="howto_step3_desc">Wählen Sie auf der Pumpe „Neues Gerät koppeln“ und bestätigen Sie. Wenn das Telefon die Bluetooth-Kopplungsanfrage zeigt, tippen Sie auf „Koppeln“.</string>
     <string name="howto_step4_title">Hintergrundbetrieb sicherstellen</string>
     <string name="howto_step4_desc">Deaktivieren Sie die Akku-Optimierung für MGSupport CGM.</string>
     <string name="btn_battery_settings">Akku-Einstellungen</string>
