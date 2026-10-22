@@ -124,9 +124,11 @@
     <string name="howto_step2_title">Kopplung in der App starten</string>
     <string
     name="howto_step2_desc"
-  >Tippen Sie auf „Neue Pumpe koppeln“. Das Telefon sendet als „Mobile 000001“.</string>
+  >Tippen Sie auf „Neue Pumpe koppeln“. Das Telefon sendet als „Mobile …“ (die App zeigt den genauen Namen, z. B. „Mobile 123456“).</string>
     <string name="howto_step3_title">Auf der Pumpe bestätigen</string>
-    <string name="howto_step3_desc">Wählen Sie auf der Pumpe „Neues Gerät koppeln“ und bestätigen Sie. Wenn das Telefon die Bluetooth-Kopplungsanfrage zeigt, tippen Sie auf „Koppeln“.</string>
+    <string
+    name="howto_step3_desc"
+  >Wählen Sie auf der Pumpe „Neues Gerät koppeln“, warten Sie auf den in der App angezeigten Namen „Mobile …“ und bestätigen Sie. Wenn das Telefon die Bluetooth-Kopplungsanfrage zeigt, tippen Sie auf „Koppeln“.</string>
     <string name="howto_step4_title">Hintergrundbetrieb sicherstellen</string>
     <string name="howto_step4_desc">Deaktivieren Sie die Akku-Optimierung für MGlycemia.</string>
     <string name="btn_battery_settings">Akku-Einstellungen</string>
@@ -224,7 +226,8 @@
     <string name="lang_zh">中文</string>
 
     <string name="log_connection_state">Verbindungsstatus: %1$s</string>
-    <string name="log_start_pairing">Starte Kopplung…</string>
+    <string name="log_start_pairing">Starte Kopplung als %1$s…</string>
+    <string name="log_new_identity">Neue Geräteidentität: %1$s</string>
     <string name="log_reconnect">Verbinde neu…</string>
     <string name="log_disconnecting">Trenne…</string>
     <string name="log_unpairing">Entferne Kopplung…</string>
@@ -245,10 +248,13 @@
   >Die Pumpe hat sich verbunden, die Authentifizierung aber nicht abgeschlossen. Erneut versuchen und das Telefon nah an die Pumpe halten.</string>
     <string
     name="fault_auth_failed"
-  >Die Pumpe hat die Authentifizierung abgelehnt. „Mobile 000001“ aus der Liste der mobilen Geräte in der Pumpe entfernen und neu koppeln.</string>
+  >Die Pumpe hat die Authentifizierung abgelehnt. Den Eintrag „Mobile …“ aus der Liste der mobilen Geräte in der Pumpe entfernen und neu koppeln.</string>
+    <string
+    name="fault_pairing_failed"
+  >Android konnte die Kopplung mit der Pumpe nicht abschließen. Bestätige die Bluetooth-Kopplungsanfrage oder entferne die Pumpe in den Bluetooth-Einstellungen und versuche es erneut.</string>
     <string
     name="fault_bound_elsewhere"
-  >Die Pumpe verbindet sich und trennt sofort wieder. Meist ist das ein alter Kopplungseintrag: „Mobile 000001“ in der Pumpe entfernen, die Pumpe in den Bluetooth-Einstellungen löschen und erneut versuchen.</string>
+  >Die Pumpe verbindet sich und trennt sofort wieder. Meist ist das ein alter Kopplungseintrag: den Eintrag „Mobile …“ in der Pumpe entfernen, die Pumpe in den Bluetooth-Einstellungen löschen und erneut versuchen.</string>
     <string name="log_sensor_updating">CGM: Sensor liefert keinen Wert (Aufwärmphase oder Update)</string>
     <string name="log_sensor_ready">CGM: Werte sind wieder da</string>
     <string name="read_error">Lesefehler</string>
@@ -271,7 +277,9 @@
     <string name="updates_later">Später</string>
     <string name="updates_downloading">Update wird geladen…</string>
     <string name="updates_download_failed">Download fehlgeschlagen.</string>
-    <string name="updates_install_failed">Installationsprogramm konnte nicht geöffnet werden. Erlaube die Installation aus dieser Quelle und versuche es erneut.</string>
+    <string
+    name="updates_install_failed"
+  >Installationsprogramm konnte nicht geöffnet werden. Erlaube die Installation aus dieser Quelle und versuche es erneut.</string>
     <string name="updates_channel">App-Updates</string>
     <string name="updates_no_notes">Keine Änderungshinweise.</string>
 </resources>

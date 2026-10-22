@@ -127,12 +127,12 @@
     <string name="howto_step2_title">Start pairing in this app</string>
     <string
     name="howto_step2_desc"
-  >Tap "Pair New Pump" above. Your phone will start broadcasting as a Bluetooth LE peripheral named Mobile 000001.</string>
+  >Tap "Pair New Pump" above. Your phone will start broadcasting as a Bluetooth LE peripheral named Mobile … (the app shows the exact name, for example Mobile 123456).</string>
 
     <string name="howto_step3_title">Confirm on the pump screen</string>
     <string
     name="howto_step3_desc"
-  >On the pump, select "Pair New Device", wait until it finds Mobile 000001 and confirm. When the phone shows the Bluetooth pairing request, tap Pair. The encrypted SAKE handshake takes 5–10 seconds. Once connected, readings update every 15 seconds.</string>
+  >On the pump, select "Pair New Device", wait until it finds the Mobile … name shown in the app and confirm. When the phone shows the Bluetooth pairing request, tap Pair. The encrypted SAKE handshake takes 5–10 seconds. Once connected, readings update every 15 seconds.</string>
 
     <string name="howto_step4_title">Keep background monitoring alive 24/7</string>
     <string
@@ -143,7 +143,7 @@
     <string name="faq_title">FAQ &amp; Troubleshooting</string>
     <string
     name="faq_body"
-  >• Supported pumps: MiniMed 780G (MMT-1886, verified), 770G and 680G.\n• Older pumps (640G, Veo, Paradigm): Use sub-GHz radio, NOT Bluetooth — they cannot connect directly to a phone without hardware bridge.\n• Pairing rejected / Auth failed: Delete Mobile 000001 from the pump\'s Mobile Devices list, toggle Bluetooth off/on on the phone, and tap "Pair New Pump" again.\n• Safety guarantee: This app is 100% READ-ONLY. It cannot deliver boluses, change basal rates, or alter any pump setting.</string>
+  >• Supported pumps: MiniMed 780G (MMT-1886, verified), 770G and 680G.\n• Older pumps (640G, Veo, Paradigm): Use sub-GHz radio, NOT Bluetooth — they cannot connect directly to a phone without hardware bridge.\n• Pairing rejected / Auth failed: Delete the Mobile … entry from the pump\'s Mobile Devices list, toggle Bluetooth off/on on the phone, and tap "Pair New Pump" again.\n• Safety guarantee: This app is 100% READ-ONLY. It cannot deliver boluses, change basal rates, or alter any pump setting.</string>
 
     <!-- Settings Tab -->
     <string name="settings_title">Preferences &amp; Alerts</string>
@@ -237,7 +237,8 @@
     <string name="lang_zh">中文</string>
 
     <string name="log_connection_state">Connection state: %1$s</string>
-    <string name="log_start_pairing">Start pairing — advertising as Mobile 000001</string>
+    <string name="log_start_pairing">Start pairing — advertising as %1$s</string>
+    <string name="log_new_identity">New device identity: %1$s</string>
     <string name="log_reconnect">Reconnecting…</string>
     <string name="log_disconnecting">Disconnecting…</string>
     <string name="log_unpairing">Removing pairing…</string>
@@ -258,10 +259,13 @@
   >The pump connected but did not finish authentication. Try again with the phone close to the pump.</string>
     <string
     name="fault_auth_failed"
-  >The pump rejected authentication. Remove Mobile 000001 from the pump’s mobile devices list and pair again.</string>
+  >The pump rejected authentication. Remove the Mobile … entry from the pump’s mobile devices list and pair again.</string>
+    <string
+    name="fault_pairing_failed"
+  >Android could not finish pairing with the pump. Confirm the system Bluetooth pairing prompt, or remove the pump from Android Bluetooth settings and pair again.</string>
     <string
     name="fault_bound_elsewhere"
-  >The pump connects and drops the link right away. This is usually a stale pairing: remove Mobile 000001 from the pump’s mobile devices list, remove the pump from Android Bluetooth settings, then try again.</string>
+  >The pump connects and drops the link right away. This is usually a stale pairing: remove the Mobile … entry from the pump’s mobile devices list, remove the pump from Android Bluetooth settings, then try again.</string>
     <string name="log_sensor_updating">CGM: sensor reports no value (warm-up or sensor update)</string>
     <string name="log_sensor_ready">CGM: readings are back</string>
     <string name="read_error">read error</string>
@@ -284,7 +288,9 @@
     <string name="updates_later">Later</string>
     <string name="updates_downloading">Downloading update…</string>
     <string name="updates_download_failed">Download failed.</string>
-    <string name="updates_install_failed">Could not open the installer. Allow installing apps from this source and try again.</string>
+    <string
+    name="updates_install_failed"
+  >Could not open the installer. Allow installing apps from this source and try again.</string>
     <string name="updates_channel">App updates</string>
     <string name="updates_no_notes">No release notes.</string>
 </resources>

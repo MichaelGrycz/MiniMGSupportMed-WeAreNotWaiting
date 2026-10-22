@@ -117,9 +117,13 @@
     name="howto_step1_desc"
   >在泵上打开：菜单 → 设置 → 设备设置 → 移动设备。\n注意：一台泵同时只能连接一台手机。</string>
     <string name="howto_step2_title">在此应用中开始配对</string>
-    <string name="howto_step2_desc">点击上方的“配对新泵”。手机将开始以“Mobile 000001”广播 BLE。</string>
+    <string
+    name="howto_step2_desc"
+  >点击上方的“配对新泵”。手机将开始以“Mobile …”广播 BLE（应用会显示确切名称，例如“Mobile 123456”）。</string>
     <string name="howto_step3_title">在泵屏幕上确认</string>
-    <string name="howto_step3_desc">在泵上选择“配对新设备”，等待找到“Mobile 000001”并确认。手机出现蓝牙配对请求时，点击“配对”。</string>
+    <string
+    name="howto_step3_desc"
+  >在泵上选择“配对新设备”，等待找到应用中显示的“Mobile …”名称并确认。手机出现蓝牙配对请求时，点击“配对”。</string>
     <string name="howto_step4_title">保持后台持续运行</string>
     <string name="howto_step4_desc">关闭应用的电池优化，确保持续夜间报警。</string>
     <string name="btn_battery_settings">电池设置</string>
@@ -213,7 +217,8 @@
     <string name="lang_zh">中文</string>
 
     <string name="log_connection_state">连接状态: %1$s</string>
-    <string name="log_start_pairing">开始配对 — 广播为 Mobile 000001</string>
+    <string name="log_start_pairing">开始配对 — 广播为 %1$s</string>
+    <string name="log_new_identity">新的设备名称: %1$s</string>
     <string name="log_reconnect">正在重新连接…</string>
     <string name="log_disconnecting">正在断开连接…</string>
     <string name="log_unpairing">正在移除配对…</string>
@@ -226,10 +231,13 @@
     <string name="fault_peripheral_unsupported">此手机无法作为蓝牙 LE 外设广播，因此无法与泵配对。</string>
     <string name="fault_advertise_failed">无法启动蓝牙广播。请关闭再打开蓝牙后重试。</string>
     <string name="fault_handshake_timeout">泵已连接但未完成认证。请将手机靠近泵后重试。</string>
-    <string name="fault_auth_failed">泵拒绝了认证。请从泵的移动设备列表中删除“Mobile 000001”，然后重新配对。</string>
+    <string name="fault_auth_failed">泵拒绝了认证。请从泵的移动设备列表中删除“Mobile …”，然后重新配对。</string>
+    <string
+    name="fault_pairing_failed"
+  >Android 未能完成与泵的配对。请确认系统蓝牙配对提示，或在蓝牙设置中删除该泵后重试。</string>
     <string
     name="fault_bound_elsewhere"
-  >泵连接后立即断开。通常是旧的配对记录：请从泵的移动设备列表中删除“Mobile 000001”，在系统蓝牙设置中删除该泵，然后重试。</string>
+  >泵连接后立即断开。通常是旧的配对记录：请从泵的移动设备列表中删除“Mobile …”，在系统蓝牙设置中删除该泵，然后重试。</string>
     <string name="log_sensor_updating">CGM：传感器暂无读数（预热或更新中）</string>
     <string name="log_sensor_ready">CGM：读数已恢复</string>
     <string name="read_error">读取错误</string>

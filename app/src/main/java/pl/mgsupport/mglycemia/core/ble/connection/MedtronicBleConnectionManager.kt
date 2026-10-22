@@ -57,6 +57,13 @@ enum class MedtronicConnectionFault {
     AUTH_FAILED,
 
     /**
+     * The OS-level BLE bond entered BOND_BONDING and then fell back to BOND_NONE. The pump dropped
+     * the link before it subscribed to SAKE, so the user must confirm the system pairing prompt (or
+     * remove a stale pump entry from Bluetooth settings) and try again.
+     */
+    PAIRING_FAILED,
+
+    /**
      * First-pair advertising has been running with no pump connecting -- the pump is likely still
      * bound to another phone (e.g. the official Medtronic app) and must be removed from it first.
      * Working assumption from desk research; exact live behavior is confirmed in 48.A2 (Sec. 7).
@@ -91,7 +98,7 @@ class MedtronicBleConnectionManager(
     private val worker: SerialWorker,
     private val scope: CoroutineScope,
     private val keyDatabase: KeyDatabase = Constants.KEYDB_PUMP_EXTRACTED,
-    private val localName: String = DEFAULT_LOCAL_NAME,
+    localName: String = DEFAULT_LOCAL_NAME,
     private val handshakeTimeoutMs: Long = DEFAULT_HANDSHAKE_TIMEOUT_MS,
     private val pairingWaitMs: Long = DEFAULT_PAIRING_WAIT_MS,
 ) {
@@ -105,6 +112,17 @@ class MedtronicBleConnectionManager(
     )
 
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
+
+    /** Advertised identity; changed by [setLocalName] when the user asks for a fresh pairing. */
+    @Volatile
+    private var localName: String = localName
+
+    /** The identity currently advertised to the pump. */
+    val currentLocalName: String
+        get() = localName
+
+    /** Replace the advertised identity. Serialized on the worker with every connection attempt. */
+    fun setLocalName(name: String) = worker.post { localName = name }
 
     /** Observable BLE/auth connection lifecycle. */
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
@@ -174,6 +192,13 @@ class MedtronicBleConnectionManager(
         override fun onAdvertiseStarted(mode: AdvertisingMode) = worker.post { onAdvertising(mode) }
         override fun onAdvertiseFailed(errorCode: Int) = worker.post { onAdvertisingFailed(errorCode) }
         override fun onPumpConnected(address: String) = worker.post { onCentralConnected(address) }
+        override fun onBondStateChanged(state: Int, previousState: Int, reason: Int) = worker.post {
+            if (state == BluetoothDevice.BOND_NONE && previousState == BluetoothDevice.BOND_BONDING) {
+                Timber.w("BLE pairing failed (reason=%d)", reason)
+                _fault.value = MedtronicConnectionFault.PAIRING_FAILED
+                diagnosticSink?.invoke("pairing failed reason=$reason")
+            }
+        }
         override fun onSakeSubscribed() = worker.post { startAuthentication() }
         override fun onSakeUnsubscribed() = driver.onUnsubscribed()
         override fun onSakeWrite(value: ByteArray) = driver.onPumpWrite(value)
@@ -317,16 +342,9 @@ class MedtronicBleConnectionManager(
         pairingWaitJob = null
         _fault.value = null
         connectedAddress = address
-        // Single-peer: stop advertising so no second central can connect mid-handshake (Sec. 7).
-        // Delayed: on some Samsung stacks stopping the advertiser in the same instant the link comes
-        // up tears the fresh connection down again (observed as an immediate disconnect, status 0).
-        val advertisedFor = address
-        scope.launch {
-            delay(ADVERTISE_STOP_DELAY_MS)
-            worker.post {
-                if (connectedAddress == advertisedFor) peripheral.stopAdvertising()
-            }
-        }
+        // Keep advertising until SAKE completes. Stopping while the OS is still bonding (or while the
+        // pump is subscribing) makes several stacks tear the fresh link down; the advertiser is
+        // stopped in onHandshakeComplete instead.
         // A pump connecting from any advertising state (first pair, scan, or reconnect) is "connected,
         // pre-auth"; AUTHENTICATING/CONNECTED are reached via onSakeSubscribed/handshake completion.
         when (_connectionState.value) {
@@ -402,6 +420,8 @@ class MedtronicBleConnectionManager(
         pairRetries = 0
         sakeSession = session
         _fault.value = null
+        // Single-peer from here on: the pump is authenticated, so no second central may connect.
+        peripheral.stopAdvertising()
         // Persist the pairing. SAKE has no pairing code (authentication is the static-key handshake
         // plus the OS BLE bond), so the credential "code" slot records the advertised identity.
         connectedAddress?.let { credentialStore.savePairing(it, localName) }
@@ -508,11 +528,5 @@ class MedtronicBleConnectionManager(
 
         /** Pause before re-advertising, so we don't collide with the pump's own retry. */
         private const val PAIR_RETRY_DELAY_MS = 1_500L
-
-        /**
-         * Grace period before stopping the advertiser after the pump connects. Stopping it in the
-         * same BLE event as the connection is known to drop the link on some Samsung stacks.
-         */
-        private const val ADVERTISE_STOP_DELAY_MS = 900L
     }
 }

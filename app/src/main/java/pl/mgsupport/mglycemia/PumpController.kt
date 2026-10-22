@@ -99,6 +99,7 @@ class PumpController(context: Context) {
     private val worker = HandlerThreadSerialWorker("medtronic-sake")
     private val peripheral = AndroidMedtronicPeripheral(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val localName = PumpIdentity.localName(appContext, paired = credentials.isPaired())
 
     private val manager =
         MedtronicBleConnectionManager(
@@ -106,6 +107,7 @@ class PumpController(context: Context) {
             credentialStore = credentials,
             worker = worker,
             scope = scope,
+            localName = localName,
         )
 
     private val gattLink =
@@ -249,6 +251,25 @@ class PumpController(context: Context) {
     fun startPairing() {
         userDisconnected = false
         retryJob?.cancel()
+        // A previous attempt that failed while pairing means the pump may still hold an entry for
+        // this identity with different keys. Rotate to a fresh name so the pump performs a clean
+        // first pairing instead of failing authentication against the stale entry.
+        val fault = manager.fault.value
+        val needsFreshIdentity =
+            fault == MedtronicConnectionFault.PAIRING_FAILED ||
+                fault == MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED ||
+                // An explicit "pair new pump" on an existing installation replaces that pump entry,
+                // so a fresh identity avoids authenticating against the old keys.
+                credentials.isPaired()
+        val name =
+            if (needsFreshIdentity) {
+                PumpIdentity.rotate(appContext).also {
+                    manager.setLocalName(it)
+                    appendLog(appContext.getString(R.string.log_new_identity, it))
+                }
+            } else {
+                manager.currentLocalName
+            }
         _state.update {
             it.copy(
                 lastError = null,
@@ -256,7 +277,7 @@ class PumpController(context: Context) {
                 pairedAddress = credentials.getPairedAddress(),
             )
         }
-        appendLog(appContext.getString(R.string.log_start_pairing))
+        appendLog(appContext.getString(R.string.log_start_pairing, name))
         manager.startSession(forceFirstPair = true)
     }
 
@@ -284,7 +305,11 @@ class PumpController(context: Context) {
     fun unpair() {
         appendLog(appContext.getString(R.string.log_unpairing))
         manager.unpair()
-        credentials.clearPairing()
+        // The manager clears the stored pairing itself; doing it here first would erase the address
+        // before its worker could remove the OS bond.
+        val newName = PumpIdentity.rotate(appContext)
+        manager.setLocalName(newName)
+        appendLog(appContext.getString(R.string.log_new_identity, newName))
         historyCursor = null
         _state.update {
             it.copy(
@@ -606,6 +631,7 @@ class PumpController(context: Context) {
                 MedtronicConnectionFault.ADVERTISE_FAILED -> R.string.fault_advertise_failed
                 MedtronicConnectionFault.HANDSHAKE_TIMEOUT -> R.string.fault_handshake_timeout
                 MedtronicConnectionFault.AUTH_FAILED -> R.string.fault_auth_failed
+                MedtronicConnectionFault.PAIRING_FAILED -> R.string.fault_pairing_failed
                 MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED -> R.string.fault_bound_elsewhere
             },
         )

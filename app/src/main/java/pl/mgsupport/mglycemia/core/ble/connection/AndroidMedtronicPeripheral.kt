@@ -27,7 +27,10 @@ import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.ParcelUuid
 import pl.mgsupport.mglycemia.core.ble.protocol.MedtronicProtocol
@@ -66,6 +69,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     @Volatile
     private var peer: BluetoothDevice? = null
 
+    /** Receives OS bond transitions so pairing failures are visible and actionable in the log. */
+    private var bondReceiver: BroadcastReceiver? = null
+
     @Volatile
     private var currentMode: AdvertisingMode = AdvertisingMode.FIRST_PAIR
 
@@ -92,6 +98,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         this.listener = listener
         currentMode = mode
         currentName = localName
+        registerBondReceiver()
         listener.onDiagnostic("adapter name=${adapter?.name ?: "?"}, advertising as $localName")
         if (gattServer == null) {
             // Defer advertising until the SAKE + Device Info services are registered (service adds are
@@ -165,6 +172,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
 
     override fun stop() {
         stopAdvertising()
+        unregisterBondReceiver()
         peer = null
         sakeCharacteristic = null
         pendingAdvertise = null
@@ -279,7 +287,13 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             return
         }
         try {
-            server.addService(next)
+            val added = server.addService(next)
+            if (!added) {
+                // addService returning false means no onServiceAdded callback will ever arrive, so
+                // advertising would otherwise never start and the UI would sit in CONNECTING.
+                Timber.e("addService returned false for %s", next.uuid)
+                failPendingAdvertise()
+            }
         } catch (e: SecurityException) {
             Timber.e(e, "addService failed for %s", next.uuid)
             failPendingAdvertise()
@@ -353,11 +367,15 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                             BluetoothDevice.BOND_BONDING -> "bonding"
                             else -> "none"
                         }
+                    // A fresh link starts with no subscription; never reuse a stale CCCD value from a
+                    // previous pump session (it would tell the pump notifications are already enabled).
+                    sakeCccdValue = byteArrayOf(0x00, 0x00)
                     listener?.onDiagnostic("GATT link up, status=$status, bond=$bond")
                     listener?.onPumpConnected(device.address)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     peer = null
+                    sakeCccdValue = byteArrayOf(0x00, 0x00)
                     listener?.onDiagnostic("GATT link down, status=$status")
                     listener?.onPumpDisconnected(status)
                 }
@@ -397,11 +415,13 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             value: ByteArray,
         ) {
             listener?.onDiagnostic("write ${short(characteristic.uuid)} len=${value.size}")
-            if (characteristic.uuid == MedtronicProtocol.SAKE_CHARACTERISTIC_UUID) {
-                listener?.onSakeWrite(value)
-            }
+            // Complete the ATT request first. The SAKE driver posts the next notification, and some
+            // stacks drop the link if a notification overtakes the write response during bonding.
             if (responseNeeded) {
                 sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
+            }
+            if (characteristic.uuid == MedtronicProtocol.SAKE_CHARACTERISTIC_UUID) {
+                listener?.onSakeWrite(value)
             }
         }
 
@@ -432,6 +452,13 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             value: ByteArray,
         ) {
             listener?.onDiagnostic("descriptor write ${short(descriptor.uuid)} len=${value.size}")
+            @Suppress("DEPRECATION")
+            descriptor.value = value
+            // Respond before starting the SAKE wake-up: the pump must see the subscription accepted
+            // before it receives the first notification.
+            if (responseNeeded) {
+                sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
+            }
             val isSakeCccd = descriptor.uuid == MedtronicProtocol.CCCD_UUID &&
                 descriptor.characteristic?.uuid == MedtronicProtocol.SAKE_CHARACTERISTIC_UUID
             if (isSakeCccd && value.size >= 2) {
@@ -448,11 +475,6 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                     else -> Timber.d("Unexpected SAKE CCCD value %02x%02x; ignoring", value[1], value[0])
                 }
             }
-            @Suppress("DEPRECATION")
-            descriptor.value = value
-            if (responseNeeded) {
-                sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
-            }
         }
 
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
@@ -464,6 +486,65 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     }
 
     private var sakeCccdValue = byteArrayOf(0x00, 0x00)
+
+    private fun registerBondReceiver() {
+        if (bondReceiver != null) return
+        val receiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    if (intent?.action != BluetoothDevice.ACTION_BOND_STATE_CHANGED) return
+                    val device =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                        }
+                    if (device == null) return
+                    // Only the pump this session is talking to matters; ignore unrelated devices.
+                    val current = peer
+                    if (current != null && current.address != device.address) return
+                    val state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR)
+                    val previous = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR)
+                    val reason = intent.getIntExtra(EXTRA_BOND_REASON, 0)
+                    val failed = state == BluetoothDevice.BOND_NONE && previous == BluetoothDevice.BOND_BONDING
+                    listener?.onDiagnostic(
+                        "bond state ${bondLabel(previous)} -> ${bondLabel(state)} reason=$reason" +
+                            if (failed) " (pairing failed)" else "",
+                    )
+                    listener?.onBondStateChanged(state, previous, reason)
+                }
+            }
+        try {
+            val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                appContext.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                appContext.registerReceiver(receiver, filter)
+            }
+            bondReceiver = receiver
+        } catch (e: SecurityException) {
+            Timber.w(e, "Cannot register bond-state receiver")
+        }
+    }
+
+    private fun unregisterBondReceiver() {
+        val receiver = bondReceiver ?: return
+        bondReceiver = null
+        try {
+            appContext.unregisterReceiver(receiver)
+        } catch (e: IllegalArgumentException) {
+            Timber.d(e, "Bond receiver was already unregistered")
+        }
+    }
+
+    private fun bondLabel(state: Int): String =
+        when (state) {
+            BluetoothDevice.BOND_BONDED -> "bonded"
+            BluetoothDevice.BOND_BONDING -> "bonding"
+            BluetoothDevice.BOND_NONE -> "none"
+            else -> "unknown($state)"
+        }
 
     private fun short(uuid: java.util.UUID): String = uuid.toString().substring(4, 8)
 
@@ -487,6 +568,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     }
 
     private companion object {
+        /** `BluetoothDevice.EXTRA_REASON` is hidden; the broadcast extra name is stable. */
+        const val EXTRA_BOND_REASON = "android.bluetooth.device.extra.REASON"
+
         /** Synthetic AdvertiseCallback error code for "no advertiser available" (not a platform code). */
         const val ADVERTISER_UNAVAILABLE = -1
 

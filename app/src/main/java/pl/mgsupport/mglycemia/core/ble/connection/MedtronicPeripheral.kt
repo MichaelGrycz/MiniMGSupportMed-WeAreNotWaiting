@@ -61,6 +61,15 @@ interface PeripheralListener {
      * descriptor, MTU, connection). Empty default so existing collaborators need no change.
      */
     fun onDiagnostic(line: String) {}
+
+    /**
+     * OS-level BLE bond transition for the pump. [reason] is the platform reason code; it is only
+     * meaningful when [state] is [android.bluetooth.BluetoothDevice.BOND_NONE], where a previous
+     * [android.bluetooth.BluetoothDevice.BOND_BONDING] means pairing failed.
+     *
+     * Empty default so existing collaborators need no change.
+     */
+    fun onBondStateChanged(state: Int, previousState: Int, reason: Int) {}
 }
 
 /**

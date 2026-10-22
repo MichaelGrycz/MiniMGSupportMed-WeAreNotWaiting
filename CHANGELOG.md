@@ -3,6 +3,18 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta17
+
+- Parowanie: każda instalacja ma unikalną nazwę `Mobile NNNNNN`, a „Usuń parowanie”
+  zmienia ją na nową. Omija to stare wpisy w pompie i konflikty kluczy, które na
+  Androidzie 16 powodowały zerwanie linku zaraz po odczycie `2902`.
+- Parowanie: rozgłaszanie nie jest już zatrzymywane w trakcie bondingu, odpowiedzi
+  GATT są wysyłane przed startem SAKE, a nieudane parowanie ma czytelny komunikat.
+- Kopia zapasowa CSV w wybranym przez użytkownika folderze (np. Dokumenty/MGlikemia),
+  przeżywa odinstalowanie i wymaga ponownego wskazania folderu po reinstalacji.
+- Pełnoekranowy wykres oraz bolusy, korekty i automatyczne mikroboleusy odczytane
+  z pompy, z rozróżnieniem dawek ręcznych i automatycznych.
+
 ## 1.0-beta13
 
 - Aktualizacja techniczna, bez zmian w interfejsie.

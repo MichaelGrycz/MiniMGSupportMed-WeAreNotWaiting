@@ -14,10 +14,10 @@ skanuje, znajduje telefon i sama się z nim łączy. Aplikacja nie skanuje.
 
 ## Tabela GATT serwera
 
-| Usługa | UUID | Zawartość |
-|---|---|---|
-| Device Information | `00000900-0000-1000-0000-009132591325` | 2A29, 2A24, 2A25, 2A26, 2A27, 2A28, 2A23, 2A50, 2A2A |
-| SAKE | `0000fe82-0000-1000-8000-00805f9b34fb` | charakterystyka `0000fe82-...-009132591325` (NOTIFY + WRITE) z CCCD `2902` |
+| Usługa             | UUID                                   | Zawartość                                                                  |
+| ------------------ | -------------------------------------- | -------------------------------------------------------------------------- |
+| Device Information | `00000900-0000-1000-0000-009132591325` | 2A29, 2A24, 2A25, 2A26, 2A27, 2A28, 2A23, 2A50, 2A2A                       |
+| SAKE               | `0000fe82-0000-1000-8000-00805f9b34fb` | charakterystyka `0000fe82-...-009132591325` (NOTIFY + WRITE) z CCCD `2902` |
 
 Wartości Device Information są kopią tych z JavaPumpConnector. Puste ciągi
 w polach firmware/software powodowały zrywanie połączenia.
@@ -29,12 +29,12 @@ w polach firmware/software powodowały zrywanie połączenia.
 
 ## Błędy
 
-| Błąd | Znaczenie |
-|---|---|
-| `PERIPHERAL_UNSUPPORTED` | telefon nie potrafi rozgłaszać się jako peripheral |
-| `ADVERTISE_FAILED` | system odrzucił rozgłaszanie |
-| `HANDSHAKE_TIMEOUT` | SAKE nie skończyło się w 30 s |
-| `AUTH_FAILED` | pompa odrzuciła autoryzację |
+| Błąd                        | Znaczenie                                                         |
+| --------------------------- | ----------------------------------------------------------------- |
+| `PERIPHERAL_UNSUPPORTED`    | telefon nie potrafi rozgłaszać się jako peripheral                |
+| `ADVERTISE_FAILED`          | system odrzucił rozgłaszanie                                      |
+| `HANDSHAKE_TIMEOUT`         | SAKE nie skończyło się w 30 s                                     |
+| `AUTH_FAILED`               | pompa odrzuciła autoryzację                                       |
 | `BOUND_ELSEWHERE_SUSPECTED` | brak połączenia w oknie 60 s, prawdopodobnie stary wpis parowania |
 
 ## Zachowanie przy zerwaniu
@@ -65,25 +65,48 @@ GATT disconnect, status=0
 - brak `read 2a29` przed rozłączeniem oznacza, że pompa nie doszła do odczytu
   danych urządzenia
 
-## Znany problem: Galaxy S24, One UI 8.5
+## Tożsamość urządzenia
 
-Objaw: pompa łączy się, czyta `2902`, po czym natychmiast zrywa. Na ekranie
-telefonu pojawia się systemowe okno „Żądanie powiązania Bluetooth”.
+Aplikacja rozgłasza się jako `Mobile NNNNNN`, gdzie sześć cyfr jest losowe i trwałe
+na daną instalację. Dzięki temu dwie osoby nie używają tej samej nazwy, a pompa
+nie dopasowuje nowego telefonu do starego wpisu z innymi kluczami.
 
-Co wiadomo:
+- pierwsza instalacja: losowa nazwa, np. `Mobile 483920`
+- aktualizacja z wersji, która była już sparowana: zachowana nazwa `Mobile 000001`,
+  żeby nie psuć działającego połączenia
+- „Usuń parowanie”: aplikacja zmienia nazwę na nową, więc kolejne parowanie jest
+  czyste i nie koliduje ze starym wpisem w pompie
 
-- na innych telefonach ta sama wersja działa
-- `unpair: bond removed=false` oznacza, że aplikacja nie usunęła powiązania.
-  Od Androida 14 `removeBond()` jest zablokowane dla zwykłych aplikacji
-- powiązanie trzeba usunąć ręcznie: Ustawienia → Bluetooth → wpis pompy
+Aktualną nazwę pokazuje log parowania oraz karta „Pompa”.
 
-Kolejność, która ma największą szansę zadziałać:
+## Znany problem: Galaxy S24 / Realme / Android 16
 
-1. usunąć `Mobile 000001` z listy urządzeń mobilnych w pompie
-2. usunąć wpis pompy w Ustawieniach Bluetooth telefonu
-3. wyłączyć i włączyć Bluetooth
-4. parować z apki, telefon odblokowany, apka na wierzchu
-5. **kliknąć „Powiąż” w systemowym oknie**, nie „Anuluj”
+Objaw: pompa łączy się, czyta `2902` i dane urządzenia, po czym natychmiast
+zrywa (`GATT link down, status=0`). Często towarzyszy temu `bond=bonding`
+i brak `descriptor write 2902`, czyli pompa nie dochodzi do subskrypcji SAKE.
+
+Najczęstsza przyczyna to stary wpis parowania po jednej ze stron. Android 16
+przy nieudanym uwierzytelnieniu bondingu zrywa link i zgłasza utratę bondingu;
+`removeBond()` jest zablokowane dla zwykłych aplikacji od Androida 14.
+
+Kolejność, która usuwa problem:
+
+1. w pompie usuń **wszystkie** stare wpisy `Mobile …`
+2. w telefonie: Ustawienia → Bluetooth → usuń wpis pompy („Zapomnij”)
+3. w aplikacji: „Usuń parowanie” (zmieni nazwę urządzenia na nową)
+4. wyłącz i włącz Bluetooth
+5. „Paruj nową pompę”, na pompie wybierz nazwę pokazaną w aplikacji
+6. **kliknij „Powiąż” w systemowym oknie**, nie „Anuluj”
+
+## Diagnoza po logu
+
+- `bond state bonding -> none reason=… (pairing failed)`: systemowe parowanie
+  zostało odrzucone lub przekroczyło czas; potwierdź okno lub usuń wpis pompy
+- `bond=bonding` i zaraz `link down`: problem w oknie powiązania lub blokada systemu
+- `bond=none` i `link down` bez żadnego `read`: pompa odrzuca urządzenie przed
+  przeglądaniem usług, wtedy sprawdzamy rozgłaszanie i tabelę GATT
+- `GATT link up` → `descriptor read 2902` → brak `descriptor write 2902`:
+  pompa nie włączyła subskrypcji SAKE; zwykle stary bonding lub brak potwierdzenia
 
 ## Diagnoza po logu
 
