@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta19
+
+- Parowanie: PnP ID (`2A50`) ma teraz wymagane 7 bajtów zamiast 1. Pompa czytająca
+  tę charakterystykę jako ostatnią odrzucała tabelę Device Information i zrywała
+  połączenie tuż przed subskrypcją SAKE.
+- Rozgłaszanie jest zatrzymywane natychmiast po połączeniu pompy, zgodnie
+  z działającym JavaPumpConnector i PythonPumpConnector.
+
 ## 1.0-beta18
 
 - Nazwa urządzenia w usłudze Device Information jest teraz zgodna z aktualnie

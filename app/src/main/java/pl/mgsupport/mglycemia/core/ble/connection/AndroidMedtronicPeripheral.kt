@@ -351,7 +351,10 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         service.addCharacteristic(readChar(MedtronicProtocol.FIRMWARE_REVISION_UUID, DIS_FIRMWARE.toByteArray(ascii)))
         service.addCharacteristic(readChar(MedtronicProtocol.SOFTWARE_REVISION_UUID, DIS_SOFTWARE.toByteArray(ascii)))
         service.addCharacteristic(readChar(MedtronicProtocol.SYSTEM_ID_UUID, ByteArray(8)))
-        service.addCharacteristic(readChar(MedtronicProtocol.PNP_ID_UUID, byteArrayOf(0x00)))
+        // PnP ID is a fixed 7-byte structure (vendor id source, vendor id, product id, product
+        // version). Returning a single byte makes the pump see a malformed Device Information table
+        // and drop the link right after reading 2A50.
+        service.addCharacteristic(readChar(MedtronicProtocol.PNP_ID_UUID, ByteArray(7)))
         service.addCharacteristic(readChar(MedtronicProtocol.REGULATORY_CERT_UUID, ByteArray(0)))
         return service
     }

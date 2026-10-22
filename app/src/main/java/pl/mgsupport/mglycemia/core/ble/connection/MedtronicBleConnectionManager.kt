@@ -342,9 +342,9 @@ class MedtronicBleConnectionManager(
         pairingWaitJob = null
         _fault.value = null
         connectedAddress = address
-        // Keep advertising until SAKE completes. Stopping while the OS is still bonding (or while the
-        // pump is subscribing) makes several stacks tear the fresh link down; the advertiser is
-        // stopped in onHandshakeComplete instead.
+        // Match the proven OpenMinimed implementations: stop advertising as soon as the pump connects.
+        // Leaving the advertiser running through bonding made some Android 16 stacks drop the link.
+        peripheral.stopAdvertising()
         // A pump connecting from any advertising state (first pair, scan, or reconnect) is "connected,
         // pre-auth"; AUTHENTICATING/CONNECTED are reached via onSakeSubscribed/handshake completion.
         when (_connectionState.value) {

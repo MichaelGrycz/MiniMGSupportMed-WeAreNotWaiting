@@ -20,7 +20,8 @@ skanuje, znajduje telefon i sama się z nim łączy. Aplikacja nie skanuje.
 | SAKE               | `0000fe82-0000-1000-8000-00805f9b34fb` | charakterystyka `0000fe82-...-009132591325` (NOTIFY + WRITE) z CCCD `2902` |
 
 Wartości Device Information są kopią tych z JavaPumpConnector. Puste ciągi
-w polach firmware/software powodowały zrywanie połączenia.
+w polach firmware/software powodowały zrywanie połączenia. `2A50` (PnP ID)
+musi mieć dokładnie 7 bajtów — jeden bajt powoduje odrzucenie tabeli przez pompę.
 
 ## Stany połączenia
 
