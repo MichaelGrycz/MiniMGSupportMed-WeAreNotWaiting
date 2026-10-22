@@ -159,7 +159,7 @@ class UpdateChecker(private val context: Context) {
     }
 
     private companion object {
-        const val RELEASES_API = "https://api.github.com/repos/MichaelGrycz/mgsupport-cgm/releases/latest"
+        const val RELEASES_API = "https://api.github.com/repos/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting/releases/latest"
         const val CHANNEL_ID = "app_updates"
         const val NOTIF_ID = 2001
     }
