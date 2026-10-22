@@ -354,14 +354,6 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                             else -> "none"
                         }
                     listener?.onDiagnostic("GATT link up, status=$status, bond=$bond")
-                    if (device.bondState == BluetoothDevice.BOND_NONE) {
-                        try {
-                            val bonded = device.createBond()
-                            listener?.onDiagnostic("Initiated createBond: $bonded")
-                        } catch (e: Exception) {
-                            Timber.w(e, "createBond failed")
-                        }
-                    }
                     listener?.onPumpConnected(device.address)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
