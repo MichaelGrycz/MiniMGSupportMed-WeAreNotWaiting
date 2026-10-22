@@ -400,9 +400,18 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             offset: Int,
             characteristic: BluetoothGattCharacteristic,
         ) {
-            listener?.onDiagnostic("read ${short(characteristic.uuid)} len=${(characteristic.value ?: ByteArray(0)).size}")
+            // The pump reads the serial number during pairing and compares it with the advertised
+            // "Mobile …" name. Keep it live so a rotated identity is reflected without rebuilding
+            // the GATT server.
+            val stored =
+                if (characteristic.uuid == MedtronicProtocol.SERIAL_NUMBER_UUID) {
+                    currentName.toByteArray(Charsets.US_ASCII)
+                } else {
+                    characteristic.value ?: ByteArray(0)
+                }
+            listener?.onDiagnostic("read ${short(characteristic.uuid)} len=${stored.size}")
             @Suppress("DEPRECATION")
-            respondWithStoredBlob(device, requestId, offset, characteristic.value ?: ByteArray(0))
+            respondWithStoredBlob(device, requestId, offset, stored)
         }
 
         override fun onCharacteristicWriteRequest(

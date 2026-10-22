@@ -3,6 +3,11 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta18
+
+- Nazwa urządzenia w usłudze Device Information jest teraz zgodna z aktualnie
+  rozgłaszaną nazwą po jej zmianie, więc pompa nie porównuje dwóch różnych wartości.
+
 ## 1.0-beta17
 
 - Parowanie: każda instalacja ma unikalną nazwę `Mobile NNNNNN`, a „Usuń parowanie”
