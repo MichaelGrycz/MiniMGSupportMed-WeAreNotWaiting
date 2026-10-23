@@ -314,4 +314,17 @@
     <string
     name="widget_description"
   >Live CGM reading from your MiniMed pump: current glucose, trend and last update time.</string>
+    <!-- App Mode / Family -->
+    <string name="role_title">App mode</string>
+    <string
+    name="role_desc"
+  >Choose whether this phone connects to the pump or only receives readings from the family phone.</string>
+    <string name="role_primary">Main phone (connected to pump)</string>
+    <string name="role_companion">Family phone (receives readings)</string>
+    <string name="role_sharing">Share readings with other apps (xDrip+)</string>
+    <string name="role_sync_url_hint">Sync server address (optional)</string>
+    <string name="role_save">Save</string>
+    <string name="role_badge_primary">Pump</string>
+    <string name="role_badge_companion">Family</string>
+    <string name="role_saved">App mode saved</string>
 </resources>

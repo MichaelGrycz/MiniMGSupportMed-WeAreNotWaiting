@@ -282,4 +282,15 @@
 
     <!-- Home Screen Widget -->
     <string name="widget_description">来自 MiniMed 胰岛素泵的实时血糖读数：当前血糖、趋势及最后一次测量时间。</string>
+    <!-- App Mode / Family -->
+    <string name="role_title">应用模式</string>
+    <string name="role_desc">选择此手机连接胰岛素泵，还是仅接收家庭手机的读数。</string>
+    <string name="role_primary">主手机（连接胰岛素泵）</string>
+    <string name="role_companion">家庭手机（接收读数）</string>
+    <string name="role_sharing">与其他应用共享读数（xDrip+）</string>
+    <string name="role_sync_url_hint">同步服务器地址（可选）</string>
+    <string name="role_save">保存</string>
+    <string name="role_badge_primary">泵</string>
+    <string name="role_badge_companion">家庭</string>
+    <string name="role_saved">应用模式已保存</string>
 </resources>

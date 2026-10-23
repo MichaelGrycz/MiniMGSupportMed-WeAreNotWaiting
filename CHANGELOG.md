@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta49
+
+- Nowy, widoczny Tryb aplikacji w Ustawieniach: „Główny telefon (z pompą)” albo „Telefon rodziny (odbiera odczyty)”. Aktywny tryb widać od razu jako plakietkę w nagłówku ekranu głównego.
+- Tryb rodziny działa przez serwer synchronizacji: główny telefon wysyła odczyt, a telefon bliskiej osoby go pobiera i pokazuje na swoim pulpicie.
+- Przełącznik udostępniania odczytów innym aplikacjom (xDrip+) oraz pole adresu serwera synchronizacji.
+- Wykres: pasy bolus / automat / baza / ? przeniesione pod wykres, tuż przy osi czasu (zamiast wysoko nad nim).
+- Wykres: wyraźna, przerywana linia prognozy glikemii na 30 minut z wartością przy prawej krawędzi.
+
 ## 1.0-beta48
 
 - Natywny Tryb Rodziny / Opiekuna: udostępnianie odczytów na żywo między telefonami w pobliżu bez rozłączania pompy.

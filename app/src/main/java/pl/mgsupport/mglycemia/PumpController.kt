@@ -191,11 +191,78 @@ class PumpController(context: Context) {
     fun setAppRole(role: AppRole) {
         appRole = role
         prefs().edit().putString(PREF_APP_ROLE, role.name).apply()
-        // W roli opiekuna nie uruchamiamy skanowania ani polowania BLE na pompę.
         if (role == AppRole.FAMILY_COMPANION) {
+            // Telefon rodziny nie laczy sie z pompa: tylko odpytuje serwer o najnowszy odczyt.
             stopPolling()
             manager.disconnect()
+            startCompanionPolling()
+        } else {
+            stopCompanionPolling()
+            if (isPaired() && !userDisconnected) {
+                manager.reconnectIfPaired()
+            }
         }
+    }
+
+    @Volatile
+    private var companionPollJob: Job? = null
+
+    /** Tryb opiekuna: cykliczne pobieranie najnowszego odczytu z serwera synchronizacji. */
+    private fun startCompanionPolling() {
+        if (companionPollJob?.isActive == true) return
+        companionPollJob =
+            scope.launch {
+                while (isActive) {
+                    val url = syncServerUrl
+                    if (!url.isNullOrBlank()) {
+                        val json = TelemetryUploader.fetchLatest(url)
+                        val glucose = json?.optInt("glucoseMgDl", -1) ?: -1
+                        if (glucose > 0 && json != null) {
+                            val trend =
+                                runCatching {
+                                    CgmTrend.valueOf(json.optString("trend", "FLAT"))
+                                }.getOrDefault(CgmTrend.FLAT)
+                            val at = json.optLong("timestampMs", System.currentTimeMillis())
+                            acceptRemoteReading(glucose, trend, at)
+                        }
+                    }
+                    delay(COMPANION_POLL_INTERVAL_MS)
+                }
+            }
+    }
+
+    private fun stopCompanionPolling() {
+        companionPollJob?.cancel()
+        companionPollJob = null
+    }
+
+    /** Odbiera odczyt z serwera (tryb opiekuna) lub lokalnego broadcastu i pokazuje go na pulpicie. */
+    fun acceptRemoteReading(mgDl: Int, trend: CgmTrend, atMs: Long) {
+        val s = _state.value
+        store.insertReading(
+            ReadingRow(
+                tsMs = atMs,
+                glucoseMgDl = mgDl,
+                trend = trend.name,
+                roc = s.rocMgDlPerMin,
+                iob = s.iob,
+                basal = s.basalRate,
+                basalAuto = s.basalAutomated,
+                reservoir = s.reservoirUnits,
+                battery = s.batteryPercent,
+                batteryCharging = s.batteryCharging,
+            ),
+        )
+        _state.update {
+            it.copy(
+                glucoseMgDl = mgDl,
+                trend = trend,
+                glucoseAt = Instant.ofEpochMilli(atMs),
+                lastError = null,
+            )
+        }
+        GlympWidgetProvider.updateWidget(appContext)
+        refreshChart()
     }
 
     @Volatile
@@ -324,6 +391,10 @@ class PumpController(context: Context) {
         _state.update { it.copy(deviceCompat = CompatChecker.checkDevice(appContext)) }
         // Zaacytuj persistowane alerty urządzenia i udostępnianie odczytów (zdefiniowane poniżej).
         loadDeviceAlarms()
+        // Telefon rodziny po starcie od razu pobiera odczyty z serwera (bez BLE).
+        if (appRole == AppRole.FAMILY_COMPANION) {
+            startCompanionPolling()
+        }
         // Seed from persisted raw history so a restart does not re-download the whole pump log.
         // An empty table (first run after this update) deliberately triggers a full backfill.
         historyCursor = store.latestHistorySequence(HISTORY_SOURCE_ID)
@@ -620,6 +691,24 @@ class PumpController(context: Context) {
         }
         // Widget na ekranie głównym aktualizujemy natychmiast po nowym odczycie.
         GlympWidgetProvider.updateWidget(appContext)
+        // Synchronizacja z serwerem (tryb rodziny): wysylamy odczyt, gdy URL jest ustawiony.
+        val serverUrl = syncServerUrl
+        if (!serverUrl.isNullOrBlank()) {
+            val snapshot = _state.value
+            scope.launch {
+                TelemetryUploader.uploadTelemetry(
+                    serverUrl = serverUrl,
+                    mgDl = mgDl,
+                    trend = trend.name,
+                    timestampMs = nowMs,
+                    iob = snapshot.iob,
+                    basalRate = snapshot.basalRate,
+                    reservoirUnits = snapshot.reservoirUnits,
+                    batteryPercent = snapshot.batteryPercent,
+                    pumpModel = snapshot.pumpModel,
+                )
+            }
+        }
         refreshChart()
     }
 
@@ -921,5 +1010,6 @@ class PumpController(context: Context) {
         const val PREF_SHARE_READINGS = "share_readings"
         const val PREF_SYNC_SERVER_URL = "sync_server_url"
         const val PREF_APP_ROLE = "app_role"
+        const val COMPANION_POLL_INTERVAL_MS = 30_000L
     }
 }

@@ -151,6 +151,23 @@ class GlucoseChartView @JvmOverloads constructor(
 
     private var samples: List<Sample> = emptyList()
     private var insulinEvents: List<ChartInsulinEvent> = emptyList()
+
+    /** Prognoza glikemii za 30 min (mg/dL); null = brak prognozy. */
+    private var predicted30: Int? = null
+    private val predictionPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFBBF24.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = dp(2.6f)
+            strokeCap = Paint.Cap.ROUND
+            pathEffect = DashPathEffect(floatArrayOf(dp(6f), dp(5f)), 0f)
+        }
+    private val predictionLabelPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFBBF24.toInt()
+            textSize = sp(10f)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
     private val eventPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val eventHits = mutableListOf<Pair<RectF, List<ChartInsulinEvent>>>()
     private var markerCache: List<ChartEventGroup> = emptyList()
@@ -264,7 +281,9 @@ class GlucoseChartView @JvmOverloads constructor(
         exactMinMgDl: Int? = null,
         exactMaxMgDl: Int? = null,
         insulinEvents: List<ChartInsulinEvent> = emptyList(),
+        predicted30: Int? = null,
     ) {
+        this.predicted30 = predicted30?.takeIf { it > 0 }
         if (this.insulinEvents != insulinEvents) {
             this.insulinEvents = insulinEvents.sortedWith(compareBy({ it.timestampMs }, { it.id }))
             markerCacheKey = null
@@ -549,9 +568,9 @@ class GlucoseChartView @JvmOverloads constructor(
 
         plotRect.set(
             paddingLeft + dp(GUTTER_DP),
-            paddingTop + dp(TOP_INSET_DP + EVENT_LANES_HEIGHT_DP),
+            paddingTop + dp(TOP_INSET_DP),
             width - paddingRight - dp(RIGHT_INSET_DP),
-            height - paddingBottom - dp(BOTTOM_INSET_DP),
+            height - paddingBottom - dp(EVENT_LANES_HEIGHT_DP),
         )
         if (plotRect.width() <= 0f || plotRect.height() <= 0f) return
 
@@ -735,6 +754,26 @@ class GlucoseChartView @JvmOverloads constructor(
                 canvas.drawCircle(lastX, lastY, dp(3.8f), dotPaint)
             }
 
+            // Prognoza 30-min: wyrazna, przerywana linia przy prawej krawedzi wykresu.
+            predicted30?.let { prediction ->
+                val predY = yFor(prediction).coerceIn(plotRect.top, plotRect.bottom)
+                val startX =
+                    if (lastX < plotRect.right - dp(8f)) {
+                        lastX.coerceIn(plotRect.left, plotRect.right)
+                    } else {
+                        (plotRect.right - dp(40f)).coerceAtLeast(plotRect.left)
+                    }
+                canvas.drawLine(startX, lastY, plotRect.right, predY, predictionPaint)
+                canvas.drawCircle(plotRect.right - dp(1f), predY, dp(3.6f), predictionPaint)
+                predictionLabelPaint.textAlign = Paint.Align.RIGHT
+                canvas.drawText(
+                    "\u2192 ${formatValue(prediction)}",
+                    plotRect.right - dp(4f),
+                    (predY - dp(6f)).coerceAtLeast(plotRect.top + dp(10f)),
+                    predictionLabelPaint,
+                )
+            }
+
             canvas.restore()
         }
 
@@ -778,7 +817,8 @@ class GlucoseChartView @JvmOverloads constructor(
             0xFF818CF8.toInt(), 0xFFF59E0B.toInt()
         )
         for (lane in ChartEventLane.entries) {
-            val y = paddingTop + dp(26f + lane.ordinal * 48f)
+            // Pasy zdarzen sa pod wykresem, tuz przy osi czasu (nie nad nim).
+            val y = plotRect.bottom + dp(16f + lane.ordinal * 42f)
             captionPaint.textAlign = Paint.Align.RIGHT
             canvas.drawText(
                 context.getString(laneLabels[lane.ordinal]), plotRect.left - dp(6f),
@@ -795,7 +835,7 @@ class GlucoseChartView @JvmOverloads constructor(
         }
         for (group in markerCache) {
             val x = xFor(group.timestampMs)
-            val y = paddingTop + dp(26f + group.lane.ordinal * 48f)
+            val y = plotRect.bottom + dp(16f + group.lane.ordinal * 42f)
             eventPaint.color = colors[group.lane.ordinal]
             eventPaint.style = Paint.Style.FILL
             val r = dp(5f)

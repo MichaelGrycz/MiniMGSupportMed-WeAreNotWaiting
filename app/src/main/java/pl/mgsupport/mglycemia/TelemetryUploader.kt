@@ -5,6 +5,7 @@ import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -57,6 +58,25 @@ object TelemetryUploader {
             }
         }
     }
+
+    /** Pobiera najnowszy odczyt z serwera (tryb Rodziny/Opiekuna). Null przy błędzie. */
+    suspend fun fetchLatest(serverUrl: String): JSONObject? =
+        withContext(Dispatchers.IO) {
+            try {
+                val target = serverUrl.trim().removeSuffix("/") + "/api/latest"
+                val conn = (URL(target).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 8_000
+                    readTimeout = 8_000
+                    setRequestProperty("User-Agent", "MGlycemiaAndroid/${BuildConfig.VERSION_NAME}")
+                }
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                conn.disconnect()
+                JSONObject(body)
+            } catch (_: Exception) {
+                null
+            }
+        }
 
     /**
      * Automatycznie przesyła zredagowany raport diagnostyczny na serwer w tle

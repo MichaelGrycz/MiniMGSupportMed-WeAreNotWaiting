@@ -63,6 +63,22 @@
       />
         </LinearLayout>
 
+        <!-- Aktywny tryb aplikacji: Pompa / Rodzina -->
+        <TextView
+      android:id="@+id/roleBadge"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginEnd="6dp"
+      android:background="@drawable/bg_chip_inactive"
+      android:paddingStart="8dp"
+      android:paddingEnd="8dp"
+      android:paddingTop="4dp"
+      android:paddingBottom="4dp"
+      android:textColor="@color/accent_primary_bright"
+      android:textSize="10sp"
+      android:textStyle="bold"
+    />
+
         <!-- Live Connection Status Pill (tapping goes to Pump tab) -->
         <LinearLayout
       android:id="@+id/statusPillContainer"
@@ -2456,6 +2472,111 @@
                 />
                             </LinearLayout>
                         </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- App Mode / Family Card -->
+                <com.google.android.material.card.MaterialCardView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="12dp"
+          app:cardBackgroundColor="@color/bg_surface"
+          app:cardCornerRadius="18dp"
+          app:cardElevation="0dp"
+          app:strokeColor="@color/border_subtle"
+          app:strokeWidth="1dp"
+        >
+                    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+          >
+                        <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/role_title"
+              android:textColor="@color/text_primary"
+              android:textSize="15sp"
+              android:textStyle="bold"
+            />
+
+                        <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="2dp"
+              android:text="@string/role_desc"
+              android:textColor="@color/text_secondary"
+              android:textSize="12sp"
+            />
+
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnRolePrimary"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="10dp"
+              android:maxLines="2"
+              android:text="@string/role_primary"
+              android:textColor="@color/text_primary"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/border_highlight"
+            />
+
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnRoleCompanion"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="8dp"
+              android:maxLines="2"
+              android:text="@string/role_companion"
+              android:textColor="@color/accent_primary_bright"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/accent_primary"
+            />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+              android:id="@+id/switchShareReadings"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="12dp"
+              android:text="@string/role_sharing"
+              android:textColor="@color/text_primary"
+              android:textSize="13sp"
+            />
+
+                        <EditText
+              android:id="@+id/etSyncUrl"
+              android:layout_width="match_parent"
+              android:layout_height="42dp"
+              android:layout_marginTop="10dp"
+              android:background="@drawable/bg_input_field"
+              android:hint="@string/role_sync_url_hint"
+              android:importantForAutofill="no"
+              android:inputType="textUri"
+              android:paddingStart="12dp"
+              android:paddingEnd="12dp"
+              android:textColor="@color/text_primary"
+              android:textColorHint="@color/text_muted"
+              android:textSize="13sp"
+            />
+
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnSaveSyncUrl"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="8dp"
+              android:maxLines="2"
+              android:text="@string/role_save"
+              android:textColor="@color/text_secondary"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/border_subtle"
+            />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

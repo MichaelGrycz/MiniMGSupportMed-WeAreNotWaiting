@@ -52,7 +52,7 @@ class FullscreenChartActivity : AppCompatActivity() {
         chart.onViewportChanged = { zoom, active ->
             val reset = findViewById<TextView>(R.id.btnZoomReset)
             reset.text = if (active && zoom > 1.05f) getString(R.string.zoom_active_format, zoom)
-                else getString(R.string.btn_zoom_reset)
+            else getString(R.string.btn_zoom_reset)
             ChartUi.updateEventControls(this, chart)
         }
         for ((duration, id) in ChartUi.windows) {
@@ -108,8 +108,12 @@ class FullscreenChartActivity : AppCompatActivity() {
             button.isSelected = selected
             button.contentDescription = getString(R.string.chart_window_description, button.text)
             button.setBackgroundResource(if (selected) R.drawable.bg_chip_active else R.drawable.bg_chip_inactive)
-            button.setTextColor(ContextCompat.getColor(this,
-                if (selected) R.color.accent_primary_bright else R.color.text_secondary))
+            button.setTextColor(
+                ContextCompat.getColor(
+                    this,
+                    if (selected) R.color.accent_primary_bright else R.color.text_secondary
+                )
+            )
         }
     }
 
@@ -162,7 +166,7 @@ internal object ChartUi {
             targetHigh = state.thresholds.high, urgentLow = state.thresholds.urgentLow,
             urgentHigh = state.thresholds.urgentHigh, unit = state.unit,
             exactMinMgDl = state.minGlucoseMgDl, exactMaxMgDl = state.maxGlucoseMgDl,
-            insulinEvents = state.insulinEvents,
+            insulinEvents = state.insulinEvents, predicted30 = state.predicted30,
         )
     }
 
@@ -209,10 +213,14 @@ internal object ChartUi {
             maximumFractionDigits = 340
             isGroupingUsed = false
         }
-        fun detail(event: ChartInsulinEvent): String = activity.getString(R.string.chart_event_detail,
+
+        fun detail(event: ChartInsulinEvent): String = activity.getString(
+            R.string.chart_event_detail,
             time.format(Date(event.timestampMs)), activity.getString(kindLabel(event.kind)),
             if (event.units.isFinite() && event.units >= 0) amount.format(event.units)
-            else activity.getString(R.string.chart_amount_unknown))
+            else activity.getString(R.string.chart_amount_unknown)
+        )
+
         val adapter = object : BaseAdapter() {
             override fun getCount() = snapshot.size
             override fun getItem(position: Int) = snapshot[position]

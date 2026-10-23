@@ -303,4 +303,17 @@
     <string
     name="widget_description"
   >Live-Blutglukosewerte der MiniMed-Pumpe: aktueller Glukosewert, Trend und Zeit des letzten Messwerts.</string>
+    <!-- App Mode / Family -->
+    <string name="role_title">App-Modus</string>
+    <string
+    name="role_desc"
+  >Wähle, ob dieses Telefon sich mit der Pumpe verbindet oder nur Messwerte vom Familientelefon empfängt.</string>
+    <string name="role_primary">Haupttelefon (mit Pumpe verbunden)</string>
+    <string name="role_companion">Familientelefon (empfängt Messwerte)</string>
+    <string name="role_sharing">Messwerte mit anderen Apps teilen (xDrip+)</string>
+    <string name="role_sync_url_hint">Adresse des Sync-Servers (optional)</string>
+    <string name="role_save">Speichern</string>
+    <string name="role_badge_primary">Pumpe</string>
+    <string name="role_badge_companion">Familie</string>
+    <string name="role_saved">App-Modus gespeichert</string>
 </resources>

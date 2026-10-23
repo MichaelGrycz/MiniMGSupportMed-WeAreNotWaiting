@@ -37,6 +37,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.ImageViewCompat
+import com.google.android.material.materialswitch.MaterialSwitch
 import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
 import pl.mgsupport.mglycemia.core.domain.model.ConnectionState
 import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
@@ -205,6 +206,12 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var btnToggleLogs: Button
     private lateinit var logsContainer: View
     private lateinit var logText: TextView
+    private lateinit var roleBadge: TextView
+    private lateinit var btnRolePrimary: Button
+    private lateinit var btnRoleCompanion: Button
+    private lateinit var switchShareReadings: MaterialSwitch
+    private lateinit var etSyncUrl: EditText
+    private lateinit var btnSaveSyncUrl: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -371,6 +378,12 @@ class PumpDashboardActivity : AppCompatActivity() {
         etUrgentHigh = findViewById(R.id.etUrgentHigh)
         etReservoirThreshold = findViewById(R.id.etReservoirThreshold)
         etSensorMaxHours = findViewById(R.id.etSensorMaxHours)
+        roleBadge = findViewById(R.id.roleBadge)
+        btnRolePrimary = findViewById(R.id.btnRolePrimary)
+        btnRoleCompanion = findViewById(R.id.btnRoleCompanion)
+        switchShareReadings = findViewById(R.id.switchShareReadings)
+        etSyncUrl = findViewById(R.id.etSyncUrl)
+        btnSaveSyncUrl = findViewById(R.id.btnSaveSyncUrl)
         dbStatsText = findViewById(R.id.dbStatsText)
         btnToggleLogs = findViewById(R.id.btnToggleLogs)
         logsContainer = findViewById(R.id.logsContainer)
@@ -660,6 +673,26 @@ class PumpDashboardActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnCheckUpdates).setOnClickListener { checkForUpdates(manual = true) }
         maybeAutoCheckForUpdates()
         findViewById<Button>(R.id.btnSaveThresholds).setOnClickListener { saveThresholds() }
+
+        // Tryb aplikacji i udostępnianie odczytów.
+        btnRolePrimary.setOnClickListener {
+            controller.setAppRole(PumpController.AppRole.PRIMARY_PUMP)
+            updateRoleUi()
+        }
+        btnRoleCompanion.setOnClickListener {
+            controller.setAppRole(PumpController.AppRole.FAMILY_COMPANION)
+            updateRoleUi()
+        }
+        switchShareReadings.isChecked = controller.isShareReadingsEnabled()
+        switchShareReadings.setOnCheckedChangeListener { _, checked ->
+            controller.setShareReadings(checked)
+        }
+        etSyncUrl.setText(controller.getSyncServerUrl() ?: "")
+        btnSaveSyncUrl.setOnClickListener {
+            controller.setSyncServerUrl(etSyncUrl.text.toString())
+            Toast.makeText(this, getString(R.string.role_saved), Toast.LENGTH_SHORT).show()
+        }
+        updateRoleUi()
         findViewById<Button>(R.id.btnExport).setOnClickListener { exportCsv() }
         findViewById<Button>(R.id.btnExportBackup).setOnClickListener { exportBackupCsv() }
         findViewById<Button>(R.id.btnImportBackup).setOnClickListener { importBackupCsv() }
@@ -852,6 +885,15 @@ class PumpDashboardActivity : AppCompatActivity() {
         if (sensorVal != null) controller.setSensorMaxAgeHours(sensorVal)
 
         Toast.makeText(this, getString(R.string.thresholds_saved), Toast.LENGTH_SHORT).show()
+    }
+
+    /** Odswieza plakietke trybu na pulpicie i wyrownanie przyciskow w Ustawieniach. */
+    private fun updateRoleUi() {
+        val companion = controller.getAppRole() == PumpController.AppRole.FAMILY_COMPANION
+        roleBadge.text = getString(if (companion) R.string.role_badge_companion else R.string.role_badge_primary)
+        roleBadge.visibility = View.VISIBLE
+        btnRolePrimary.alpha = if (companion) 0.55f else 1f
+        btnRoleCompanion.alpha = if (companion) 1f else 0.55f
     }
 
     private fun exportCsv() {

@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
-import java.time.Instant
 
 /**
  * Odbiornik w telefonie rodziny / opiekuna (Tryb Family Companion).
@@ -26,29 +25,14 @@ class FamilyCompanionReceiver : BroadcastReceiver() {
         val atMs = intent.getLongArrayExtra(ReadingBroadcast.EXTRA_AT_MILLIS)?.firstOrNull()
             ?: intent.getLongExtra(ReadingBroadcast.EXTRA_AT_MILLIS, System.currentTimeMillis())
 
-        val store = ReadingStore(app)
-        val trend = try {
-            CgmTrend.valueOf(trendName ?: "FLAT")
-        } catch (_: Exception) {
-            CgmTrend.FLAT
-        }
+        val trend =
+            try {
+                CgmTrend.valueOf(trendName ?: "FLAT")
+            } catch (_: Exception) {
+                CgmTrend.FLAT
+            }
 
-        store.insertReading(
-            ReadingRow(
-                tsMs = atMs,
-                glucoseMgDl = mgDl,
-                trend = trend.name,
-                roc = 0.0,
-                iob = null,
-                basal = null,
-                basalAuto = null,
-                reservoir = null,
-                battery = null,
-                batteryCharging = false,
-            )
-        )
-
-        // Odśwież widżet na telefonie opiekuna
-        GlympWidgetProvider.updateWidget(app)
+        // Odczyt trafia do bazy, stanu pulpitu i widzetu (ta sama sciezka co tryb opiekuna).
+        app.controller.acceptRemoteReading(mgDl, trend, atMs)
     }
 }
