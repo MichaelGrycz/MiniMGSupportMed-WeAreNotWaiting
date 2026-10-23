@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta35
+
+- Parowanie BLE: Przywrócono zachowanie referencyjnej implementacji JavaPumpConnector — odczyt deskryptora CCCD (`2902`) zwraca prawdziwy stan subskrypcji (`0x0000`), a nie sztuczne `0x0100`. Wymusza to na pompie zapis CCCD i zarejestrowanie subskrypcji w stosie Androida, bez czego notyfikacje SAKE nie są w ogóle wysyłane w eter.
+- Parowanie BLE: Dodano diagnostykę `pump read CCCD but did not subscribe within 2s`, która jednoznacznie rozstrzyga, czy pompa w ogóle próbuje się zasubskrybować.
+- Instalator i launcher pokazują teraz numer wersji w nazwie aplikacji (np. `MGlikemia 1.0-beta35`), żeby łatwo odróżnić buildy.
+
 ## 1.0-beta34
 
 - Naprawa wydania: poprzedni plik beta33 został omyłkowo zbudowany przed podbiciem numeru wersji, więc zawierał beta32. Ta wersja jest zbudowana poprawnie (versionCode 35) i zawiera opóźnienie startu SAKE o 150 ms po odczycie CCCD.

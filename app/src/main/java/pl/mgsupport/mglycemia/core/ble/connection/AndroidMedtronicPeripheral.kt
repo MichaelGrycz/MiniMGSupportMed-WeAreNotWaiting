@@ -537,12 +537,12 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             // this read (seen on Galaxy S24 and Redmi Note 13 Pro: read 2902, then link down).
             val isSakeCccd = descriptor.uuid == MedtronicProtocol.CCCD_UUID &&
                 descriptor.characteristic?.uuid == MedtronicProtocol.SAKE_CHARACTERISTIC_UUID
+            // Report the real subscription state, exactly like JavaPumpConnector. A fake 0x0100 makes
+            // the pump believe it is already subscribed, so it never writes the CCCD -- and Android
+            // then refuses to transmit our notifications (no subscription registered), which is the
+            // deadlock seen on Galaxy S24 and Redmi: pump reads 2902, waits, then drops the link.
             val reply = if (isSakeCccd) {
-                if (sakeCccdValue.contentEquals(byteArrayOf(0x00, 0x00))) {
-                    byteArrayOf(0x01, 0x00)
-                } else {
-                    sakeCccdValue
-                }
+                sakeCccdValue.copyOf(2)
             } else {
                 descriptor.value ?: byteArrayOf(0x00, 0x00)
             }
@@ -556,13 +556,17 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             respondWithStoredBlob(device, requestId, offset, reply)
 
             if (isSakeCccd && reply.size >= 2 && (reply[0].toInt() and 0x01) != 0) {
-                if (sakeCccdValue.contentEquals(byteArrayOf(0x00, 0x00))) {
-                    sakeCccdValue = reply.copyOf(2)
-                    diag("CCCD read confirmed subscription (0x0100); scheduling SAKE start in 150ms")
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        listener?.onSakeSubscribed()
-                    }, 150L)
-                }
+                // Reachable only after the pump really wrote the CCCD; the driver ignores duplicates.
+                listener?.onSakeSubscribed()
+            } else if (isSakeCccd) {
+                // If the pump reads 0x0000 it must write 0x0100 to subscribe. Log it when it doesn't,
+                // so the next report distinguishes "pump never subscribed" from "stack dropped our
+                // notification".
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (peer != null && sakeCccdValue.contentEquals(byteArrayOf(0x00, 0x00))) {
+                        diag("pump read CCCD but did not subscribe within 2s")
+                    }
+                }, 2_000L)
             }
         }
 
