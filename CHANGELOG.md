@@ -3,6 +3,11 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta37
+
+- Parowanie BLE: Wydłużono watchdog SAKE z 15 do 30 sekund. Na realnym sprzęcie pompa czyta CCCD dopiero po ~12 s i subskrybuje po ~19 s od połączenia, więc poprzedni limit mógł ubić poprawną sesję na wolniejszych telefonach.
+- Potwierdzone działanie: pełny handshake SAKE, odczyt modelu `MMT-1886` i numeru seryjnego oraz synchronizacja historii na Realme 14 Pro+.
+
 ## 1.0-beta36
 
 - Parowanie BLE: Gdy pompa zapisze CCCD (`2902`) dopiero po naszej pierwszej ramce SAKE, aplikacja wysyła ją ponownie. Wcześniej spóźniona subskrypcja była ignorowana i kończyło się to błędem `HANDSHAKE_TIMEOUT` (widoczne na Realme 14 Pro+).

@@ -228,6 +228,7 @@ class MedtronicBleConnectionManager(
                 diagnosticSink?.invoke("pairing failed reason=$reason")
             }
         }
+
         override fun onSakeSubscribed() = worker.post { startAuthentication() }
         override fun onSakeUnsubscribed() = driver.onUnsubscribed()
         override fun onSakeWrite(value: ByteArray) {
@@ -235,6 +236,7 @@ class MedtronicBleConnectionManager(
             worker.post { pokeSakeWatchdog() }
             driver.onPumpWrite(value)
         }
+
         override fun onPumpDisconnected(status: Int) = worker.post { onCentralDisconnected(status) }
         override fun onDiagnostic(line: String) {
             diagnosticSink?.invoke(line)
@@ -420,6 +422,7 @@ class MedtronicBleConnectionManager(
             ConnectionState.SCANNING,
             ConnectionState.CONNECTING,
             ConnectionState.RECONNECTING -> _connectionState.value = ConnectionState.CONNECTING
+
             else -> Unit
         }
         onDiscovered?.invoke(
@@ -773,8 +776,12 @@ class MedtronicBleConnectionManager(
         /** First-pair window before suspecting the pump is bound to another phone (Sec. 7). */
         private const val DEFAULT_PAIRING_WAIT_MS = 60_000L
 
-        /** No ATT/SAKE progress this long after link-up means the pump is stuck: reset the server. */
-        private const val DEFAULT_SAKE_WATCHDOG_TIMEOUT_MS = 15_000L
+        /**
+         * No ATT/SAKE progress this long after link-up means the pump is stuck: reset the server.
+         * Real hardware can be slow: on a Realme 14 Pro+ the pump read the CCCD after ~12 s and
+         * only subscribed ~19 s after link-up, so 15 s was too tight for a valid session.
+         */
+        private const val DEFAULT_SAKE_WATCHDOG_TIMEOUT_MS = 30_000L
 
         /** Backoff between re-advertises after a drop: 1s, 2s, 5s, 10s, 30s, then economy mode. */
         private val RECONNECT_BACKOFF_MS = longArrayOf(1_000L, 2_000L, 5_000L, 10_000L, 30_000L)
