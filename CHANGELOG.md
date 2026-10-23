@@ -3,6 +3,15 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta41
+
+- Diagnostyka: log zaczyna się od wersji aplikacji, np. `app version=1.0-beta41 (42)`.
+- Diagnostyka: każdy wpis BLE ma teraz godzinę z dokładnością do milisekund, np. `11:53:12.345 t=+2034ms ...`.
+- Diagnostyka: nowa linia `clock local=... zone=...` z czytelną datą i godziną telefonu.
+- Diagnostyka: nowa linia `phone` ze stanem ekranu, blokady, baterii, trybu dzwonka, DND, standby bucket i uptime.
+- Diagnostyka: tablica GATT jest logowana raz na proces, żeby nie wypychać zdarzeń z bufora.
+- Parowanie BLE: deskryptor CCCD wymaga szyfrowanego połączenia (zmiana z beta40). W logu widać to jako `gatt desc ... perms=0x22`.
+
 ## 1.0-beta40
 
 - Parowanie BLE: Deskryptor CCCD wymaga teraz szyfrowanego połączenia. Na telefonie bez bondu (Galaxy S24) pompa czytała deskryptor, czekała 7 sekund i odchodziła bez zapisu. Wymóg szyfrowania zmusza ją do rozpoczęcia parowania SMP.

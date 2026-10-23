@@ -2,17 +2,23 @@ package pl.mgsupport.mglycemia.core.ble.connection
 
 import android.Manifest
 import android.app.ActivityManager
+import android.app.KeyguardManager
+import android.app.NotificationManager
+import android.app.usage.UsageStatsManager
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import java.util.Locale
 import java.util.TimeZone
+import pl.mgsupport.mglycemia.BuildConfig
 
 /**
  * Snapshot of the phone + Bluetooth environment, emitted into the technical log when a session starts.
@@ -41,6 +47,7 @@ object DeviceDiagnostics {
 
     private fun buildStatic(): List<String> =
         listOf(
+            "app version=${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
             "device manufacturer=${Build.MANUFACTURER} brand=${Build.BRAND} model=${Build.MODEL} " +
                 "device=${Build.DEVICE} product=${Build.PRODUCT} board=${Build.BOARD} " +
                 "hardware=${Build.HARDWARE}",
@@ -59,11 +66,12 @@ object DeviceDiagnostics {
 
     /** Bluetooth adapter, permission, Doze, memory and clock facts: re-read on every session. */
     fun liveFacts(context: Context): List<String> {
-        val lines = ArrayList<String>(6)
+        val lines = ArrayList<String>(8)
         lines += bluetoothLine(context)
         lines += profileLine(context)
         lines += permissionsLine(context)
         lines += powerLine(context)
+        lines += phoneLine(context)
         lines += memoryLine(context)
         lines += clockLine()
         return lines
@@ -146,6 +154,71 @@ object DeviceDiagnostics {
             "powerSave=${pm.isPowerSaveMode}"
     }
 
+    /**
+     * Screen, lock, battery, ringer and standby state. Those decide whether a background BLE
+     * session and an alert are actually delivered, so they belong in every report.
+     */
+    private fun phoneLine(context: Context): String {
+        val fields = StringBuilder("phone")
+        val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (pm != null) {
+            fields.append(" screen=").append(if (pm.isInteractive) "on" else "off")
+        }
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        if (km != null) {
+            fields.append(" keyguard=").append(if (km.isKeyguardLocked) "locked" else "unlocked")
+        }
+        val battery = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        if (battery != null) {
+            val percent = battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            if (percent in 0..100) fields.append(" battery=").append(percent).append('%')
+            fields.append(" charging=").append(battery.isCharging)
+        }
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audio != null) {
+            fields.append(" ringer=").append(ringerLabel(audio.ringerMode))
+        }
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        if (nm != null) {
+            fields.append(" dnd=").append(dndLabel(nm.currentInterruptionFilter))
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+            if (usm != null) {
+                fields.append(" standby=").append(standbyLabel(usm.appStandbyBucket))
+            }
+        }
+        fields.append(" uptimeMin=").append(SystemClock.elapsedRealtime() / 60_000L)
+        return fields.toString()
+    }
+
+    private fun ringerLabel(mode: Int): String =
+        when (mode) {
+            AudioManager.RINGER_MODE_SILENT -> "silent"
+            AudioManager.RINGER_MODE_VIBRATE -> "vibrate"
+            AudioManager.RINGER_MODE_NORMAL -> "normal"
+            else -> "unknown($mode)"
+        }
+
+    private fun dndLabel(filter: Int): String =
+        when (filter) {
+            NotificationManager.INTERRUPTION_FILTER_ALL -> "off"
+            NotificationManager.INTERRUPTION_FILTER_PRIORITY -> "priority"
+            NotificationManager.INTERRUPTION_FILTER_NONE -> "none"
+            NotificationManager.INTERRUPTION_FILTER_ALARMS -> "alarms"
+            else -> "unknown($filter)"
+        }
+
+    private fun standbyLabel(bucket: Int): String =
+        when (bucket) {
+            UsageStatsManager.STANDBY_BUCKET_ACTIVE -> "active"
+            UsageStatsManager.STANDBY_BUCKET_WORKING_SET -> "working"
+            UsageStatsManager.STANDBY_BUCKET_FREQUENT -> "frequent"
+            UsageStatsManager.STANDBY_BUCKET_RARE -> "rare"
+            UsageStatsManager.STANDBY_BUCKET_RESTRICTED -> "restricted"
+            else -> bucket.toString()
+        }
+
     private fun memoryLine(context: Context): String {
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
             ?: return "memory=unavailable"
@@ -157,15 +230,23 @@ object DeviceDiagnostics {
     }
 
     /**
-     * Wall clock vs monotonic clock. History timestamps are anchored on pump time, so a wildly
-     * different wall clock (manual change, timezone jump) explains "stale data" reports that are
-     * actually a clock mismatch.
+     * Wall clock vs monotonic clock in a readable form. History timestamps are anchored on pump
+     * time, so a wrong wall clock explains "stale data" reports that are actually a clock mismatch.
      */
     private fun clockLine(): String {
         val wall = System.currentTimeMillis()
         val monotonic = SystemClock.elapsedRealtime()
         val zone = TimeZone.getDefault()
-        return "clock wallMs=$wall elapsedMs=$monotonic offsetMin=${zone.getOffset(wall) / 60_000}"
+        val local =
+            try {
+                java.time.Instant.ofEpochMilli(wall)
+                    .atZone(zone.toZoneId())
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
+            } catch (e: RuntimeException) {
+                "?"
+            }
+        return "clock local=$local zone=${zone.id} wallMs=$wall elapsedMs=$monotonic " +
+            "offsetMin=${zone.getOffset(wall) / 60_000}"
     }
 
     private fun socLabel(): String =

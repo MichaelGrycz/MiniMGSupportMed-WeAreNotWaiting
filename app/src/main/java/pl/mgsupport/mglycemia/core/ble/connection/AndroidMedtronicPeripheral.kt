@@ -108,6 +108,12 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     @Volatile
     private var linkUpElapsedRealtime = 0L
 
+    /** The GATT table cannot change while the process lives, so it is dumped once. */
+    @Volatile
+    private var gattMapLogged = false
+
+    private val diagTimeFormat = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+
     override fun isSupported(): Boolean {
         val ad = adapter ?: return false
         return ad.isEnabled && ad.isMultipleAdvertisementSupported && ad.bluetoothLeAdvertiser != null
@@ -359,6 +365,8 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
      * be compared against the reference implementation (JavaPumpConnector).
      */
     private fun logGattMap() {
+        if (gattMapLogged) return
+        gattMapLogged = true
         val server = gattServer ?: return
         for (service in server.services) {
             diag("gatt service ${service.uuid} type=${service.type}")
@@ -759,10 +767,16 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
      */
     private fun diag(line: String) {
         val since = linkUpElapsedRealtime
-        val prefix =
+        val rel =
             if (since == 0L) ""
             else "t=+${SystemClock.elapsedRealtime() - since}ms "
-        listener?.onDiagnostic(prefix + line)
+        val local =
+            try {
+                java.time.LocalTime.now().format(diagTimeFormat)
+            } catch (e: RuntimeException) {
+                ""
+            }
+        listener?.onDiagnostic("$local $rel$line")
     }
 
     private fun gattStatusLabel(status: Int): String =
