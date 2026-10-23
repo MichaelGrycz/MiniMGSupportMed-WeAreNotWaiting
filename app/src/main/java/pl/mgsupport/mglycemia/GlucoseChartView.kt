@@ -154,6 +154,9 @@ class GlucoseChartView @JvmOverloads constructor(
 
     /** Prognoza glikemii za 30 min (mg/dL); null = brak prognozy. */
     private var predicted30: Int? = null
+
+    /** Szerokość strefy przyszłości w pikselach; zależy od wybranego okna czasu. */
+    private var futureGutterPx = 0f
     private val predictionPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFFFBBF24.toInt()
@@ -601,14 +604,26 @@ class GlucoseChartView @JvmOverloads constructor(
             width - paddingRight - dp(RIGHT_INSET_DP),
             height - paddingBottom - dp(EVENT_LANES_HEIGHT_DP),
         )
-        // Prognoza dostaje wydzieloną strefę po prawej, żeby nie nachodziła na linię cukru.
-        if (predicted30 != null) {
-            plotRect.right =
-                (plotRect.right - dp(FUTURE_GUTTER_DP)).coerceAtLeast(plotRect.left + dp(24f))
-        }
         if (plotRect.width() <= 0f || plotRect.height() <= 0f) return
 
         val visDuration = visibleDurationMs()
+        // Strefa prognozy skaluje się z oknem: 30 min jako frakcja widocznego zakresu,
+        // z czytelnym minimum i maksimum (nie zawsze ta sama szerokość).
+        futureGutterPx =
+            if (predicted30 != null) {
+                val fraction =
+                    PREDICTION_HORIZON_MS.toFloat() / visDuration.coerceAtLeast(1L).toFloat()
+                (plotRect.width() * fraction).coerceIn(
+                    dp(FUTURE_GUTTER_MIN_DP),
+                    dp(FUTURE_GUTTER_MAX_DP),
+                )
+            } else {
+                0f
+            }
+        if (futureGutterPx > 0f) {
+            plotRect.right =
+                (plotRect.right - futureGutterPx).coerceAtLeast(plotRect.left + dp(24f))
+        }
         val timeEnd = latestTimestamp() - panOffsetMs
         val timeStart = timeEnd - visDuration
         val timeSpan = max(1L, timeEnd - timeStart)
@@ -840,7 +855,7 @@ class GlucoseChartView @JvmOverloads constructor(
         yFor: (Int) -> Float,
     ) {
         val dividerX = plotRect.right
-        val right = (dividerX + dp(FUTURE_GUTTER_DP)).coerceAtMost(cardRect.right - dp(2f))
+        val right = (dividerX + futureGutterPx).coerceAtMost(cardRect.right - dp(2f))
         if (right - dividerX <= 0f) return
 
         // Delikatna granica teraźniejszość | przyszłość.
@@ -1117,7 +1132,9 @@ class GlucoseChartView @JvmOverloads constructor(
         const val DEFAULT_HEIGHT_DP = 440f
         const val EVENT_LANES_HEIGHT_DP = 192f
         const val GUTTER_DP = 48f
-        const val FUTURE_GUTTER_DP = 58f
+        const val PREDICTION_HORIZON_MS = 30L * 60L * 1000L
+        const val FUTURE_GUTTER_MIN_DP = 46f
+        const val FUTURE_GUTTER_MAX_DP = 96f
         const val TOP_INSET_DP = 24f
         const val RIGHT_INSET_DP = 14f
         const val BOTTOM_INSET_DP = 22f

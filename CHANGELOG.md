@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta54
+
+- Wykres: strefa prognozy skaluje się z wybranym oknem — przy 1h jest szeroka, przy 6h/12h/24h zwęża się do czytelnego minimum, zamiast zawsze zajmować tyle samo miejsca.
+- Prognoza: zamiast różnicy dwóch ostatnich punktów liczy regresję liniową z ostatnich 20 minut, ogranicza tempo zmian do ±3 mg/dL/min i tłumi prognozę, gdy dane są nieświeże.
+- Prognoza: dodane testy jednostkowe (wzrost, spadek, trend płaski, zbyt mało danych, nieświeże dane, ograniczenie tempa).
+
 ## 1.0-beta53
 
 - Tryb rodziny: krótki kod parowania (6 cyfr) zamiast ręcznego adresu — oba telefony wpisują ten sam kod, a serwer trzyma dane każdej rodziny osobno.

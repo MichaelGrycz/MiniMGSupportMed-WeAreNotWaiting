@@ -11,6 +11,7 @@ import pl.mgsupport.mglycemia.core.ble.connection.MedtronicBleConnectionManager
 import pl.mgsupport.mglycemia.core.ble.connection.MedtronicConnectionFault
 import pl.mgsupport.mglycemia.core.ble.read.MedtronicReadGateway
 import pl.mgsupport.mglycemia.core.ble.read.SensorNotReadyException
+import pl.mgsupport.mglycemia.core.domain.analytics.GlucoseForecast
 import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
 import pl.mgsupport.mglycemia.core.domain.model.ConnectionState
 import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
@@ -823,13 +824,9 @@ class PumpController(context: Context) {
                 windowPoints.last().second - prevPoint.second
             } else null
 
-        val currentG = s.glucoseMgDl ?: windowPoints.lastOrNull()?.second
-        // Ekstrapolacja na 30 min z ograniczoną prędkością zmian, żeby jeden artefakt odczytu
-        // nie dawał absurdalnej prognozy.
-        val predicted =
-            roc?.let { g ->
-                currentG?.let { (it + (g.coerceIn(-3.0, 3.0) * 30).toInt()).coerceIn(40, 400) }
-            }
+        // Prognoza z ostatnich 20 minut surowych odczytów (nie z downsamplowanego wykresu).
+        val recentForForecast = store.queryGlucose(nowMs - 20 * 60_000L, nowMs)
+        val predicted = GlucoseForecast.predict30(recentForForecast, nowMs)
 
         _state.update {
             it.copy(
