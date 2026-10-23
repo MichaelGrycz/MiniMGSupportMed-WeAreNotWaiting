@@ -13,6 +13,9 @@ zmieniać bazy ani wysyłać do pompy poleceń terapeutycznych.
 - repozytorium: https://github.com/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting
 - strona: https://mgsupport.pl/aplikacja/MGlikemia (stary adres /pobierz/minimgsupportmed przekierowuje 301)
 
+Praktyczny przewodnik po warsztacie (build, lint, emulator, CI, wydanie, układ wykresu):
+[`docs/WORKSPACE.md`](docs/WORKSPACE.md).
+
 ## Zasady nadrzędne
 
 1. **Najpierw przeczytaj kod i logi, potem zmieniaj.** Nie zgaduj przyczyny.
