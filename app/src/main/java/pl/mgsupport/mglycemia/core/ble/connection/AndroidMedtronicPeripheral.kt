@@ -459,6 +459,8 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 descriptor.value ?: byteArrayOf(0x00, 0x00)
             }
             @Suppress("DEPRECATION")
+            descriptor.value = reply
+            @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, reply)
         }
 

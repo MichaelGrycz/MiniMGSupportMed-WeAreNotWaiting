@@ -3,6 +3,11 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta25
+
+- Parowanie BLE: naprawiono synchronizację bufora deskryptora CCCD (`2902`) w serwerze GATT
+  dla rygorystycznych stosów Bluetooth w telefonach Samsung (Galaxy S24) i Xiaomi.
+
 ## 1.0-beta24
 
 - Parowanie BLE: poprawiono stabilność inicjalizacji subskrypcji SAKE (`2902`) dla
