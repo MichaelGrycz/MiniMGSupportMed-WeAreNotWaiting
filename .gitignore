@@ -90,7 +90,7 @@ lint/tmp/
 # lint/reports/
 # MacOS
 .DS_Store
-# App Specific cases 
+# App Specific cases
 app/release/output.json
 .idea/codeStyles/
 view raw
@@ -108,3 +108,14 @@ android.gitignore hosted with ❤ by GitHub
 
 # Local emulator screenshots and demo seed
 .screens/
+
+# Secrets and signing credentials
+*.env
+.env*
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.properties
+keystore.properties
+signing.properties
