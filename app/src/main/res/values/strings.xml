@@ -15,7 +15,7 @@
     <string name="conn_connecting">Connecting…</string>
     <string name="conn_authenticating">Authenticating…</string>
     <string name="conn_reconnecting">Reconnecting…</string>
-    <string name="conn_auth_failed">Pairing rejected</string>
+    <string name="conn_auth_failed">Not connected</string>
     <string name="conn_disconnected">Disconnected</string>
 
     <!-- Onboarding Banner on Dashboard -->
@@ -255,7 +255,7 @@
     <string name="log_pump">Pump: %1$s SN=%2$s</string>
     <string name="log_history_cursor">History: start cursor = %1$s</string>
     <string name="log_history_sync">History: +%1$d events (up to seq %2$s)</string>
-    <string name="log_auth_failed">Attestation/pairing rejected by the pump</string>
+    <string name="log_auth_failed">Could not finish authenticating with the pump</string>
     <string name="log_fault">Fault: %1$s</string>
     <string
     name="fault_peripheral_unsupported"

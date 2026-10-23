@@ -15,7 +15,7 @@
     <string name="conn_connecting">Verbinde…</string>
     <string name="conn_authenticating">Authentifizierung…</string>
     <string name="conn_reconnecting">Verbinde neu…</string>
-    <string name="conn_auth_failed">Kopplung abgelehnt</string>
+    <string name="conn_auth_failed">Nicht verbunden</string>
     <string name="conn_disconnected">Getrennt</string>
 
     <!-- Onboarding Banner -->
@@ -244,7 +244,7 @@
     <string name="log_pump">Pumpe: %1$s SN=%2$s</string>
     <string name="log_history_cursor">Verlauf Cursor = %1$s</string>
     <string name="log_history_sync">Verlauf sync +%1$d</string>
-    <string name="log_auth_failed">Authentifizierung abgelehnt</string>
+    <string name="log_auth_failed">Authentifizierung mit der Pumpe nicht abgeschlossen</string>
     <string name="log_fault">Fehler: %1$s</string>
     <string
     name="fault_peripheral_unsupported"

@@ -15,7 +15,7 @@
     <string name="conn_connecting">正在连接…</string>
     <string name="conn_authenticating">正在验证…</string>
     <string name="conn_reconnecting">正在重新连接…</string>
-    <string name="conn_auth_failed">配对被拒绝</string>
+    <string name="conn_auth_failed">未连接</string>
     <string name="conn_disconnected">已断开连接</string>
 
     <!-- Onboarding Banner -->
@@ -235,7 +235,7 @@
     <string name="log_pump">泵: %1$s SN=%2$s</string>
     <string name="log_history_cursor">历史游标 = %1$s</string>
     <string name="log_history_sync">历史同步 +%1$d</string>
-    <string name="log_auth_failed">配对验证被泵拒绝</string>
+    <string name="log_auth_failed">未能完成与泵的认证</string>
     <string name="log_fault">错误: %1$s</string>
     <string name="fault_peripheral_unsupported">此手机无法作为蓝牙 LE 外设广播，因此无法与泵配对。</string>
     <string name="fault_advertise_failed">无法启动蓝牙广播。请关闭再打开蓝牙后重试。</string>

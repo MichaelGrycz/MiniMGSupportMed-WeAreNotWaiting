@@ -3,6 +3,11 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta36
+
+- Parowanie BLE: Gdy pompa zapisze CCCD (`2902`) dopiero po naszej pierwszej ramce SAKE, aplikacja wysyła ją ponownie. Wcześniej spóźniona subskrypcja była ignorowana i kończyło się to błędem `HANDSHAKE_TIMEOUT` (widoczne na Realme 14 Pro+).
+- Komunikaty: Stan `AUTH_FAILED` nie jest już opisany jako „Parowanie odrzucone”. Przyczyna bywa po naszej stronie (timeout), więc etykieta brzmi teraz „Nie połączono”, a wpis w logu „Nie udało się dokończyć autoryzacji z pompą”.
+
 ## 1.0-beta35
 
 - Parowanie BLE: Przywrócono zachowanie referencyjnej implementacji JavaPumpConnector — odczyt deskryptora CCCD (`2902`) zwraca prawdziwy stan subskrypcji (`0x0000`), a nie sztuczne `0x0100`. Wymusza to na pompie zapis CCCD i zarejestrowanie subskrypcji w stosie Androida, bez czego notyfikacje SAKE nie są w ogóle wysyłane w eter.

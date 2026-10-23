@@ -71,8 +71,12 @@ class SakeHandshakeDriver(
      * mid-handshake the session is rebuilt so the new wake-up starts cleanly.
      */
     fun onSubscribed() = worker.post {
-        if (pumpSubscribed) return@post
-        if (!complete && session.stage != 0) {
+        if (complete) return@post
+        if (pumpSubscribed && session.stage == 0) {
+            // A CCCD write that arrives after our first wake-up means the pump subscribed too late:
+            // the earlier notification was dropped by the stack. Send a fresh wake-up frame.
+            Timber.d("SAKE wake-up re-sent after late subscription")
+        } else if (!complete && session.stage != 0) {
             Timber.w("Pump resubscribed mid-handshake; restarting SAKE state")
             session = sessionFactory()
         }
@@ -96,7 +100,12 @@ class SakeHandshakeDriver(
             try {
                 val stage = session.stage
                 val response = session.onPumpWrite(copy)
-                Timber.d("SAKE handshake: RX[stage=%d] %s -> TX %s", stage, copy.toHex(), response?.toHex() ?: "null (complete)")
+                Timber.d(
+                    "SAKE handshake: RX[stage=%d] %s -> TX %s",
+                    stage,
+                    copy.toHex(),
+                    response?.toHex() ?: "null (complete)"
+                )
                 if (response != null) {
                     notify(response)
                 } else {

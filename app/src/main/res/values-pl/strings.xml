@@ -15,7 +15,7 @@
     <string name="conn_connecting">Łączenie z pompą…</string>
     <string name="conn_authenticating">Autoryzacja…</string>
     <string name="conn_reconnecting">Ponawianie połączenia…</string>
-    <string name="conn_auth_failed">Parowanie odrzucone</string>
+    <string name="conn_auth_failed">Nie połączono</string>
     <string name="conn_disconnected">Rozłączono</string>
 
     <!-- Banner startowy na pulpicie -->
@@ -261,7 +261,7 @@
     <string name="log_pump">Pompa: %1$s SN=%2$s</string>
     <string name="log_history_cursor">Historia: kursor startowy = %1$s</string>
     <string name="log_history_sync">Historia: +%1$d zdarzeń (do seq %2$s)</string>
-    <string name="log_auth_failed">Atestacja/parowanie odrzucone przez pompę</string>
+    <string name="log_auth_failed">Nie udało się dokończyć autoryzacji z pompą</string>
     <string name="log_fault">Błąd BLE: %1$s</string>
     <string
     name="fault_peripheral_unsupported"
