@@ -55,6 +55,11 @@ class FullscreenChartActivity : AppCompatActivity() {
             else getString(R.string.btn_zoom_reset)
             ChartUi.updateEventControls(this, chart)
         }
+        chart.onVisibleRangeSettled = { _, _, atNewestEdge ->
+            if (atNewestEdge) controller.releaseChartPinningIfAtNow()
+        }
+        chart.onOlderDataNeeded = { oldest -> controller.loadOlderChartData(oldest) }
+        chart.onNewerDataNeeded = { newest -> controller.loadNewerChartData(newest) }
         for ((duration, id) in ChartUi.windows) {
             findViewById<View>(id).setOnClickListener { controller.setWindow(duration) }
         }

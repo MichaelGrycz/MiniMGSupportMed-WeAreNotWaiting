@@ -1,13 +1,19 @@
 package pl.mgsupport.mglycemia.core.domain.analytics
 
+import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /**
  * Prognoza glikemii na 30 minut z ostatnich odczytów.
  *
  * Zamiast ekstrapolacji dwóch ostatnich punktów (podatnej na szum i artefakty) liczy
- * nachylenie metodą najmniejszych kwadratów z ostatnich 20 minut, ogranicza je do
- * fizjologicznie sensownego zakresu i tłumi prognozę, gdy ostatni odczyt jest nieświeży.
+ * nachylenie ważoną metodą najmniejszych kwadratów z ostatnich 20 minut: świeższe odczyty
+ * mają większy wpływ (okres połowicznego zaniku wagi), a gdy dopasowanie nie przewyższa
+ * szumu, trend jest zerowany zamiast zgadywany. Nachylenie jest ograniczone do
+ * fizjologicznie sensownego zakresu, a prognoza wygasa, gdy ostatni odczyt jest nieświeży.
  *
  * Gdy znana jest aktywna insulina ([iob]), rosnąca prognoza jest ostrożnie tłumiona.
  * Tłumienie korzysta z [insulinSensitivityMgDlPerUnit] (domyślnie 40 mg/dL/U) i
@@ -28,6 +34,15 @@ object GlucoseForecast {
 
     /** Po ilu minutach bez nowego odczytu prognoza wygasa do bieżącej wartości. */
     private const val STALE_AFTER_MINUTES = 15.0
+
+    /** Waga odczytu spada o połowę co tyle minut — ostatnie 7 min dominuje nad resztą okna. */
+    private const val WEIGHT_HALF_LIFE_MINUTES = 7.0
+
+    /**
+     * Minimalny stosunek przewidywanego ruchu (30 min) do szumu dopasowania. Poniżej tego progu
+     * nachylenie jest traktowane jak szum i zerowane — lepiej pokazać płasko niż zgadywać wzrost.
+     */
+    private const val NOISE_GUARD_RATIO = 1.5
 
     /** Zachowawcze wartości domyślne, gdy użytkownik nie podał własnego ISF. */
     const val DEFAULT_INSULIN_SENSITIVITY_MG_DL_PER_UNIT = 40.0
@@ -100,15 +115,32 @@ object GlucoseForecast {
         val t0 = points.first().first
         val xs = points.map { (it.first - t0) / 60_000.0 }
         val ys = points.map { it.second.toDouble() }
-        val meanX = xs.average()
-        val meanY = ys.average()
-        val denominator = xs.sumOf { (it - meanX) * (it - meanX) }
-        if (denominator <= 0.0) return null
-        val numerator = xs.indices.sumOf { (xs[it] - meanX) * (ys[it] - meanY) }
-        val slope = (numerator / denominator).coerceIn(
+        val nowMinutes = (nowMs - t0) / 60_000.0
+        val decay = ln(2.0) / WEIGHT_HALF_LIFE_MINUTES
+        val weights = xs.map { exp(-decay * (nowMinutes - it).coerceAtLeast(0.0)) }
+        val totalWeight = weights.sum()
+        if (totalWeight <= 0.0) return null
+
+        val meanX = xs.indices.sumOf { weights[it] * xs[it] } / totalWeight
+        val meanY = ys.indices.sumOf { weights[it] * ys[it] } / totalWeight
+        val denominator = xs.indices.sumOf { weights[it] * (xs[it] - meanX) * (xs[it] - meanX) }
+        if (denominator <= 1e-9) return null
+        val numerator = xs.indices.sumOf { weights[it] * (xs[it] - meanX) * (ys[it] - meanY) }
+        var slope = (numerator / denominator).coerceIn(
             -MAX_SLOPE_MG_DL_PER_MIN,
             MAX_SLOPE_MG_DL_PER_MIN,
         )
+
+        // A fit that explains no more than the residual scatter is noise, not a trend. Without
+        // this guard a flat but noisy series keeps flipping between "rising" and "falling".
+        val residual = sqrt(
+            xs.indices.sumOf {
+                val predicted = meanY + slope * (xs[it] - meanX)
+                weights[it] * (ys[it] - predicted) * (ys[it] - predicted)
+            } / totalWeight,
+        )
+        if (abs(slope) * HORIZON_MINUTES < NOISE_GUARD_RATIO * residual) slope = 0.0
+
         val last = points.last()
         val minutesSinceLast = (nowMs - last.first) / 60_000.0
         // Gdy dane są nieświeże, prognoza płynnie wraca do bieżącej wartości.

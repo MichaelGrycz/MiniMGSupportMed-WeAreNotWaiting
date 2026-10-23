@@ -266,6 +266,32 @@ class GlucoseChartView @JvmOverloads constructor(
 
     var onViewportChanged: ((zoomFactor: Float, isPanned: Boolean) -> Unit)? = null
 
+    /**
+     * Fired once the user settles on a new visible range (pan/zoom/scroll), not on every frame.
+     * [atNewestEdge] is true when the view sits at the newest loaded reading; the host then decides
+     * whether that edge is "now" (live) or the end of an older, pinned window.
+     */
+    var onVisibleRangeSettled: ((startMs: Long, endMs: Long, atNewestEdge: Boolean) -> Unit)? = null
+
+    /** The user asked to go further back than the loaded data; the host should load a older window. */
+    var onOlderDataNeeded: ((oldestLoadedMs: Long) -> Unit)? = null
+
+    /** The user asked to go forward past the loaded edge; the host should load a newer window. */
+    var onNewerDataNeeded: ((newestLoadedMs: Long) -> Unit)? = null
+
+    private val settleRunnable = Runnable {
+        val range = visibleTimeRange()
+        onVisibleRangeSettled?.invoke(range.first, range.last, panOffsetMs == 0L)
+    }
+
+    private val olderDataRunnable = Runnable {
+        samples.firstOrNull()?.let { onOlderDataNeeded?.invoke(it.time) }
+    }
+
+    private val newerDataRunnable = Runnable {
+        samples.lastOrNull()?.let { onNewerDataNeeded?.invoke(it.time) }
+    }
+
     private val scaleDetector =
         ScaleGestureDetector(
             context,
@@ -325,9 +351,13 @@ class GlucoseChartView @JvmOverloads constructor(
                             val deltaMs = ((distanceX / plotW) * visDuration).toLong()
                             // Dragging finger right (distanceX < 0) moves back in time (increases panOffsetMs).
                             val maxPan = maxPanOffsetMs(visDuration)
-                            setPanOffset((panOffsetMs - deltaMs).coerceIn(0L, maxPan))
+                            val requested = panOffsetMs - deltaMs
+                            if (requested > maxPan) requestOlderData()
+                            if (requested < 0L) requestNewerData()
+                            setPanOffset(requested.coerceIn(0L, maxPan))
                             notifyViewportChanged()
                             invalidate()
+                            scheduleSettle()
                         }
                         return true
                     }
@@ -383,6 +413,29 @@ class GlucoseChartView @JvmOverloads constructor(
         }
         notifyViewportChanged()
         invalidate()
+        scheduleSettle()
+    }
+
+    private fun scheduleSettle() {
+        removeCallbacks(settleRunnable)
+        postDelayed(settleRunnable, SETTLE_DELAY_MS)
+    }
+
+    private fun requestOlderData() {
+        removeCallbacks(olderDataRunnable)
+        postDelayed(olderDataRunnable, DATA_REQUEST_DELAY_MS)
+    }
+
+    private fun requestNewerData() {
+        removeCallbacks(newerDataRunnable)
+        postDelayed(newerDataRunnable, DATA_REQUEST_DELAY_MS)
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(settleRunnable)
+        removeCallbacks(olderDataRunnable)
+        removeCallbacks(newerDataRunnable)
+        super.onDetachedFromWindow()
     }
 
     fun setWindow(windowMillis: Long) {
@@ -397,6 +450,7 @@ class GlucoseChartView @JvmOverloads constructor(
             notifyViewportChanged()
         }
         invalidate()
+        scheduleSettle()
     }
 
     fun zoomIn() {
@@ -417,6 +471,7 @@ class GlucoseChartView @JvmOverloads constructor(
         selectedDeltaMgDl = null
         notifyViewportChanged()
         invalidate()
+        scheduleSettle()
     }
 
     /**
@@ -438,7 +493,13 @@ class GlucoseChartView @JvmOverloads constructor(
     }
 
     /** True when the view is not already pinned to the newest reading. */
-    fun canPanLater(): Boolean = hasData() && panOffsetMs > 0L
+    fun canPanLater(): Boolean {
+        if (!hasData()) return false
+        if (panOffsetMs > 0L) return true
+        // A pinned window can end at its newest sample while "now" is much later; there is still
+        // newer data to load, so "Later" must stay usable at that edge.
+        return latestTimestamp() < System.currentTimeMillis() - LIVE_EDGE_MS
+    }
 
     private fun applyZoomAtFocus(scale: Float, focusX: Float) {
         if (!hasData()) return
@@ -450,6 +511,7 @@ class GlucoseChartView @JvmOverloads constructor(
                 setPanOffset(0L)
                 notifyViewportChanged()
                 invalidate()
+                scheduleSettle()
             }
             return
         }
@@ -469,6 +531,7 @@ class GlucoseChartView @JvmOverloads constructor(
         setPanOffset(if (newZoom <= 1.01f) 0L else rawPan.coerceIn(0L, maxPanOffsetMs(newVis)))
         notifyViewportChanged()
         invalidate()
+        scheduleSettle()
     }
 
     private fun visibleDurationMs(): Long =
@@ -509,9 +572,15 @@ class GlucoseChartView @JvmOverloads constructor(
     fun panLater() = panBy(-visibleDurationMs() / 2)
 
     private fun panBy(delta: Long) {
-        setPanOffset((panOffsetMs + delta).coerceIn(0L, maxPanOffsetMs(visibleDurationMs())))
+        val vis = visibleDurationMs()
+        val maxPan = maxPanOffsetMs(vis)
+        val requested = panOffsetMs + delta
+        if (requested > maxPan) requestOlderData()
+        if (requested < 0L) requestNewerData()
+        setPanOffset(requested.coerceIn(0L, maxPan))
         notifyViewportChanged()
         invalidate()
+        scheduleSettle()
     }
 
     /** Single writer for [panOffsetMs] so the absolute anchor never drifts. */
@@ -541,6 +610,7 @@ class GlucoseChartView @JvmOverloads constructor(
         setPanOffset(viewport.panOffsetMs.coerceIn(0L, maxPanOffsetMs(visibleDurationMs())))
         notifyViewportChanged()
         invalidate()
+        scheduleSettle()
     }
 
     private fun selectEventAt(x: Float, y: Float): Boolean {
@@ -1288,6 +1358,15 @@ class GlucoseChartView @JvmOverloads constructor(
         const val MIN_WINDOW_MILLIS = 60L * 1000L
         const val MIN_VISIBLE_MILLIS = 15L * 60L * 1000L
         const val MAX_ZOOM_SAFETY = 50_000f
+
+        /** Debounce for the "user stopped dragging" callback that may trigger a DB reload. */
+        const val SETTLE_DELAY_MS = 350L
+
+        /** Debounce before asking the host for history beyond the loaded window. */
+        const val DATA_REQUEST_DELAY_MS = 180L
+
+        /** A reading this fresh counts as the live edge. */
+        const val LIVE_EDGE_MS = 2L * 60L * 1000L
 
         const val DEFAULT_Y_FLOOR = 40
         const val DEFAULT_Y_CEILING = 300

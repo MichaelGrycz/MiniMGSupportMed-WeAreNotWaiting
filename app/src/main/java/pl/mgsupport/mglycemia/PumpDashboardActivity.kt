@@ -674,6 +674,13 @@ class PumpDashboardActivity : AppCompatActivity() {
             }
         }
 
+        chart.onVisibleRangeSettled = { _, _, atNewestEdge ->
+            // Reaching the newest loaded reading does not mean "now": release only at the live edge.
+            if (atNewestEdge) controller.releaseChartPinningIfAtNow()
+        }
+        chart.onOlderDataNeeded = { oldest -> controller.loadOlderChartData(oldest) }
+        chart.onNewerDataNeeded = { newest -> controller.loadNewerChartData(newest) }
+
         for ((windowMs, btn) in windowButtons) {
             btn.setOnClickListener { controller.setWindow(windowMs) }
             btn.contentDescription = getString(R.string.chart_window_description, btn.text)

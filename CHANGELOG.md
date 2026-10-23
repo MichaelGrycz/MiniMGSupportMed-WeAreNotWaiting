@@ -3,6 +3,13 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta61
+
+- Wykres dociąga historię w obie strony: „Earlier” działa teraz także po dojściu do krawędzi wcześniej wczytanych danych (tygodnie i miesiące wstecz), a „Later” wraca do teraźniejszości bez skoku i ponownego wczytywania całości.
+- Statystyki na dashboardzie (ostatnia zmiana, tempo zmian, prognoza) zawsze dotyczą bieżącego odczytu — nawet gdy wykres jest przewinięty w stare dane.
+- Prognoza 30 min: ważona regresja — świeższe minuty ważą więcej niż starsze, więc reakcja na zmianę trendu jest szybsza.
+- Prognoza 30 min: blokada szumu — płaski, poszarpany przebieg nie jest już pokazywany jako „rosnący” albo „spadający”; lepiej pokazać płasko niż zgadywać.
+
 ## 1.0-beta60
 
 - Wykres glikemii narysowany od nowa: gładka linia bez „schodków” i bez sztucznych pików między odczytami; przerwy w danych są widoczne jako przerwy, a nie dorysowana linia.

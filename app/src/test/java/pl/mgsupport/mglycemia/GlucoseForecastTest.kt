@@ -68,4 +68,28 @@ class GlucoseForecastTest {
             GlucoseForecast.predict30(points, now, iob = 2.0),
         )
     }
+
+    @Test
+    fun `noisy flat series does not invent a trend`() {
+        val values = listOf(100, 104, 99, 105, 100, 103, 99, 102)
+        val points = values.mapIndexed { i, v -> (now - (values.size - 1 - i) * step) to v }
+        val predicted = GlucoseForecast.predict30(points, now)
+        assertTrue("predicted=$predicted", predicted != null && predicted!! in 98..106)
+    }
+
+    @Test
+    fun `recent movement outweighs an older flat stretch`() {
+        val values = listOf(120, 120, 120, 120, 126, 132, 138)
+        val points = values.mapIndexed { i, v -> (now - (values.size - 1 - i) * step) to v }
+        val predicted = GlucoseForecast.predict30(points, now)
+        assertTrue("predicted=$predicted", predicted != null && predicted!! > 140)
+    }
+
+    @Test
+    fun `recent fall outweighs an older rise`() {
+        val values = listOf(140, 150, 160, 150, 140, 130)
+        val points = values.mapIndexed { i, v -> (now - (values.size - 1 - i) * step) to v }
+        val predicted = GlucoseForecast.predict30(points, now)
+        assertTrue("predicted=$predicted", predicted != null && predicted!! < 130)
+    }
 }

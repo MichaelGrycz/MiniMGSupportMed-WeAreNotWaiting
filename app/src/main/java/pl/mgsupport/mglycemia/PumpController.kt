@@ -2,6 +2,7 @@ package pl.mgsupport.mglycemia
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import pl.mgsupport.mglycemia.core.ble.connection.AndroidMedtronicGattLink
@@ -53,6 +54,9 @@ data class PumpUiState(
     val deviceCompat: DeviceCompatibility? = null,
     val pumpModel: String? = null,
     val glucoseHistory: List<Pair<Long, Int>> = emptyList(),
+    /** Absolute time span currently loaded for the chart (may be older than the selected window). */
+    val chartFromMs: Long = 0L,
+    val chartToMs: Long = 0L,
     /** Sensor warm-up / update: the pump reports no SG, so the last known value is shown as stale. */
     val sensorUpdating: Boolean = false,
     val sensorPhase: SensorPhase = SensorPhase.UNKNOWN,
@@ -419,6 +423,14 @@ class PumpController(context: Context) {
     private var userDisconnected = false
     private var historyJob: Job? = null
     private var chartJob: Job? = null
+
+    /** Absolute end of a panned chart window; `null` means the chart follows the live edge. */
+    @Volatile
+    private var chartPinnedEndMs: Long? = null
+
+    @Volatile
+    private var chartPinnedSpanMs: Long = 0L
+
     private var historyCursor: Int? = null
 
     init {
@@ -630,6 +642,62 @@ class PumpController(context: Context) {
     /** Select the chart/TIR window. Every window is served from SQLite, so it survives restarts. */
     fun setWindow(windowMillis: Long) {
         _state.update { it.copy(windowMillis = windowMillis) }
+        // A new window starts at "now"; drop any panned-history anchor from the previous one.
+        chartPinnedEndMs = null
+        chartPinnedSpanMs = 0L
+        refreshChart()
+    }
+
+    /**
+     * Load a window older than [oldestMs] when the user pans past the loaded edge. The new window
+     * ends two selected-windows after the edge: the visible range stays covered and "Later" has a
+     * margin to move into instead of being pinned at zero the moment the old window is replaced.
+     */
+    fun loadOlderChartData(oldestMs: Long) {
+        val s = _state.value
+        val span = liveChartSpan(s.windowMillis)
+        val end = minOf(System.currentTimeMillis(), oldestMs + 2 * s.windowMillis)
+        val proceed = end - span < s.chartFromMs - 60_000L
+        Log.d(
+            CHART_LOG,
+            "older requested=$oldestMs chart=[${s.chartFromMs},${s.chartToMs}] end=$end span=$span proceed=$proceed"
+        )
+        if (!proceed) return
+        pinChartWindow(end, span)
+    }
+
+    /** Load the next window forward when the user walks back toward now from a pinned window. */
+    fun loadNewerChartData(newestMs: Long) {
+        val s = _state.value
+        val span = liveChartSpan(s.windowMillis)
+        val end = minOf(System.currentTimeMillis(), newestMs + 2 * s.windowMillis)
+        val proceed = end > s.chartToMs + 60_000L
+        Log.d(
+            CHART_LOG,
+            "newer requested=$newestMs chart=[${s.chartFromMs},${s.chartToMs}] end=$end span=$span proceed=$proceed"
+        )
+        if (!proceed) return
+        pinChartWindow(end, span)
+    }
+
+    /** Release a pinned history window only when it actually reaches the live edge. */
+    fun releaseChartPinningIfAtNow() {
+        val pinned = chartPinnedEndMs ?: return
+        if (pinned >= System.currentTimeMillis() - LIVE_EDGE_TOLERANCE_MS) releaseChartPinning()
+    }
+
+    private fun pinChartWindow(endMs: Long, spanMs: Long) {
+        chartPinnedEndMs = endMs
+        chartPinnedSpanMs = spanMs
+        chartJob?.cancel()
+        chartJob = scope.launch { loadChartWindow(endMs, spanMs) }
+    }
+
+    /** Back to the newest data after the user returns to the live edge. */
+    fun releaseChartPinning() {
+        if (chartPinnedEndMs == null) return
+        chartPinnedEndMs = null
+        chartPinnedSpanMs = 0L
         refreshChart()
     }
 
@@ -640,27 +708,40 @@ class PumpController(context: Context) {
             scope.launch {
                 val now = System.currentTimeMillis()
                 val w = _state.value.windowMillis
-                // Load more than the visible window, otherwise "Earlier" has nowhere to go: the
-                // chart can only pan inside the data it was given. Four windows (at least a week)
-                // keeps every view pannable while staying well inside the SQLite budget.
-                val loadSpan =
-                    (w * 4)
-                        .coerceAtLeast(7L * 24 * 60 * 60 * 1000)
-                        .coerceAtMost(365L * 24 * 60 * 60 * 1000)
-                val pts = store.queryGlucose(now - loadSpan, now, chartPointBudget(loadSpan))
-                val events = store.queryInsulinEvents(now - loadSpan, now)
-                val rCount = store.countReadings()
-                val eCount = store.countEvents()
-                _state.update {
-                    it.copy(
-                        glucoseHistory = pts,
-                        insulinEvents = events,
-                        readingsCount = rCount,
-                        eventsCount = eCount
-                    )
-                }
-                recomputeDerived()
+                val pinnedEnd = chartPinnedEndMs
+                val end = pinnedEnd ?: now
+                val span =
+                    if (pinnedEnd != null) {
+                        chartPinnedSpanMs.coerceAtLeast(liveChartSpan(w))
+                    } else {
+                        liveChartSpan(w)
+                    }
+                loadChartWindow(end, span)
             }
+    }
+
+    /** Four windows, at least a week: enough history that the first pan has somewhere to go. */
+    private fun liveChartSpan(windowMillis: Long): Long =
+        (windowMillis * 4)
+            .coerceAtLeast(7L * 24 * 60 * 60 * 1000)
+            .coerceAtMost(MAX_CHART_SPAN_MS)
+
+    /** Query and publish one chart window; derived dashboard numbers stay tied to the live reads. */
+    private suspend fun loadChartWindow(endMs: Long, spanMs: Long) {
+        val from = endMs - spanMs
+        val pts = store.queryGlucose(from, endMs, chartPointBudget(spanMs))
+        val events = store.queryInsulinEvents(from, endMs)
+        _state.update {
+            it.copy(
+                glucoseHistory = pts,
+                insulinEvents = events,
+                chartFromMs = from,
+                chartToMs = endMs,
+                readingsCount = store.countReadings(),
+                eventsCount = store.countEvents(),
+            )
+        }
+        recomputeDerived()
     }
 
     /** Point budget for the chart: 5-minute fidelity up to a month, coarse but zoomable for a year. */
@@ -696,6 +777,8 @@ class PumpController(context: Context) {
                 eventsCount = store.countEvents(),
             )
         }
+        chartPinnedEndMs = null
+        chartPinnedSpanMs = 0L
         refreshChart()
         return result
     }
@@ -827,7 +910,6 @@ class PumpController(context: Context) {
 
     private fun recomputeDerived() {
         val s = _state.value
-        val windowPoints = s.glucoseHistory
         val low = s.thresholds.low
         val high = s.thresholds.high
 
@@ -865,36 +947,38 @@ class PumpController(context: Context) {
             gmi = if (total >= 3) 3.31 + 0.02392 * stats.avg else null
         }
 
+        // The chart may be panned into old history, so derived numbers never read the chart
+        // buffer: they always describe the live reading at the newest edge.
+        val recentPoints = store.queryGlucose(nowMs - 20 * 60_000L, nowMs, 64)
+
         val prevPoint =
-            if (windowPoints.size >= 2) {
-                val b = windowPoints.last()
-                windowPoints
+            if (recentPoints.size >= 2) {
+                val b = recentPoints.last()
+                recentPoints
                     .dropLast(1)
                     .lastOrNull {
                         val dt = b.first - it.first
                         dt in 30_000L..1_200_000L && (it.second != b.second || dt >= 240_000L)
                     }
-                    ?: windowPoints[windowPoints.size - 2]
+                    ?: recentPoints[recentPoints.size - 2]
             } else null
 
         val roc =
             if (prevPoint != null) {
-                val b = windowPoints.last()
+                val b = recentPoints.last()
                 val dtMin = (b.first - prevPoint.first) / 60_000.0
                 if (dtMin > 0.0 && dtMin <= 20.0) (b.second - prevPoint.second) / dtMin else null
             } else null
 
         val lastDelta =
             if (prevPoint != null) {
-                windowPoints.last().second - prevPoint.second
+                recentPoints.last().second - prevPoint.second
             } else null
 
-        // Prognoza z ostatnich 20 minut surowych odczytów (nie z downsamplowanego wykresu).
-        val recentForForecast = store.queryGlucose(nowMs - 20 * 60_000L, nowMs)
         val predicted =
             if (showPrediction) {
                 GlucoseForecast.predict30(
-                    recentForForecast,
+                    recentPoints,
                     nowMs,
                     s.iob?.toDouble(),
                     insulinSensitivityMgDlPerUnit,
@@ -1160,6 +1244,15 @@ class PumpController(context: Context) {
         const val HISTORY_SETTLE_MS = 8_000L
         const val RETRY_INTERVAL_MS = 30_000L
         const val HISTORY_INTERVAL_MS = 60_000L
+
+        /** Hard ceiling for a chart window (one year); panning further back has nothing to show. */
+        const val MAX_CHART_SPAN_MS = 365L * 24 * 60 * 60 * 1000
+
+        /** A pinned window this close to wall-clock now counts as the live edge. */
+        const val LIVE_EDGE_TOLERANCE_MS = 2 * 60_000L
+
+        /** Local logcat tag for chart window decisions (no health data). */
+        const val CHART_LOG = "MGlycemiaChart"
         const val MAX_HISTORY_LINES = 80
 
         /** Stable app-side identity for the pump's raw history log. */
