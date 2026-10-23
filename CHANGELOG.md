@@ -3,6 +3,10 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta34
+
+- Naprawa wydania: poprzedni plik beta33 został omyłkowo zbudowany przed podbiciem numeru wersji, więc zawierał beta32. Ta wersja jest zbudowana poprawnie (versionCode 35) i zawiera opóźnienie startu SAKE o 150 ms po odczycie CCCD.
+
 ## 1.0-beta33
 
 - Parowanie BLE: Opóźniono start powiadomienia SAKE o 150 ms po odczycie deskryptora CCCD przez pompę. Daje to czas na poprawne zamknięcie i wysłanie pakietu potwierdzenia odczytu przez stos Bluetooth telefonu, eliminując race condition w trybie peryferyjnym na Samsungu i Xiaomi. Dodano także pełne logowanie wysyłanych ramek SAKE (`sake notify`).
