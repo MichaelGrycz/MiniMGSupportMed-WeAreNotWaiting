@@ -63,6 +63,7 @@
     <string name="chart_hint">Pinch to zoom · Drag to pan · Tap point for details</string>
     <string name="chart_empty_title">No glucose readings in this period</string>
     <string name="chart_empty_subtitle">Connect your pump or select a wider time range</string>
+    <string name="chart_prediction_30min">30 min</string>
     <string name="btn_zoom_in">Zoom in</string>
     <string name="btn_zoom_out">Zoom out</string>
     <string name="btn_zoom_reset">Live 1:1</string>
@@ -303,6 +304,8 @@
     <string name="updates_download">Download and install</string>
     <string name="updates_later">Later</string>
     <string name="updates_downloading">Downloading update…</string>
+    <string name="updates_downloading_percent">Downloading %1$d%% (%2$s / %3$s)</string>
+    <string name="updates_installing">Installing…</string>
     <string name="updates_download_failed">Download failed.</string>
     <string
     name="updates_install_failed"

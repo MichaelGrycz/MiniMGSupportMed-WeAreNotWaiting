@@ -809,8 +809,12 @@ class PumpController(context: Context) {
             } else null
 
         val currentG = s.glucoseMgDl ?: windowPoints.lastOrNull()?.second
+        // Ekstrapolacja na 30 min z ograniczoną prędkością zmian, żeby jeden artefakt odczytu
+        // nie dawał absurdalnej prognozy.
         val predicted =
-            roc?.let { g -> currentG?.let { (it + (g * 30).toInt()).coerceIn(40, 500) } }
+            roc?.let { g ->
+                currentG?.let { (it + (g.coerceIn(-3.0, 3.0) * 30).toInt()).coerceIn(40, 400) }
+            }
 
         _state.update {
             it.copy(

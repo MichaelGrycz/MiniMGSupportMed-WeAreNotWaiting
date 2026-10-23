@@ -63,6 +63,7 @@
     <string name="chart_hint">Zum Zoomen kneifen · Zum Verschieben ziehen · Punkt antippen für Details</string>
     <string name="chart_empty_title">Keine Glukosewerte in diesem Zeitraum</string>
     <string name="chart_empty_subtitle">Verbinden Sie Ihre Pumpe oder wählen Sie einen größeren Zeitraum</string>
+    <string name="chart_prediction_30min">30 Min.</string>
     <string name="btn_zoom_in">Vergrößern</string>
     <string name="btn_zoom_out">Verkleinern</string>
     <string name="btn_zoom_reset">Live 1:1</string>
@@ -292,6 +293,8 @@
     <string name="updates_download">Herunterladen und installieren</string>
     <string name="updates_later">Später</string>
     <string name="updates_downloading">Update wird geladen…</string>
+    <string name="updates_downloading_percent">Herunterladen %1$d%% (%2$s / %3$s)</string>
+    <string name="updates_installing">Wird installiert…</string>
     <string name="updates_download_failed">Download fehlgeschlagen.</string>
     <string
     name="updates_install_failed"

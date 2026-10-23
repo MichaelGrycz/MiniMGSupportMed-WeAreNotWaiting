@@ -18,6 +18,7 @@ import android.provider.Settings
 import android.provider.DocumentsContract
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.HorizontalScrollView
@@ -67,6 +68,7 @@ class PumpDashboardActivity : AppCompatActivity() {
     private val updateChecker by lazy { UpdateChecker(this) }
     private lateinit var updateVersionText: TextView
     private lateinit var updateStatusText: TextView
+    private var updateProgressBar: ProgressBar? = null
     private var updateChecking = false
 
     // Re-check on app open at most every 15 minutes. The previous 24-hour throttle hid fresh
@@ -675,6 +677,7 @@ class PumpDashboardActivity : AppCompatActivity() {
 
         updateVersionText = findViewById(R.id.updateVersionText)
         updateStatusText = findViewById(R.id.updateStatusText)
+        updateProgressBar = createUpdateProgressBar()
         updateVersionText.text = getString(R.string.updates_current, BuildConfig.VERSION_NAME)
         findViewById<Button>(R.id.btnCheckUpdates).setOnClickListener { checkForUpdates(manual = true) }
         maybeAutoCheckForUpdates()
@@ -758,6 +761,58 @@ class PumpDashboardActivity : AppCompatActivity() {
         updateStatusText.visibility = View.VISIBLE
     }
 
+    /**
+     * Pasek postępu pobierania dokładany programowo pod tekstem statusu, żeby nie zmieniać
+     * istniejącego układu karty aktualizacji.
+     */
+    private fun createUpdateProgressBar(): ProgressBar? {
+        val container = updateStatusText.parent as? ViewGroup ?: return null
+        val heightPx = (4 * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        val marginPx = (6 * resources.displayMetrics.density).toInt()
+        val bar =
+            ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+                isIndeterminate = true
+                max = 100
+                visibility = View.GONE
+                layoutParams =
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, heightPx)
+                        .apply { topMargin = marginPx }
+            }
+        container.addView(bar, container.indexOfChild(updateStatusText) + 1)
+        return bar
+    }
+
+    /** Aktualizuje pasek i tekst postępu; totalBytes <= 0 oznacza nieznany rozmiar pliku. */
+    private fun updateDownloadProgress(bytesRead: Long, totalBytes: Long) {
+        val bar = updateProgressBar ?: return
+        val percent = downloadProgressPercent(bytesRead, totalBytes)
+        if (percent == null) {
+            bar.isIndeterminate = true
+            bar.visibility = View.VISIBLE
+            showUpdateStatus(getString(R.string.updates_downloading))
+            return
+        }
+        bar.isIndeterminate = false
+        bar.progress = percent
+        bar.visibility = View.VISIBLE
+        showUpdateStatus(
+            getString(
+                R.string.updates_downloading_percent,
+                percent,
+                formatMegabytes(bytesRead),
+                formatMegabytes(totalBytes),
+            ),
+        )
+    }
+
+    private fun hideDownloadProgress() {
+        updateProgressBar?.let {
+            it.visibility = View.GONE
+            it.isIndeterminate = true
+            it.progress = 0
+        }
+    }
+
     /** Once a day, silently look for a newer release; the dialog only appears when one exists. */
     private fun maybeAutoCheckForUpdates() {
         val prefs = getSharedPreferences("updates", MODE_PRIVATE)
@@ -770,6 +825,7 @@ class PumpDashboardActivity : AppCompatActivity() {
     private fun checkForUpdates(manual: Boolean) {
         if (updateChecking) return
         updateChecking = true
+        hideDownloadProgress()
         if (manual) showUpdateStatus(getString(R.string.updates_checking))
         uiScope.launch {
             val result = updateChecker.latest()
@@ -799,16 +855,36 @@ class PumpDashboardActivity : AppCompatActivity() {
 
     private fun downloadAndInstall(update: AvailableUpdate) {
         showUpdateStatus(getString(R.string.updates_downloading))
+        updateProgressBar?.let {
+            it.isIndeterminate = true
+            it.progress = 0
+            it.visibility = View.VISIBLE
+        }
         uiScope.launch {
-            val apk = updateChecker.download(update)
+            // Percent changes only are posted to the main thread; the stream callback fires per 8 KB.
+            var lastPercent = Int.MIN_VALUE
+            val apk =
+                updateChecker.download(update) { bytesRead, totalBytes ->
+                    val percent = downloadProgressPercent(bytesRead, totalBytes) ?: -1
+                    if (percent != lastPercent) {
+                        lastPercent = percent
+                        runOnUiThread { updateDownloadProgress(bytesRead, totalBytes) }
+                    }
+                }
             if (apk == null) {
+                hideDownloadProgress()
                 showUpdateStatus(getString(R.string.updates_download_failed))
                 return@launch
             }
-            updateStatusText.visibility = View.GONE
+            updateProgressBar?.let {
+                it.isIndeterminate = false
+                it.progress = 100
+            }
+            showUpdateStatus(getString(R.string.updates_installing))
             try {
                 updateChecker.install(apk)
             } catch (_: Exception) {
+                hideDownloadProgress()
                 Toast.makeText(this@PumpDashboardActivity, R.string.updates_install_failed, Toast.LENGTH_LONG)
                     .show()
             }

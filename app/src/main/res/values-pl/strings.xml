@@ -63,6 +63,7 @@
     <string name="chart_hint">Rozsuń 2 palcami, aby przybliżyć · Przesuwaj w bok · Dotknij punktu po szczegóły</string>
     <string name="chart_empty_title">Brak pomiarów glikemii w tym okresie</string>
     <string name="chart_empty_subtitle">Połącz pompę lub wybierz szerszy zakres czasu poniżej</string>
+    <string name="chart_prediction_30min">30 min</string>
     <string name="btn_zoom_in">Przybliż</string>
     <string name="btn_zoom_out">Oddal</string>
     <string name="btn_zoom_reset">1:1 Na żywo</string>
@@ -309,6 +310,8 @@
     <string name="updates_download">Pobierz i zainstaluj</string>
     <string name="updates_later">Później</string>
     <string name="updates_downloading">Pobieram aktualizację…</string>
+    <string name="updates_downloading_percent">Pobieranie %1$d%% (%2$s / %3$s)</string>
+    <string name="updates_installing">Instalowanie…</string>
     <string name="updates_download_failed">Pobieranie nie udało się.</string>
     <string
     name="updates_install_failed"

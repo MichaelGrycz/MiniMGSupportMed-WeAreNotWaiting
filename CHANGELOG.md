@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta51
+
+- Aktualizacje: widoczny pasek postępu i procent pobierania, komunikat „Instalowanie…”.
+- Wykres: prognoza 30 min przeniesiona do osobnej strefy po prawej, nie nachodzi już na linię cukru; ekstrapolacja ograniczona, żeby nie pokazywać absurdalnych skoków.
+- Plan ulepszeń UI w docs/UI-PLAN.md.
+
 ## 1.0-beta50
 
 - Alerty: pełna konfiguracja w Ustawieniach — brak łącza (30–45 min), odstęp powtarzania (1–60 min) i tryb cichy (bez dźwięku i wibracji).

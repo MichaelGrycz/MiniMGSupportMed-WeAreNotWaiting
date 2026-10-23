@@ -168,6 +168,21 @@ class GlucoseChartView @JvmOverloads constructor(
             textSize = sp(10f)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
+
+    /** Delikatna granica między teraźniejszością a strefą prognozy. */
+    private val futureDividerPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0x66FBBF24.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = dp(1f)
+            pathEffect = DashPathEffect(floatArrayOf(dp(3f), dp(4f)), 0f)
+        }
+    private val futureCaptionPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF94A3B8.toInt()
+            textSize = sp(9.5f)
+            textAlign = Paint.Align.CENTER
+        }
     private val eventPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     /** Polprzezroczyste slupki bazy rysowane na dole wykresu. */
@@ -579,6 +594,11 @@ class GlucoseChartView @JvmOverloads constructor(
             width - paddingRight - dp(RIGHT_INSET_DP),
             height - paddingBottom - dp(EVENT_LANES_HEIGHT_DP),
         )
+        // Prognoza dostaje wydzieloną strefę po prawej, żeby nie nachodziła na linię cukru.
+        if (predicted30 != null) {
+            plotRect.right =
+                (plotRect.right - dp(FUTURE_GUTTER_DP)).coerceAtLeast(plotRect.left + dp(24f))
+        }
         if (plotRect.width() <= 0f || plotRect.height() <= 0f) return
 
         val visDuration = visibleDurationMs()
@@ -763,27 +783,13 @@ class GlucoseChartView @JvmOverloads constructor(
                 canvas.drawCircle(lastX, lastY, dp(3.8f), dotPaint)
             }
 
-            // Prognoza 30-min: wyrazna, przerywana linia przy prawej krawedzi wykresu.
-            predicted30?.let { prediction ->
-                val predY = yFor(prediction).coerceIn(plotRect.top, plotRect.bottom)
-                val startX =
-                    if (lastX < plotRect.right - dp(8f)) {
-                        lastX.coerceIn(plotRect.left, plotRect.right)
-                    } else {
-                        (plotRect.right - dp(40f)).coerceAtLeast(plotRect.left)
-                    }
-                canvas.drawLine(startX, lastY, plotRect.right, predY, predictionPaint)
-                canvas.drawCircle(plotRect.right - dp(1f), predY, dp(3.6f), predictionPaint)
-                predictionLabelPaint.textAlign = Paint.Align.RIGHT
-                canvas.drawText(
-                    "\u2192 ${formatValue(prediction)}",
-                    plotRect.right - dp(4f),
-                    (predY - dp(6f)).coerceAtLeast(plotRect.top + dp(10f)),
-                    predictionLabelPaint,
-                )
-            }
-
             canvas.restore()
+        }
+
+        // 4b. Prognoza 30-min w wydzielonej strefie przyszłości, rysowana poza clipem wykresu.
+        predicted30?.let { prediction ->
+            val lastY = yFor(samples.last().value).coerceIn(plotRect.top, plotRect.bottom)
+            drawPredictionGutter(canvas, lastY, prediction) { yFor(it) }
         }
 
         // 5. Top-right summary caption (min / max + zoom badge if active)
@@ -814,6 +820,48 @@ class GlucoseChartView @JvmOverloads constructor(
                 drawTooltip(canvas, sx, sel)
             }
         }
+    }
+
+    /**
+     * Rysuje prognozę 30-min w strefie przyszłości po prawej stronie wykresu.
+     * Wywoływane po `canvas.restore()`, więc strefa nie jest obcinana clipem plotRect.
+     */
+    private fun drawPredictionGutter(
+        canvas: Canvas,
+        lastY: Float,
+        prediction: Int,
+        yFor: (Int) -> Float,
+    ) {
+        val dividerX = plotRect.right
+        val right = (dividerX + dp(FUTURE_GUTTER_DP)).coerceAtMost(cardRect.right - dp(2f))
+        if (right - dividerX <= 0f) return
+
+        // Delikatna granica teraźniejszość | przyszłość.
+        canvas.drawLine(dividerX, plotRect.top, dividerX, plotRect.bottom, futureDividerPaint)
+
+        val predX = (right - dp(9f)).coerceAtLeast(dividerX + dp(4f))
+        val predY = yFor(prediction).coerceIn(plotRect.top, plotRect.bottom)
+
+        // Przerywana linia od ostatniego odczytu do punktu prognozy.
+        canvas.drawLine(dividerX, lastY, predX, predY, predictionPaint)
+
+        dotPaint.color = predictionPaint.color
+        canvas.drawCircle(predX, predY, dp(3.6f), dotPaint)
+
+        val centerX = dividerX + (right - dividerX) / 2f
+        predictionLabelPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText(
+            "\u2192 ${formatValue(prediction)}",
+            centerX,
+            (predY - dp(7f)).coerceAtLeast(plotRect.top + dp(10f)),
+            predictionLabelPaint,
+        )
+        canvas.drawText(
+            context.getString(R.string.chart_prediction_30min),
+            centerX,
+            (predY + dp(14f)).coerceAtMost(plotRect.bottom),
+            futureCaptionPaint,
+        )
     }
 
     /** Rysuje slupki bazy (AUTO_BASAL) na dole wykresu, proporcjonalnie do podanej ilosci. */
@@ -1046,6 +1094,7 @@ class GlucoseChartView @JvmOverloads constructor(
         const val DEFAULT_HEIGHT_DP = 440f
         const val EVENT_LANES_HEIGHT_DP = 192f
         const val GUTTER_DP = 48f
+        const val FUTURE_GUTTER_DP = 58f
         const val TOP_INSET_DP = 24f
         const val RIGHT_INSET_DP = 14f
         const val BOTTOM_INSET_DP = 22f

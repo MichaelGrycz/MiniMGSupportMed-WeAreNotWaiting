@@ -12,6 +12,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -150,15 +151,35 @@ class UpdateChecker(private val context: Context) {
         return null
     }
 
-    /** Downloads the release APK into the cache directory. Returns null when the transfer failed. */
-    suspend fun download(update: AvailableUpdate): File? = withContext(Dispatchers.IO) {
+    /**
+     * Downloads the release APK into the cache directory. Returns null when the transfer failed.
+     *
+     * [onProgress] is invoked from the IO dispatcher after every chunk. [totalBytes] is `0` when the
+     * server did not send a Content-Length header, which lets the UI show an indeterminate bar.
+     */
+    suspend fun download(
+        update: AvailableUpdate,
+        onProgress: ((bytesRead: Long, totalBytes: Long) -> Unit)? = null,
+    ): File? = withContext(Dispatchers.IO) {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
         val target = File(dir, "MGSupportCGM-${update.version}.apk")
         val conn = open(update.apkUrl) ?: return@withContext null
         try {
             if (conn.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+            val totalBytes = conn.contentLengthLong.takeIf { it > 0L } ?: 0L
+            onProgress?.invoke(0L, totalBytes)
             conn.inputStream.use { input ->
-                target.outputStream().use { output -> input.copyTo(output) }
+                target.outputStream().use { output ->
+                    val buffer = ByteArray(DOWNLOAD_BUFFER_BYTES)
+                    var bytesRead = 0L
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        bytesRead += read
+                        onProgress?.invoke(bytesRead, totalBytes)
+                    }
+                }
             }
             target.takeIf { it.length() > 0 }
         } catch (_: Exception) {
@@ -268,6 +289,7 @@ class UpdateChecker(private val context: Context) {
         const val RELEASES_LATEST = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/latest"
         const val RELEASES_ATOM = "https://github.com/$REPO_OWNER/$REPO_NAME/releases.atom"
         const val APK_ASSET = "app-debug.apk"
+        const val DOWNLOAD_BUFFER_BYTES = 8 * 1024
         const val MAX_REDIRECTS = 5
         const val CHANNEL_ID = "app_updates"
         const val NOTIF_ID = 2001
@@ -281,6 +303,18 @@ internal fun parseTagFromReleaseUrl(url: String): String? =
 /** First `<entry><title>` in the releases Atom feed. */
 internal fun parseAtomTitle(xml: String): String? =
     Regex("<entry>[\\s\\S]*?<title>([^<]+)</title>").find(xml)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+
+/** Download progress in percent, or null when the server did not report a size. */
+internal fun downloadProgressPercent(bytesRead: Long, totalBytes: Long): Int? =
+    if (totalBytes <= 0L) {
+        null
+    } else {
+        ((bytesRead.coerceAtLeast(0L) * 100L) / totalBytes).toInt().coerceIn(0, 100)
+    }
+
+/** Byte count as megabytes with one decimal, formatted for [locale]. */
+internal fun formatMegabytes(bytes: Long, locale: Locale = Locale.getDefault()): String =
+    String.format(locale, "%.1f MB", bytes.coerceAtLeast(0L) / (1024.0 * 1024.0))
 
 /** Numeric segment comparison so `1.0-beta10` counts as newer than `1.0-beta9`. */
 internal fun compareVersions(candidate: String, current: String): Int {
