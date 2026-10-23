@@ -34,9 +34,16 @@
     <string name="zone_urgent_high">BARDZO WYSOKI — PILNE!</string>
     <string name="zone_waiting">OCZEKIWANIE NA POMIAR</string>
     <string name="zone_sensor_updating">AKTUALIZACJA SENSORA</string>
+    <string name="zone_sensor_initializing">INICJALIZACJA SENSORA</string>
     <string
     name="sensor_updating_banner"
   >Trwa aktualizacja sensora. Pompa nie podaje teraz odczytu, więc na ekranie zostaje ostatnia znana wartość.</string>
+    <string
+    name="sensor_initializing_banner"
+  >Trwa inicjalizacja sensora. Pompa nie poda odczytu do końca rozgrzewania — pozostało około %1$s. Ostatnia znana wartość zostaje na ekranie.</string>
+    <string name="sensor_remaining_hm">%1$d godz. %2$d min</string>
+    <string name="sensor_remaining_m">%1$d min</string>
+    <string name="sensor_remaining_unknown">nieznany czas</string>
 
     <string name="trend_double_up">Szybki wzrost</string>
     <string name="trend_single_up">Wzrost</string>
@@ -215,6 +222,7 @@
     <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
     <string name="notif_waiting">Połączono · oczekiwanie na odczyt</string>
     <string name="notif_sensor_updating">Aktualizacja sensora · %1$s</string>
+    <string name="notif_sensor_initializing">Inicjalizacja sensora · pozostało %1$s · %2$s</string>
     <string name="label_log">Log</string>
     <string name="no_reading">Oczekiwanie na pierwszy odczyt z pompy…</string>
     <string name="no_events">Brak zapisanych zdarzeń w wybranej kategorii.</string>

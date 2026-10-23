@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta22
+
+- Aplikacja odróżnia inicjalizację nowego sensora od zwykłej aktualizacji.
+- Podczas dwóch godzin rozgrzewania baner i powiadomienie pokazują „Inicjalizacja sensora”
+  wraz z przybliżonym pozostałym czasem (np. „1 godz. 45 min”).
+- Po zakończeniu rozgrzewania lub przy braku danych o czasie aplikacja wraca do komunikatu
+  „Aktualizacja sensora”.
+
 ## 1.0-beta21
 
 - Historia zdarzeń pokazuje dokładną datę i godzinę z czasu pompy (`RRRR-MM-DD GG:MM:SS`)

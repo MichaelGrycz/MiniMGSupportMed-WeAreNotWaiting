@@ -34,7 +34,14 @@
     <string name="zone_urgent_high">严重偏高 — 紧急！</string>
     <string name="zone_waiting">正在等待数据</string>
     <string name="zone_sensor_updating">传感器更新中</string>
+    <string name="zone_sensor_initializing">传感器初始化中</string>
     <string name="sensor_updating_banner">传感器正在更新，泵暂时不提供读数，屏幕上保留最后一次已知数值。</string>
+    <string
+    name="sensor_initializing_banner"
+  >传感器正在初始化。预热结束前泵不会提供读数，预计还需 %1$s。屏幕上保留最后一次已知数值。</string>
+    <string name="sensor_remaining_hm">%1$d 小时 %2$d 分钟</string>
+    <string name="sensor_remaining_m">%1$d 分钟</string>
+    <string name="sensor_remaining_unknown">时间未知</string>
 
     <string name="trend_double_up">快速上升</string>
     <string name="trend_single_up">上升</string>
@@ -189,6 +196,7 @@
     <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
     <string name="notif_waiting">已连接 · 等待读数</string>
     <string name="notif_sensor_updating">传感器更新中 · %1$s</string>
+    <string name="notif_sensor_initializing">传感器初始化中 · 还需 %1$s · %2$s</string>
     <string name="label_log">日志</string>
     <string name="no_reading">正在等待第一个泵读数…</string>
     <string name="no_events">无事件记录。</string>

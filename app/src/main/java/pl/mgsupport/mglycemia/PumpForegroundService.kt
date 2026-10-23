@@ -13,6 +13,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import pl.mgsupport.mglycemia.core.domain.model.ConnectionState
+import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +76,12 @@ class PumpForegroundService : Service() {
         when {
             s.connection != ConnectionState.CONNECTED ->
                 getString(R.string.notif_status_format, connectionLabel(s.connection))
+            s.sensorUpdating && s.sensorPhase == SensorPhase.INITIALIZING ->
+                getString(
+                    R.string.notif_sensor_initializing,
+                    formatSensorRemaining(this, s.sensorRemainingMinutes),
+                    connectionLabel(s.connection),
+                )
             s.sensorUpdating ->
                 getString(R.string.notif_sensor_updating, connectionLabel(s.connection))
             s.glucoseMgDl != null -> {

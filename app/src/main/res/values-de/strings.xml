@@ -34,9 +34,16 @@
     <string name="zone_urgent_high">SEHR HOCH — DRINGEND!</string>
     <string name="zone_waiting">WARTE AUF DATEN</string>
     <string name="zone_sensor_updating">SENSOR-UPDATE</string>
+    <string name="zone_sensor_initializing">SENSOR-INITIALISIERUNG</string>
     <string
     name="sensor_updating_banner"
   >Der Sensor wird aktualisiert. Die Pumpe liefert gerade keinen Wert, daher bleibt der letzte bekannte Messwert sichtbar.</string>
+    <string
+    name="sensor_initializing_banner"
+  >Der Sensor wird initialisiert. Die Pumpe liefert erst nach der Aufwärmphase einen Wert — noch etwa %1$s. Der letzte bekannte Wert bleibt sichtbar.</string>
+    <string name="sensor_remaining_hm">%1$d Std. %2$d Min.</string>
+    <string name="sensor_remaining_m">%1$d Min.</string>
+    <string name="sensor_remaining_unknown">unbekannte Zeit</string>
 
     <string name="trend_double_up">Steigt schnell</string>
     <string name="trend_single_up">Steigt</string>
@@ -198,6 +205,7 @@
     <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
     <string name="notif_waiting">Verbunden · warte auf Messwert</string>
     <string name="notif_sensor_updating">Sensor wird aktualisiert · %1$s</string>
+    <string name="notif_sensor_initializing">Sensor wird initialisiert · noch %1$s · %2$s</string>
     <string name="label_log">Protokoll</string>
     <string name="no_reading">Warte auf ersten Messwert…</string>
     <string name="no_events">Keine Ereignisse.</string>

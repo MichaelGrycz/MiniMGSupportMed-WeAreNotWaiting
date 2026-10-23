@@ -16,6 +16,7 @@ import pl.mgsupport.mglycemia.core.ble.protocol.MedtronicProtocol
 import pl.mgsupport.mglycemia.core.ble.sake.MedtronicSakeSession
 import pl.mgsupport.mglycemia.core.domain.model.CgmReading
 import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
+import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
 import pl.mgsupport.mglycemia.core.domain.pump.SafetyLimits
 import java.time.Instant
 import kotlin.math.abs
@@ -75,7 +76,15 @@ class CgmReader(
         // "Sensor update"). That is a normal state, not a broken frame, so it gets its own type and
         // callers can keep the last known value on screen instead of raising a read error.
         if (mgDl <= 0) {
-            throw SensorNotReadyException("Sensor has no value yet (SG 0); warm-up or sensor update in progress")
+            // Time Offset is minutes since the CGM session start. A fresh sensor therefore counts up
+            // from 0 through its two-hour warm-up; a mid-session update happens at a larger offset.
+            val offset = measurement.timeOffsetMinutes
+            val phase = sensorPhaseFor(offset)
+            throw SensorNotReadyException(
+                "Sensor has no value yet (SG 0); $phase at offset ${offset} min",
+                phase = phase,
+                remainingMinutes = remainingWarmUpMinutes(offset),
+            )
         }
         // SafetyLimits is the authoritative reject-not-clamp gate; we check it (and fail with a clear
         // MedtronicReadException) before constructing CgmReading, whose own init re-asserts 20..500.
@@ -94,6 +103,22 @@ class CgmReader(
     }
 
     companion object {
+        /** MiniMed sensor warm-up is two hours. */
+        const val SENSOR_WARM_UP_MINUTES = 120
+
+        internal fun sensorPhaseFor(timeOffsetMinutes: Int): SensorPhase =
+            when {
+                timeOffsetMinutes in 0 until SENSOR_WARM_UP_MINUTES -> SensorPhase.INITIALIZING
+                else -> SensorPhase.UPDATING
+            }
+
+        internal fun remainingWarmUpMinutes(timeOffsetMinutes: Int): Int? =
+            if (sensorPhaseFor(timeOffsetMinutes) == SensorPhase.INITIALIZING) {
+                (SENSOR_WARM_UP_MINUTES - timeOffsetMinutes).coerceAtLeast(0)
+            } else {
+                null
+            }
+
         /**
          * Map the CGM rate of change (mg/dL/min) onto the app-wide 7-state [CgmTrend]. The thresholds
          * follow the 780G manual (1-2 / 2-3 / >3 mg/dL/min = 1 / 2 / 3 arrows), folding Medtronic's

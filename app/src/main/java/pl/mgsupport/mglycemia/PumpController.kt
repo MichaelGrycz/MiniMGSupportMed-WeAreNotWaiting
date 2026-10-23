@@ -13,6 +13,7 @@ import pl.mgsupport.mglycemia.core.ble.read.MedtronicReadGateway
 import pl.mgsupport.mglycemia.core.ble.read.SensorNotReadyException
 import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
 import pl.mgsupport.mglycemia.core.domain.model.ConnectionState
+import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
 import java.io.File
 import java.io.InputStream
 import java.time.Instant
@@ -53,6 +54,8 @@ data class PumpUiState(
     val glucoseHistory: List<Pair<Long, Int>> = emptyList(),
     /** Sensor warm-up / update: the pump reports no SG, so the last known value is shown as stale. */
     val sensorUpdating: Boolean = false,
+    val sensorPhase: SensorPhase = SensorPhase.UNKNOWN,
+    val sensorRemainingMinutes: Int? = null,
     val windowMillis: Long = WINDOW_6H,
     val tirPercent: Int? = null,
     val belowPercent: Int? = null,
@@ -190,7 +193,13 @@ class PumpController(context: Context) {
                     stopPolling()
                     // A sensor-update banner would be stale once the link is gone.
                     if (cs == ConnectionState.DISCONNECTED) {
-                        _state.update { it.copy(sensorUpdating = false) }
+                        _state.update {
+                            it.copy(
+                                sensorUpdating = false,
+                                sensorPhase = SensorPhase.UNKNOWN,
+                                sensorRemainingMinutes = null,
+                            )
+                        }
                     }
                     if (cs == ConnectionState.AUTH_FAILED) {
                         _state.update { it.copy(lastError = appContext.getString(R.string.log_auth_failed)) }
@@ -423,7 +432,7 @@ class PumpController(context: Context) {
                         onCgm(r.glucoseMgDl, r.trendArrow, r.timestamp)
                         noteSensorReady()
                     }.onFailure { e ->
-                        if (e is SensorNotReadyException) noteSensorNotReady() else noteReadFailure("CGM", e)
+                        if (e is SensorNotReadyException) noteSensorNotReady(e) else noteReadFailure("CGM", e)
                     }
 
                     gateway.getIoB().onSuccess { r -> _state.update { it.copy(iob = r.iob) } }
@@ -660,20 +669,35 @@ class PumpController(context: Context) {
      * Sensor warm-up / update. The pump answers with SG 0, which is a normal state rather than a read
      * fault: keep the last known value on screen, drop any stale CGM error banner, and log it once.
      */
-    private fun noteSensorNotReady() {
+    private fun noteSensorNotReady(e: SensorNotReadyException) {
         _state.update { s ->
             s.copy(
                 sensorUpdating = true,
+                sensorPhase = e.phase,
+                sensorRemainingMinutes = e.remainingMinutes,
                 lastError = if (s.lastError?.startsWith("CGM") == true) null else s.lastError,
             )
         }
         if (sensorNotReadyLogged) return
         sensorNotReadyLogged = true
-        appendLog(appContext.getString(R.string.log_sensor_updating))
+        appendLog(
+            appContext.getString(R.string.log_sensor_updating) +
+                " (${e.phase.name}, remaining=${e.remainingMinutes?.toString() ?: "?"} min)",
+        )
     }
 
     private fun noteSensorReady() {
-        _state.update { s -> if (s.sensorUpdating) s.copy(sensorUpdating = false) else s }
+        _state.update { s ->
+            if (s.sensorUpdating) {
+                s.copy(
+                    sensorUpdating = false,
+                    sensorPhase = SensorPhase.UNKNOWN,
+                    sensorRemainingMinutes = null,
+                )
+            } else {
+                s
+            }
+        }
         if (!sensorNotReadyLogged) return
         sensorNotReadyLogged = false
         appendLog(appContext.getString(R.string.log_sensor_ready))

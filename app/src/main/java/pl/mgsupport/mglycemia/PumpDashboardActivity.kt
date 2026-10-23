@@ -38,6 +38,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.ImageViewCompat
 import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
 import pl.mgsupport.mglycemia.core.domain.model.ConnectionState
+import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -892,7 +893,15 @@ class PumpDashboardActivity : AppCompatActivity() {
         // the last known one. Informational, not an error.
         if (s.sensorUpdating) {
             sensorBannerCard.visibility = View.VISIBLE
-            sensorBannerText.text = getString(R.string.sensor_updating_banner)
+            sensorBannerText.text =
+                if (s.sensorPhase == SensorPhase.INITIALIZING) {
+                    getString(
+                        R.string.sensor_initializing_banner,
+                        formatSensorRemaining(this, s.sensorRemainingMinutes),
+                    )
+                } else {
+                    getString(R.string.sensor_updating_banner)
+                }
         } else {
             sensorBannerCard.visibility = View.GONE
         }
@@ -908,7 +917,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         // 2. Hero Glucose Card
         unitLabel.text = unitStr
         glucoseValue.text = s.glucoseMgDl?.let { mgdlToDisplay(it, s.unit) } ?: "--"
-        renderGlucoseZoneColors(s.glucoseMgDl, s.thresholds, s.sensorUpdating)
+        renderGlucoseZoneColors(s.glucoseMgDl, s.thresholds, s.sensorUpdating, s.sensorPhase)
 
         deltaBadgeText.text =
             s.lastDeltaMgDl?.let { d ->
@@ -1095,11 +1104,23 @@ class PumpDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderGlucoseZoneColors(mgDl: Int?, t: Thresholds, sensorUpdating: Boolean = false) {
+    private fun renderGlucoseZoneColors(
+        mgDl: Int?,
+        t: Thresholds,
+        sensorUpdating: Boolean = false,
+        sensorPhase: SensorPhase = SensorPhase.UNKNOWN,
+    ) {
         if (sensorUpdating) {
             val cyan = ContextCompat.getColor(this, R.color.accent_primary)
             glucoseValue.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
-            zoneBadgeText.text = getString(R.string.zone_sensor_updating)
+            zoneBadgeText.text =
+                getString(
+                    if (sensorPhase == SensorPhase.INITIALIZING) {
+                        R.string.zone_sensor_initializing
+                    } else {
+                        R.string.zone_sensor_updating
+                    },
+                )
             zoneBadgeText.setTextColor(cyan)
             return
         }

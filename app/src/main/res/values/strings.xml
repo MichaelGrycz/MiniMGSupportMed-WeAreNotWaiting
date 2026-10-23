@@ -34,9 +34,16 @@
     <string name="zone_urgent_high">URGENT HIGH</string>
     <string name="zone_waiting">WAITING FOR DATA</string>
     <string name="zone_sensor_updating">SENSOR UPDATING</string>
+    <string name="zone_sensor_initializing">SENSOR INITIALIZING</string>
     <string
     name="sensor_updating_banner"
   >Sensor update in progress. The pump is not sending a value right now, so the last known reading stays on screen.</string>
+    <string
+    name="sensor_initializing_banner"
+  >Sensor initialization in progress. The pump will not show a reading until warm-up ends — about %1$s left. The last known value stays on screen.</string>
+    <string name="sensor_remaining_hm">%1$d h %2$d min</string>
+    <string name="sensor_remaining_m">%1$d min</string>
+    <string name="sensor_remaining_unknown">unknown time</string>
 
     <string name="trend_double_up">Rising rapidly</string>
     <string name="trend_single_up">Rising</string>
@@ -209,6 +216,7 @@
     <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
     <string name="notif_waiting">Connected · waiting for reading</string>
     <string name="notif_sensor_updating">Sensor updating · %1$s</string>
+    <string name="notif_sensor_initializing">Sensor initializing · %1$s left · %2$s</string>
     <string name="label_log">Log</string>
     <string name="no_reading">Waiting for first pump reading…</string>
     <string name="no_events">No pump events recorded in this filter yet.</string>

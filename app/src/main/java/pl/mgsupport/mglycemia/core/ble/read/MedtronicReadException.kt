@@ -3,6 +3,8 @@
  */
 package pl.mgsupport.mglycemia.core.ble.read
 
+import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
+
 /**
  * Thrown when a Medtronic pump payload cannot be turned into a trustworthy domain value: a malformed
  * or truncated frame, a failed E2E-CRC, an unexpected control-point response, or a reading that
@@ -18,4 +20,9 @@ class MedtronicReadException(message: String, cause: Throwable? = null) : Except
  * expired sensor). The pump reports glucose 0 in that state, which [CgmReader] rejects like any other
  * out-of-range value. Callers must treat this as "no reading yet", not as a fault worth showing.
  */
-class SensorNotReadyException(message: String) : Exception(message)
+class SensorNotReadyException(
+    message: String,
+    val phase: SensorPhase = SensorPhase.UNKNOWN,
+    /** Minutes until the two-hour warm-up ends, when [phase] is [SensorPhase.INITIALIZING]. */
+    val remainingMinutes: Int? = null,
+) : Exception(message)
