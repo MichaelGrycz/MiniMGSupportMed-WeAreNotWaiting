@@ -185,6 +185,13 @@ class GlucoseChartView @JvmOverloads constructor(
         }
     private val eventPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
+    /** Kolorowe etykiety pasów zdarzeń: kolor etykiety = kolor znacznika. */
+    private val eventLabelPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = sp(10f)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+
     /** Polprzezroczyste slupki bazy rysowane na dole wykresu. */
     private val basalBarPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -914,10 +921,11 @@ class GlucoseChartView @JvmOverloads constructor(
         for (lane in ChartEventLane.entries) {
             // Pasy zdarzen sa pod wykresem, tuz przy osi czasu (nie nad nim).
             val y = plotRect.bottom + dp(16f + lane.ordinal * 42f)
-            captionPaint.textAlign = Paint.Align.RIGHT
+            eventLabelPaint.color = colors[lane.ordinal]
+            eventLabelPaint.textAlign = Paint.Align.RIGHT
             canvas.drawText(
                 context.getString(laneLabels[lane.ordinal]), plotRect.left - dp(6f),
-                y + dp(4f), captionPaint
+                y + dp(4f), eventLabelPaint
             )
             canvas.drawLine(plotRect.left, y, plotRect.right, y, gridPaint)
         }

@@ -217,6 +217,9 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var switchShareReadings: MaterialSwitch
     private lateinit var etSyncUrl: EditText
     private lateinit var btnSaveSyncUrl: Button
+    private lateinit var familyCodeValue: TextView
+    private lateinit var etFamilyCode: EditText
+    private lateinit var btnShareFamilyCode: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -392,6 +395,9 @@ class PumpDashboardActivity : AppCompatActivity() {
         switchShareReadings = findViewById(R.id.switchShareReadings)
         etSyncUrl = findViewById(R.id.etSyncUrl)
         btnSaveSyncUrl = findViewById(R.id.btnSaveSyncUrl)
+        familyCodeValue = findViewById(R.id.familyCodeValue)
+        etFamilyCode = findViewById(R.id.etFamilyCode)
+        btnShareFamilyCode = findViewById(R.id.btnShareFamilyCode)
         dbStatsText = findViewById(R.id.dbStatsText)
         btnToggleLogs = findViewById(R.id.btnToggleLogs)
         logsContainer = findViewById(R.id.logsContainer)
@@ -707,9 +713,22 @@ class PumpDashboardActivity : AppCompatActivity() {
             controller.setSilentAlerts(checked)
         }
         etSyncUrl.setText(controller.getSyncServerUrl() ?: "")
+        familyCodeValue.text = controller.getFamilyCode()
+        etFamilyCode.setText(controller.getFamilyCode())
+        btnShareFamilyCode.setOnClickListener { shareFamilyCode() }
         btnSaveSyncUrl.setOnClickListener {
+            val code = etFamilyCode.text.toString().trim()
+            val normalized = code.replace(Regex("[^A-Za-z0-9]"), "")
+            if (code.isNotEmpty() && (normalized.length < 4 || normalized.length > 16)) {
+                etFamilyCode.error = getString(R.string.family_code_invalid)
+                etFamilyCode.requestFocus()
+                return@setOnClickListener
+            }
             controller.setSyncServerUrl(etSyncUrl.text.toString())
-            Toast.makeText(this, getString(R.string.role_saved), Toast.LENGTH_SHORT).show()
+            if (code.isNotEmpty()) controller.setFamilyCode(code)
+            familyCodeValue.text = controller.getFamilyCode()
+            etFamilyCode.setText(controller.getFamilyCode())
+            Toast.makeText(this, getString(R.string.family_code_saved), Toast.LENGTH_SHORT).show()
         }
         updateRoleUi()
         findViewById<Button>(R.id.btnExport).setOnClickListener { exportCsv() }
@@ -1115,6 +1134,17 @@ class PumpDashboardActivity : AppCompatActivity() {
         roleBadge.visibility = View.VISIBLE
         btnRolePrimary.alpha = if (companion) 0.55f else 1f
         btnRoleCompanion.alpha = if (companion) 1f else 0.55f
+    }
+
+    /** Udostępnia kod rodziny przez systemowe okno udostępniania. */
+    private fun shareFamilyCode() {
+        val text = getString(R.string.family_code_share_text, controller.getFamilyCode())
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+        startActivity(Intent.createChooser(intent, getString(R.string.family_code_share)))
     }
 
     private fun exportCsv() {

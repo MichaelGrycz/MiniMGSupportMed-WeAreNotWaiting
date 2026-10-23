@@ -2647,6 +2647,66 @@
               app:strokeColor="@color/accent_primary"
             />
 
+                        <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="14dp"
+              android:text="@string/family_code_title"
+              android:textColor="@color/accent_primary_bright"
+              android:textSize="12sp"
+              android:textStyle="bold"
+            />
+
+                        <TextView
+              android:id="@+id/familyCodeValue"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="4dp"
+              android:fontFamily="monospace"
+              android:textColor="@color/text_primary"
+              android:textSize="22sp"
+              android:textStyle="bold"
+            />
+
+                        <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="2dp"
+              android:text="@string/family_code_desc"
+              android:textColor="@color/text_secondary"
+              android:textSize="12sp"
+            />
+
+                        <EditText
+              android:id="@+id/etFamilyCode"
+              android:layout_width="match_parent"
+              android:layout_height="42dp"
+              android:layout_marginTop="8dp"
+              android:background="@drawable/bg_input_field"
+              android:hint="@string/family_code_hint"
+              android:importantForAutofill="no"
+              android:inputType="text"
+              android:paddingStart="12dp"
+              android:paddingEnd="12dp"
+              android:textColor="@color/text_primary"
+              android:textColorHint="@color/text_muted"
+              android:textSize="14sp"
+            />
+
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnShareFamilyCode"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="8dp"
+              android:maxLines="2"
+              android:text="@string/family_code_share"
+              android:textColor="@color/text_secondary"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/border_subtle"
+            />
+
                         <com.google.android.material.materialswitch.MaterialSwitch
               android:id="@+id/switchShareReadings"
               android:layout_width="match_parent"

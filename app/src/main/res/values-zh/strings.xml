@@ -336,4 +336,11 @@
     <string name="doze_disable_button">关闭电池优化</string>
     <string name="doze_status_off">优化状态：已关闭。后台运行正常</string>
     <string name="doze_status_on">优化状态：已开启。Doze 可能会暂停读数</string>
+    <string name="family_code_title">家庭代码</string>
+    <string name="family_code_desc">两部手机必须使用相同的代码。请仅与信任的人分享。</string>
+    <string name="family_code_hint">家庭代码（4–16 个字符）</string>
+    <string name="family_code_share">分享代码</string>
+    <string name="family_code_invalid">代码必须是 4–16 个字母或数字</string>
+    <string name="family_code_share_text">MGlikemia 家庭代码：%1$s</string>
+    <string name="family_code_saved">家庭代码已保存</string>
 </resources>

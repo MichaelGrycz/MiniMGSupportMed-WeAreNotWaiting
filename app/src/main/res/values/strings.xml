@@ -370,4 +370,11 @@
     <string name="doze_disable_button">Disable battery optimization</string>
     <string name="doze_status_off">Optimization status: off. Background work OK</string>
     <string name="doze_status_on">Optimization status: on. Doze may pause readings</string>
+    <string name="family_code_title">Family code</string>
+    <string name="family_code_desc">Both phones must use the same code. Share it only with people you trust.</string>
+    <string name="family_code_hint">Family code (4–16 characters)</string>
+    <string name="family_code_share">Share code</string>
+    <string name="family_code_invalid">Code must be 4–16 letters or digits</string>
+    <string name="family_code_share_text">MGlikemia family code: %1$s</string>
+    <string name="family_code_saved">Family code saved</string>
 </resources>

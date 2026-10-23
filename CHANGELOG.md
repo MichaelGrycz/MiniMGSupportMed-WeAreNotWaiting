@@ -3,6 +3,13 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta53
+
+- Tryb rodziny: krótki kod parowania (6 cyfr) zamiast ręcznego adresu — oba telefony wpisują ten sam kod, a serwer trzyma dane każdej rodziny osobno.
+- Przycisk „Udostępnij kod” wysyła kod przez systemowe okno udostępniania.
+- Wykres: etykiety pasów bolus / automat / baza / ? mają teraz kolory zgodne ze znacznikami, więc legenda jest czytelna bez dodatkowego bloku.
+- Serwer: izolowane pokoje rodzin (`?family=`), dashboard rodziny pokazuje kod.
+
 ## 1.0-beta52
 
 - Aktualizacje: pobieranie pokazuje modalny pasek postępu z procentem i rozmiarem, widoczny niezależnie od zakładki, oraz stan „Instalowanie…”.

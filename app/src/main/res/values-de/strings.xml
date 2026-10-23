@@ -359,4 +359,13 @@
     <string name="doze_disable_button">Akku-Optimierung deaktivieren</string>
     <string name="doze_status_off">Optimierungsstatus: aus. Hintergrundarbeit OK</string>
     <string name="doze_status_on">Optimierungsstatus: an. Doze kann Messwerte pausieren</string>
+    <string name="family_code_title">Familiencode</string>
+    <string
+    name="family_code_desc"
+  >Beide Telefone müssen denselben Code verwenden. Teile ihn nur mit vertrauenswürdigen Personen.</string>
+    <string name="family_code_hint">Familiencode (4–16 Zeichen)</string>
+    <string name="family_code_share">Code teilen</string>
+    <string name="family_code_invalid">Der Code muss 4–16 Buchstaben oder Ziffern haben</string>
+    <string name="family_code_share_text">MGlikemia-Familiencode: %1$s</string>
+    <string name="family_code_saved">Familiencode gespeichert</string>
 </resources>

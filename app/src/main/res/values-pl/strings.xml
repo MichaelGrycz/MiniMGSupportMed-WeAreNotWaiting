@@ -376,4 +376,11 @@
     <string name="doze_disable_button">Wyłącz optymalizację baterii</string>
     <string name="doze_status_off">Stan optymalizacji: wyłączona. Praca w tle OK</string>
     <string name="doze_status_on">Stan optymalizacji: włączona. Doze może wstrzymywać odczyty</string>
+    <string name="family_code_title">Kod rodziny</string>
+    <string name="family_code_desc">Oba telefony muszą mieć ten sam kod. Udostępniaj go tylko zaufanym osobom.</string>
+    <string name="family_code_hint">Kod rodziny (4–16 znaków)</string>
+    <string name="family_code_share">Udostępnij kod</string>
+    <string name="family_code_invalid">Kod musi mieć 4–16 liter lub cyfr</string>
+    <string name="family_code_share_text">Kod rodziny MGlikemia: %1$s</string>
+    <string name="family_code_saved">Kod rodziny zapisany</string>
 </resources>

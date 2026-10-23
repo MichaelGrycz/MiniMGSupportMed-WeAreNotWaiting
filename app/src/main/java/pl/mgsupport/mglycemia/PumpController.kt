@@ -215,7 +215,7 @@ class PumpController(context: Context) {
                 while (isActive) {
                     val url = syncServerUrl
                     if (!url.isNullOrBlank()) {
-                        val json = TelemetryUploader.fetchLatest(url)
+                        val json = TelemetryUploader.fetchLatest(url, familyCode)
                         val glucose = json?.optInt("glucoseMgDl", -1) ?: -1
                         if (glucose > 0 && json != null) {
                             val trend =
@@ -287,6 +287,20 @@ class PumpController(context: Context) {
         prefs().edit().putString(PREF_SYNC_SERVER_URL, syncServerUrl).apply()
     }
 
+    /** Kod parowania rodziny; izoluje dane na wspólnym serwerze. */
+    @Volatile
+    private var familyCode: String = ""
+
+    fun getFamilyCode(): String = familyCode
+
+    /** Ustawia kod rodziny (4-16 znaków alfanumerycznych); pusty przywraca domyślny. */
+    fun setFamilyCode(code: String?) {
+        val normalized = code?.trim()?.lowercase()?.replace(Regex("[^a-z0-9]"), "")
+            ?.takeIf { it.length in 4..16 } ?: ""
+        familyCode = normalized
+        prefs().edit().putString(PREF_FAMILY_CODE, normalized).apply()
+    }
+
     @Volatile
     private var alertRepeatMin: Long = 5L
 
@@ -315,7 +329,7 @@ class PumpController(context: Context) {
     fun sendDiagnosticsNow() {
         val url = syncServerUrl
         if (url.isNullOrBlank()) return
-        scope.launch { TelemetryUploader.uploadDiagnosticReport(appContext, url, _state.value.log) }
+        scope.launch { TelemetryUploader.uploadDiagnosticReport(appContext, url, familyCode, _state.value.log) }
     }
 
     private val historyPresenter = HistoryPresenter()
@@ -730,6 +744,7 @@ class PumpController(context: Context) {
             scope.launch {
                 TelemetryUploader.uploadTelemetry(
                     serverUrl = serverUrl,
+                    familyCode = familyCode,
                     mgDl = mgDl,
                     trend = trend.name,
                     timestampMs = nowMs,
@@ -934,7 +949,7 @@ class PumpController(context: Context) {
         if (now - lastDiagUploadAt < 10 * 60_000L) return
         lastDiagUploadAt = now
         scope.launch {
-            TelemetryUploader.uploadDiagnosticReport(appContext, url, _state.value.log)
+            TelemetryUploader.uploadDiagnosticReport(appContext, url, familyCode, _state.value.log)
         }
     }
 
@@ -1036,6 +1051,15 @@ class PumpController(context: Context) {
         )
         shareReadingsEnabled = p.getBoolean(PREF_SHARE_READINGS, true)
         syncServerUrl = p.getString(PREF_SYNC_SERVER_URL, null)
+        val savedFamily = p.getString(PREF_FAMILY_CODE, null)
+        familyCode = if (savedFamily.isNullOrBlank()) {
+            // Pierwsze uruchomienie: wygeneruj 6-cyfrowy kod parowania rodziny.
+            val generated = (100000 + java.security.SecureRandom().nextInt(900000)).toString()
+            p.edit().putString(PREF_FAMILY_CODE, generated).apply()
+            generated
+        } else {
+            savedFamily
+        }
         appRole = try {
             AppRole.valueOf(p.getString(PREF_APP_ROLE, AppRole.PRIMARY_PUMP.name) ?: AppRole.PRIMARY_PUMP.name)
         } catch (_: Exception) {
@@ -1064,6 +1088,7 @@ class PumpController(context: Context) {
         const val PREF_STALE_LINK_TIMEOUT_MIN = "stale_link_timeout_min"
         const val PREF_SHARE_READINGS = "share_readings"
         const val PREF_SYNC_SERVER_URL = "sync_server_url"
+        const val PREF_FAMILY_CODE = "family_code"
         const val PREF_APP_ROLE = "app_role"
         const val PREF_ALERT_REPEAT_MIN = "alert_repeat_min"
         const val PREF_SILENT_ALERTS = "silent_alerts"
