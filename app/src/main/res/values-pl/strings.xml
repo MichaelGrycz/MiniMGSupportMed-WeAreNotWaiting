@@ -346,4 +346,34 @@
     <string name="diag_need_server">Najpierw ustaw adres serwera synchronizacji.</string>
     <string name="diag_sending">Wysyłanie raportu diagnostycznego…</string>
     <string name="notif_last_reading_unit">Ostatni odczyt: %1$s · %2$s</string>
+    <string name="thresholds_invalid_number">Podaj poprawną liczbę</string>
+    <string name="thresholds_range_format">Zakres %1$s–%2$s</string>
+    <string name="chart_now">teraz</string>
+    <string name="alarm_section_glucose">Glikemia</string>
+    <string name="alarm_section_device">Urządzenie</string>
+    <string name="alarm_section_notifications">Powiadomienia</string>
+    <string name="sensor_status_placeholder">Sensor: --</string>
+    <string name="sensor_phase_initializing">Inicjalizacja</string>
+    <string name="sensor_phase_updating">Aktualizacja</string>
+    <string name="sensor_phase_unknown">Nieznany</string>
+    <string name="sensor_status_ok">OK</string>
+    <string name="sensor_status_initializing_format">Inicjalizacja · pozostało %1$s</string>
+    <string name="sensor_status_line_format">Sensor: %1$s · Odczyt: %2$s</string>
+    <string name="data_age_now">przed chwilą</string>
+    <string name="data_age_minutes">%1$d min temu</string>
+    <string name="reservoir_units_format">%1$d j.</string>
+    <string name="reservoir_threshold_short">Próg 30 j.</string>
+    <string name="reservoir_low_suffix"> · NISKI STAN</string>
+    <string name="battery_charging">Ładowanie</string>
+    <string name="battery_no_data">Brak danych</string>
+    <string name="battery_type_aa">Bateria pompy · AA</string>
+    <string name="doze_warning_short">Oszczędzanie baterii może wstrzymywać odczyty. Dotknij, aby to zmienić</string>
+    <string name="doze_title">Praca w tle i bateria</string>
+    <string
+    name="doze_body"
+  >Android (Doze) oraz nakładki Samsung i Xiaomi potrafią usypiać aplikację po zgaszeniu ekranu i wstrzymywać Bluetooth, wtedy odczyty i alarmy nocne przestają napływać. Wyłączenie optymalizacji dla MGlikemii pozwala działać w tle. Na Xiaomi sprawdź też Autostart i blokadę w menedżerze zadań, na Samsungu opcję „Nigdy nie usypiaj”.</string>
+    <string name="doze_status_placeholder">Stan optymalizacji: --</string>
+    <string name="doze_disable_button">Wyłącz optymalizację baterii</string>
+    <string name="doze_status_off">Stan optymalizacji: wyłączona. Praca w tle OK</string>
+    <string name="doze_status_on">Stan optymalizacji: włączona. Doze może wstrzymywać odczyty</string>
 </resources>

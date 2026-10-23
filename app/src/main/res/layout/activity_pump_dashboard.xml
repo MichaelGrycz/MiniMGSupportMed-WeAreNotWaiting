@@ -70,6 +70,9 @@
       android:layout_height="wrap_content"
       android:layout_marginEnd="6dp"
       android:background="@drawable/bg_chip_inactive"
+      android:ellipsize="end"
+      android:maxLines="1"
+      android:maxWidth="64dp"
       android:paddingStart="8dp"
       android:paddingEnd="8dp"
       android:paddingTop="4dp"
@@ -107,6 +110,7 @@
         android:layout_marginStart="7dp"
         android:ellipsize="end"
         android:maxLines="1"
+        android:maxWidth="110dp"
         android:text="@string/conn_disconnected"
         android:textColor="@color/text_primary"
         android:textSize="12sp"
@@ -2240,10 +2244,20 @@
               android:textSize="12sp"
             />
 
+                        <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="14dp"
+              android:text="@string/alarm_section_glucose"
+              android:textColor="@color/accent_primary_bright"
+              android:textSize="12sp"
+              android:textStyle="bold"
+            />
+
                         <LinearLayout
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:layout_marginTop="12dp"
+              android:layout_marginTop="6dp"
               android:orientation="horizontal"
             >
 
@@ -2386,30 +2400,20 @@
                             </LinearLayout>
                         </LinearLayout>
 
-                        <com.google.android.material.button.MaterialButton
-              android:id="@+id/btnSaveThresholds"
-              style="@style/Widget.Material3.Button.OutlinedButton"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:minHeight="48dp"
-              android:layout_marginTop="12dp"
-              android:paddingTop="10dp"
-              android:paddingBottom="10dp"
-              android:gravity="center"
-              android:breakStrategy="simple"
-              android:hyphenationFrequency="none"
-              android:maxLines="2"
-              android:text="@string/btn_save_thresholds"
-              android:textColor="@color/accent_primary_bright"
-              app:cornerRadius="12dp"
-              app:strokeColor="@color/accent_primary"
-            />
-
                         <!-- Dodatkowe progi alarmów urządzenia: zbiornik i sensor -->
+                        <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="14dp"
+              android:text="@string/alarm_section_device"
+              android:textColor="@color/accent_primary_bright"
+              android:textSize="12sp"
+              android:textStyle="bold"
+            />
                         <LinearLayout
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:layout_marginTop="12dp"
+              android:layout_marginTop="6dp"
               android:orientation="horizontal"
             >
                             <LinearLayout
@@ -2539,6 +2543,16 @@
                             </LinearLayout>
                         </LinearLayout>
 
+                        <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="14dp"
+              android:text="@string/alarm_section_notifications"
+              android:textColor="@color/accent_primary_bright"
+              android:textSize="12sp"
+              android:textStyle="bold"
+            />
+
                         <com.google.android.material.materialswitch.MaterialSwitch
               android:id="@+id/switchSilentAlerts"
               android:layout_width="match_parent"
@@ -2547,6 +2561,25 @@
               android:text="@string/alarm_silent_label"
               android:textColor="@color/text_primary"
               android:textSize="13sp"
+            />
+
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnSaveThresholds"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="14dp"
+              android:paddingTop="10dp"
+              android:paddingBottom="10dp"
+              android:gravity="center"
+              android:breakStrategy="simple"
+              android:hyphenationFrequency="none"
+              android:maxLines="2"
+              android:text="@string/btn_save_thresholds"
+              android:textColor="@color/accent_primary_bright"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/accent_primary"
             />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>

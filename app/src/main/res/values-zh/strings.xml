@@ -306,4 +306,34 @@
     <string name="diag_need_server">请先设置同步服务器地址。</string>
     <string name="diag_sending">正在发送诊断报告…</string>
     <string name="notif_last_reading_unit">最后读数：%1$s · %2$s</string>
+    <string name="thresholds_invalid_number">请输入有效数字</string>
+    <string name="thresholds_range_format">范围 %1$s–%2$s</string>
+    <string name="chart_now">现在</string>
+    <string name="alarm_section_glucose">血糖</string>
+    <string name="alarm_section_device">设备</string>
+    <string name="alarm_section_notifications">通知</string>
+    <string name="sensor_status_placeholder">传感器：--</string>
+    <string name="sensor_phase_initializing">初始化</string>
+    <string name="sensor_phase_updating">更新中</string>
+    <string name="sensor_phase_unknown">未知</string>
+    <string name="sensor_status_ok">OK</string>
+    <string name="sensor_status_initializing_format">初始化 · 剩余 %1$s</string>
+    <string name="sensor_status_line_format">传感器：%1$s · 读数：%2$s</string>
+    <string name="data_age_now">刚刚</string>
+    <string name="data_age_minutes">%1$d 分钟前</string>
+    <string name="reservoir_units_format">%1$d U</string>
+    <string name="reservoir_threshold_short">阈值 30 U</string>
+    <string name="reservoir_low_suffix"> · 低</string>
+    <string name="battery_charging">充电中</string>
+    <string name="battery_no_data">无数据</string>
+    <string name="battery_type_aa">泵电池 · AA</string>
+    <string name="doze_warning_short">电池优化可能会暂停读数。点击更改。</string>
+    <string name="doze_title">后台运行与电池</string>
+    <string
+    name="doze_body"
+  >Android (Doze) 以及三星、小米等厂商定制可能在熄屏后让应用休眠并暂停蓝牙，导致读数和夜间提醒停止。为 MGlikemia 关闭优化可让其在后台继续运行。小米还需检查自启动和任务管理器锁定，三星检查“永不休眠的应用”。</string>
+    <string name="doze_status_placeholder">优化状态：--</string>
+    <string name="doze_disable_button">关闭电池优化</string>
+    <string name="doze_status_off">优化状态：已关闭。后台运行正常</string>
+    <string name="doze_status_on">优化状态：已开启。Doze 可能会暂停读数</string>
 </resources>

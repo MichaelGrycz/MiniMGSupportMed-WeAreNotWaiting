@@ -3,6 +3,15 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta52
+
+- Aktualizacje: pobieranie pokazuje modalny pasek postępu z procentem i rozmiarem, widoczny niezależnie od zakładki, oraz stan „Instalowanie…”.
+- Ustawienia: walidacja pól przy zapisie — błędne pole jest podświetlone i wskazane, zamiast tylko komunikatu Toast.
+- Ustawienia: progi glikemii są pokazywane i zapisywane w wybranej jednostce (mg/dL albo mmol/L), z przeliczaniem.
+- Ustawienia: przycisk „Zapisz” przeniesiony na dół karty, żeby obejmował także progi urządzenia i powiadomień; dodane nagłówki sekcji Glikemia / Urządzenie / Powiadomienia.
+- Wykres: strefa prognozy ma pionową etykietę „teraz” i podpis „30 min”; nagłówek odporniejszy na wąskie ekrany.
+- Lokalizacja: status sensora, zbiornik, bateria i cała karta pracy w tle (Doze) korzystają teraz z tłumaczeń zamiast polskich tekstów na sztywno.
+
 ## 1.0-beta51
 
 - Aktualizacje: widoczny pasek postępu i procent pobierania, komunikat „Instalowanie…”.

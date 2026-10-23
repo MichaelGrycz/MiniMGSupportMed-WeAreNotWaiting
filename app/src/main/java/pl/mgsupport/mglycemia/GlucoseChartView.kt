@@ -838,6 +838,21 @@ class GlucoseChartView @JvmOverloads constructor(
 
         // Delikatna granica teraźniejszość | przyszłość.
         canvas.drawLine(dividerX, plotRect.top, dividerX, plotRect.bottom, futureDividerPaint)
+        // Pionowa etykieta "teraz" przy granicy, żeby nie kolidowała z wartością prognozy.
+        canvas.save()
+        canvas.rotate(
+            -90f,
+            dividerX + dp(9f),
+            plotRect.centerY(),
+        )
+        futureCaptionPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText(
+            context.getString(R.string.chart_now),
+            dividerX + dp(9f),
+            plotRect.centerY() + dp(3f),
+            futureCaptionPaint,
+        )
+        canvas.restore()
 
         val predX = (right - dp(9f)).coerceAtLeast(dividerX + dp(4f))
         val predY = yFor(prediction).coerceIn(plotRect.top, plotRect.bottom)
@@ -859,7 +874,7 @@ class GlucoseChartView @JvmOverloads constructor(
         canvas.drawText(
             context.getString(R.string.chart_prediction_30min),
             centerX,
-            (predY + dp(14f)).coerceAtMost(plotRect.bottom),
+            plotRect.bottom - dp(4f),
             futureCaptionPaint,
         )
     }

@@ -657,8 +657,14 @@ class PumpDashboardActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnBatterySettings).setOnClickListener { showSystemShortcuts() }
 
         // Settings Controls
-        btnUnitMgdl.setOnClickListener { controller.setUnit(GlucoseUnit.MGDL) }
-        btnUnitMmol.setOnClickListener { controller.setUnit(GlucoseUnit.MMOL) }
+        btnUnitMgdl.setOnClickListener {
+            controller.setUnit(GlucoseUnit.MGDL)
+            prefillThresholds(controller.state.value.thresholds)
+        }
+        btnUnitMmol.setOnClickListener {
+            controller.setUnit(GlucoseUnit.MMOL)
+            prefillThresholds(controller.state.value.thresholds)
+        }
         btnLangAuto.setOnClickListener { controller.setLanguage(null) }
         btnLangPl.setOnClickListener { controller.setLanguage("pl") }
         btnLangEn.setOnClickListener { controller.setLanguage("en") }
@@ -854,6 +860,40 @@ class PumpDashboardActivity : AppCompatActivity() {
     }
 
     private fun downloadAndInstall(update: AvailableUpdate) {
+        val density = resources.displayMetrics.density
+        val padding = (20 * density).toInt()
+        val label =
+            TextView(this).apply {
+                text = getString(R.string.updates_downloading)
+                textSize = 14f
+                setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_secondary))
+            }
+        val bar =
+            ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+                isIndeterminate = true
+                max = 100
+            }
+        val content =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(padding, padding, padding, padding)
+                addView(label)
+                addView(
+                    bar,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        (6 * density).toInt().coerceAtLeast(1),
+                    ).apply { topMargin = (12 * density).toInt() },
+                )
+            }
+        val dialog =
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.updates_dialog_title, update.version))
+                .setView(content)
+                .setCancelable(false)
+                .create()
+        dialog.show()
+
         showUpdateStatus(getString(R.string.updates_downloading))
         updateProgressBar?.let {
             it.isIndeterminate = true
@@ -861,26 +901,50 @@ class PumpDashboardActivity : AppCompatActivity() {
             it.visibility = View.VISIBLE
         }
         uiScope.launch {
-            // Percent changes only are posted to the main thread; the stream callback fires per 8 KB.
             var lastPercent = Int.MIN_VALUE
             val apk =
                 updateChecker.download(update) { bytesRead, totalBytes ->
                     val percent = downloadProgressPercent(bytesRead, totalBytes) ?: -1
                     if (percent != lastPercent) {
                         lastPercent = percent
-                        runOnUiThread { updateDownloadProgress(bytesRead, totalBytes) }
+                        runOnUiThread {
+                            if (percent >= 0) {
+                                bar.isIndeterminate = false
+                                bar.progress = percent
+                                label.text =
+                                    getString(
+                                        R.string.updates_downloading_percent,
+                                        percent,
+                                        formatMegabytes(bytesRead),
+                                        formatMegabytes(totalBytes),
+                                    )
+                            } else {
+                                bar.isIndeterminate = true
+                                label.text = getString(R.string.updates_downloading)
+                            }
+                            updateDownloadProgress(bytesRead, totalBytes)
+                        }
                     }
                 }
             if (apk == null) {
+                dialog.dismiss()
                 hideDownloadProgress()
                 showUpdateStatus(getString(R.string.updates_download_failed))
+                Toast.makeText(this@PumpDashboardActivity, R.string.updates_download_failed, Toast.LENGTH_LONG)
+                    .show()
                 return@launch
             }
+            bar.isIndeterminate = false
+            bar.progress = 100
+            label.text = getString(R.string.updates_installing)
             updateProgressBar?.let {
                 it.isIndeterminate = false
                 it.progress = 100
             }
             showUpdateStatus(getString(R.string.updates_installing))
+            // Krotka chwila, zeby uzytkownik zobaczyl 100% przed otwarciem instalatora.
+            delay(350L)
+            dialog.dismiss()
             try {
                 updateChecker.install(apk)
             } catch (_: Exception) {
@@ -941,51 +1005,106 @@ class PumpDashboardActivity : AppCompatActivity() {
     }
 
     private fun prefillThresholds(t: Thresholds) {
-        etUrgentLow.setText(t.urgentLow.toString())
-        etLow.setText(t.low.toString())
-        etHigh.setText(t.high.toString())
-        etUrgentHigh.setText(t.urgentHigh.toString())
-        etReservoirThreshold.setText(controller.reservoirThresholdIu().toInt().toString())
-        etSensorMaxHours.setText(controller.sensorMaxAgeHoursHours().toInt().toString())
+        thresholdsLabel.text =
+            getString(R.string.label_thresholds) + " \u00b7 " + if (isMmol()) "mmol/L" else "mg/dL"
+        etUrgentLow.setText(formatThreshold(t.urgentLow))
+        etLow.setText(formatThreshold(t.low))
+        etHigh.setText(formatThreshold(t.high))
+        etUrgentHigh.setText(formatThreshold(t.urgentHigh))
+        etReservoirThreshold.setText(formatNumber(controller.reservoirThresholdIu()))
+        etSensorMaxHours.setText(formatNumber(controller.sensorMaxAgeHoursHours()))
         etStaleLinkMin.setText(controller.staleLinkTimeoutMin().toString())
         etAlertRepeatMin.setText(controller.alertRepeatMinutes().toString())
+        listOf(
+            etUrgentLow,
+            etLow,
+            etHigh,
+            etUrgentHigh,
+            etReservoirThreshold,
+            etSensorMaxHours,
+            etStaleLinkMin,
+            etAlertRepeatMin
+        )
+            .forEach { it.error = null }
+    }
+
+    private fun isMmol(): Boolean = controller.state.value.unit == GlucoseUnit.MMOL
+
+    private fun formatThreshold(mgDl: Int): String =
+        if (isMmol()) String.format(Locale.getDefault(), "%.1f", mgDl / 18.0) else mgDl.toString()
+
+    private fun formatNumber(value: Double): String =
+        if (value % 1.0 == 0.0) value.toInt().toString()
+        else String.format(Locale.getDefault(), "%.1f", value)
+
+    private fun toMgDl(value: Double): Int =
+        if (isMmol()) (value * 18.0).roundToInt() else value.roundToInt()
+
+    /** Waliduje pole liczbowе i ustawia blad przy konkretnym polu. */
+    private fun EditText.requireNumber(min: Double, max: Double): Double? {
+        val raw = text.toString().trim().replace(',', '.')
+        val value = raw.toDoubleOrNull()
+        if (value == null) {
+            error = getString(R.string.thresholds_invalid_number)
+            requestFocus()
+            return null
+        }
+        if (value < min || value > max) {
+            error = getString(R.string.thresholds_range_format, formatNumber(min), formatNumber(max))
+            requestFocus()
+            return null
+        }
+        error = null
+        return value
     }
 
     private fun saveThresholds() {
-        fun read(v: EditText, fallback: Int): Int =
-            v.text.toString().toIntOrNull() ?: fallback
+        listOf(
+            etUrgentLow,
+            etLow,
+            etHigh,
+            etUrgentHigh,
+            etReservoirThreshold,
+            etSensorMaxHours,
+            etStaleLinkMin,
+            etAlertRepeatMin
+        )
+            .forEach { it.error = null }
 
-        val current = controller.state.value.thresholds
+        val glucoseMin = if (isMmol()) 20.0 / 18.0 else 20.0
+        val glucoseMax = if (isMmol()) 600.0 / 18.0 else 600.0
+        val urgentLow = etUrgentLow.requireNumber(glucoseMin, glucoseMax) ?: return
+        val low = etLow.requireNumber(glucoseMin, glucoseMax) ?: return
+        val high = etHigh.requireNumber(glucoseMin, glucoseMax) ?: return
+        val urgentHigh = etUrgentHigh.requireNumber(glucoseMin, glucoseMax) ?: return
+
         val t =
             Thresholds(
-                low = read(etLow, current.low),
-                high = read(etHigh, current.high),
-                urgentLow = read(etUrgentLow, current.urgentLow),
-                urgentHigh = read(etUrgentHigh, current.urgentHigh),
+                low = toMgDl(low),
+                high = toMgDl(high),
+                urgentLow = toMgDl(urgentLow),
+                urgentHigh = toMgDl(urgentHigh),
             )
         if (!(t.urgentLow <= t.low && t.low < t.high && t.high <= t.urgentHigh)) {
-            Toast.makeText(
-                this,
-                getString(R.string.thresholds_order_error),
-                Toast.LENGTH_LONG,
-            )
-                .show()
+            etUrgentLow.error = getString(R.string.thresholds_order_error)
+            etLow.error = getString(R.string.thresholds_order_error)
+            etHigh.error = getString(R.string.thresholds_order_error)
+            etUrgentHigh.error = getString(R.string.thresholds_order_error)
+            etLow.requestFocus()
             return
         }
+
+        val reservoir = etReservoirThreshold.requireNumber(5.0, 50.0) ?: return
+        val sensor = etSensorMaxHours.requireNumber(24.0, 336.0) ?: return
+        val stale = etStaleLinkMin.requireNumber(30.0, 45.0) ?: return
+        val repeat = etAlertRepeatMin.requireNumber(1.0, 60.0) ?: return
+
         controller.setThresholds(t)
-
-        val resVal = etReservoirThreshold.text.toString().toDoubleOrNull()
-        if (resVal != null) controller.setReservoirWarnThresholdIu(resVal)
-
-        val sensorVal = etSensorMaxHours.text.toString().toDoubleOrNull()
-        if (sensorVal != null) controller.setSensorMaxAgeHours(sensorVal)
-
-        val staleVal = etStaleLinkMin.text.toString().toLongOrNull()
-        if (staleVal != null) controller.setStaleLinkTimeoutMin(staleVal)
-
-        val repeatVal = etAlertRepeatMin.text.toString().toLongOrNull()
-        if (repeatVal != null) controller.setAlertRepeatMin(repeatVal)
-
+        controller.setReservoirWarnThresholdIu(reservoir)
+        controller.setSensorMaxAgeHours(sensor)
+        controller.setStaleLinkTimeoutMin(stale.toLong())
+        controller.setAlertRepeatMin(repeat.toLong())
+        prefillThresholds(t)
         Toast.makeText(this, getString(R.string.thresholds_saved), Toast.LENGTH_SHORT).show()
     }
 
@@ -1309,7 +1428,8 @@ class PumpDashboardActivity : AppCompatActivity() {
         styleChip(btnLangDe, s.languageTag == "de")
         styleChip(btnLangZh, s.languageTag == "zh")
 
-        thresholdsLabel.text = "${getString(R.string.label_thresholds)} (mg/dL)"
+        thresholdsLabel.text =
+            getString(R.string.label_thresholds) + " \u00b7 " + if (mmol) "mmol/L" else "mg/dL"
         dbStatsText.text = getString(R.string.db_stats_format, s.readingsCount, s.eventsCount)
         logText.text = s.log.ifBlank { getString(R.string.logs_empty) }
     }
@@ -1399,7 +1519,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         glucoseTime.setTextColor(
             ContextCompat.getColor(
                 this,
-                if (isDataStalePl(mins)) R.color.glucose_low else R.color.text_secondary,
+                if (isDataStale(mins)) R.color.glucose_low else R.color.text_secondary,
             )
         )
     }
@@ -1428,14 +1548,14 @@ class PumpDashboardActivity : AppCompatActivity() {
         sensorTileText = TextView(this).apply {
             textSize = 13f
             setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
-            text = "Sensor: --"
+            text = getString(R.string.sensor_status_placeholder)
         }.also(box::addView)
 
         // Ostrzeżenie pokazuje się WYŁĄCZNIE wtedy, gdy system faktycznie ogranicza pracę w tle.
         dozeWarnText = TextView(this).apply {
             textSize = 12.5f
             setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.glucose_high))
-            text = "Oszczędzanie baterii może wstrzymywać odczyty. Dotknij, aby to zmienić"
+            text = getString(R.string.doze_warning_short)
             visibility = View.GONE
             setOnClickListener { requestIgnoreBatteryOptimizations() }
             setPadding(0, dpi(4), 0, 0)
@@ -1467,16 +1587,13 @@ class PumpDashboardActivity : AppCompatActivity() {
             setPadding(dpi(16), dpi(14), dpi(16), dpi(14))
         }
         box.addView(TextView(this).apply {
-            text = "Praca w tle i bateria"
+            text = getString(R.string.doze_title)
             textSize = 15f
             setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
             setTypeface(null, Typeface.BOLD)
         })
         box.addView(TextView(this).apply {
-            text = "Android (Doze) oraz nakładki Samsung i Xiaomi potrafią usypiać aplikację po " +
-                "zgaszeniu ekranu i wstrzymywać Bluetooth, wtedy odczyty i alarmy nocne przestają " +
-                "napływać. Wyłączenie optymalizacji dla MGlikemii pozwala działać w tle. Na Xiaomi " +
-                "sprawdź też Autostart i blokadę w menedżerze zadań, na Samsungu opcję „Nigdy nie usypiaj”."
+            text = getString(R.string.doze_body)
             textSize = 12.5f
             setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_muted))
             setPadding(0, dpi(6), 0, dpi(8))
@@ -1484,10 +1601,10 @@ class PumpDashboardActivity : AppCompatActivity() {
         box.addView(TextView(this).apply {
             textSize = 13f
             setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
-            text = "Stan optymalizacji: --"
+            text = getString(R.string.doze_status_placeholder)
         }.also { dozeStatusText = it })
         box.addView(Button(this).apply {
-            text = "Wyłącz optymalizację baterii"
+            text = getString(R.string.doze_disable_button)
             minHeight = dpi(48)
             setOnClickListener { requestIgnoreBatteryOptimizations() }
         })
@@ -1502,14 +1619,15 @@ class PumpDashboardActivity : AppCompatActivity() {
             ContextCompat.getColor(this, if (statusLineIsAlert(s)) R.color.glucose_low else R.color.text_primary)
         )
         // Kafelki zbiornika i baterii: tylko wartość i krótki dopisek, bez akapitów.
-        reservoirText.text = formatReservoirPl(s.reservoirUnits)
-        reservoirUnitsText.text = "Próg 30 j." + reservoirLowWarningPl(s.reservoirUnits)
+        reservoirText.text = formatReservoir(this, s.reservoirUnits)
+        reservoirUnitsText.text =
+            getString(R.string.reservoir_threshold_short) + reservoirLowWarning(this, s.reservoirUnits)
         batteryText.text = s.batteryPercent?.let { "$it%" } ?: "--"
         batterySubText.text =
             when {
-                s.batteryCharging == true -> "Ładowanie"
-                s.batteryPercent == null -> "Brak danych"
-                else -> "Bateria pompy · AA"
+                s.batteryCharging == true -> getString(R.string.battery_charging)
+                s.batteryPercent == null -> getString(R.string.battery_no_data)
+                else -> getString(R.string.battery_type_aa)
             }
         updateDozeStatus()
     }
@@ -1517,27 +1635,26 @@ class PumpDashboardActivity : AppCompatActivity() {
     /** Jedna linia: stan sensora i wiek ostatniego odczytu. */
     private fun statusLine(s: PumpUiState): String {
         val sensor =
-            when {
-                s.sensorUpdating && s.sensorPhase == SensorPhase.INITIALIZING ->
-                    "Inicjalizacja · ${formatSensorRemaining(this, s.sensorRemainingMinutes)}"
-
-                s.sensorUpdating -> "Aktualizacja"
-                else -> "OK"
-            }
-        val age = formatDataAgePl(dataAgeMinutesPl(s.glucoseAt))
-        return "Sensor: $sensor · Odczyt: $age"
+            formatSensorStatus(
+                this,
+                s.sensorPhase,
+                s.sensorRemainingMinutes,
+                s.sensorUpdating,
+            )
+        val age = formatDataAge(this, dataAgeMinutes(s.glucoseAt))
+        return getString(R.string.sensor_status_line_format, sensor, age)
     }
 
     private fun statusLineIsAlert(s: PumpUiState): Boolean =
-        s.sensorUpdating || isDataStalePl(dataAgeMinutesPl(s.glucoseAt))
+        s.sensorUpdating || isDataStale(dataAgeMinutes(s.glucoseAt))
 
     private fun updateDozeStatus() {
         val pm = getSystemService(POWER_SERVICE) as? PowerManager
         val ignoring = pm?.isIgnoringBatteryOptimizations(packageName) ?: false
         dozeWarnText?.visibility = if (ignoring) View.GONE else View.VISIBLE
         dozeStatusText?.text =
-            if (ignoring) "Stan optymalizacji: wyłączona. Praca w tle OK"
-            else "Stan optymalizacji: włączona. Doze może wstrzymywać odczyty"
+            if (ignoring) getString(R.string.doze_status_off)
+            else getString(R.string.doze_status_on)
         dozeStatusText?.setTextColor(
             ContextCompat.getColor(
                 this,

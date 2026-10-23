@@ -329,4 +329,34 @@
     <string name="diag_need_server">Lege zuerst die Sync-Serveradresse fest.</string>
     <string name="diag_sending">Diagnosebericht wird gesendet…</string>
     <string name="notif_last_reading_unit">Letzter Wert: %1$s · %2$s</string>
+    <string name="thresholds_invalid_number">Bitte eine gültige Zahl eingeben</string>
+    <string name="thresholds_range_format">Bereich %1$s–%2$s</string>
+    <string name="chart_now">jetzt</string>
+    <string name="alarm_section_glucose">Glukose</string>
+    <string name="alarm_section_device">Gerät</string>
+    <string name="alarm_section_notifications">Benachrichtigungen</string>
+    <string name="sensor_status_placeholder">Sensor: --</string>
+    <string name="sensor_phase_initializing">Initialisierung</string>
+    <string name="sensor_phase_updating">Aktualisierung</string>
+    <string name="sensor_phase_unknown">Unbekannt</string>
+    <string name="sensor_status_ok">OK</string>
+    <string name="sensor_status_initializing_format">Initialisierung · %1$s übrig</string>
+    <string name="sensor_status_line_format">Sensor: %1$s · Wert: %2$s</string>
+    <string name="data_age_now">gerade eben</string>
+    <string name="data_age_minutes">vor %1$d Min.</string>
+    <string name="reservoir_units_format">%1$d U</string>
+    <string name="reservoir_threshold_short">Schwelle 30 U</string>
+    <string name="reservoir_low_suffix"> · NIEDRIG</string>
+    <string name="battery_charging">Lädt</string>
+    <string name="battery_no_data">Keine Daten</string>
+    <string name="battery_type_aa">Pumpenbatterie · AA</string>
+    <string name="doze_warning_short">Die Akku-Optimierung kann Messwerte pausieren. Tippen zum Ändern.</string>
+    <string name="doze_title">Hintergrundarbeit und Akku</string>
+    <string
+    name="doze_body"
+  >Android (Doze) und Hersteller-Aufsätze (Samsung, Xiaomi) können die App nach dem Ausschalten des Bildschirms schlafen legen und Bluetooth pausieren; dann kommen Messwerte und Nachtalarme nicht mehr an. Das Deaktivieren der Optimierung für MGlikemia lässt sie weiterlaufen. Bei Xiaomi auch Autostart und Task-Manager-Sperre prüfen, bei Samsung die Option „Nie schlafen“.</string>
+    <string name="doze_status_placeholder">Optimierungsstatus: --</string>
+    <string name="doze_disable_button">Akku-Optimierung deaktivieren</string>
+    <string name="doze_status_off">Optimierungsstatus: aus. Hintergrundarbeit OK</string>
+    <string name="doze_status_on">Optimierungsstatus: an. Doze kann Messwerte pausieren</string>
 </resources>

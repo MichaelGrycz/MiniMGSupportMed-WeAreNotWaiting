@@ -340,4 +340,34 @@
     <string name="diag_need_server">Set the sync server address first.</string>
     <string name="diag_sending">Sending diagnostic report…</string>
     <string name="notif_last_reading_unit">Last reading: %1$s · %2$s</string>
+    <string name="thresholds_invalid_number">Enter a valid number</string>
+    <string name="thresholds_range_format">Range %1$s–%2$s</string>
+    <string name="chart_now">now</string>
+    <string name="alarm_section_glucose">Glucose</string>
+    <string name="alarm_section_device">Device</string>
+    <string name="alarm_section_notifications">Notifications</string>
+    <string name="sensor_status_placeholder">Sensor: --</string>
+    <string name="sensor_phase_initializing">Initializing</string>
+    <string name="sensor_phase_updating">Updating</string>
+    <string name="sensor_phase_unknown">Unknown</string>
+    <string name="sensor_status_ok">OK</string>
+    <string name="sensor_status_initializing_format">Initializing · %1$s left</string>
+    <string name="sensor_status_line_format">Sensor: %1$s · Reading: %2$s</string>
+    <string name="data_age_now">just now</string>
+    <string name="data_age_minutes">%1$d min ago</string>
+    <string name="reservoir_units_format">%1$d U</string>
+    <string name="reservoir_threshold_short">Threshold 30 U</string>
+    <string name="reservoir_low_suffix"> · LOW</string>
+    <string name="battery_charging">Charging</string>
+    <string name="battery_no_data">No data</string>
+    <string name="battery_type_aa">Pump battery · AA</string>
+    <string name="doze_warning_short">Battery optimization can pause readings. Tap to change.</string>
+    <string name="doze_title">Background work and battery</string>
+    <string
+    name="doze_body"
+  >Android (Doze) and vendor overlays (Samsung, Xiaomi) can put the app to sleep after the screen turns off and pause Bluetooth, so readings and night alerts stop. Disabling optimization for MGlikemia lets it keep working. On Xiaomi also check Autostart and the task manager lock; on Samsung the “Never sleeping apps” option.</string>
+    <string name="doze_status_placeholder">Optimization status: --</string>
+    <string name="doze_disable_button">Disable battery optimization</string>
+    <string name="doze_status_off">Optimization status: off. Background work OK</string>
+    <string name="doze_status_on">Optimization status: on. Doze may pause readings</string>
 </resources>
