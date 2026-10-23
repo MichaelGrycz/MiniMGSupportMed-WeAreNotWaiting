@@ -444,12 +444,20 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             descriptor: BluetoothGattDescriptor,
         ) {
             listener?.onDiagnostic("descriptor read ${short(descriptor.uuid)}")
-            // The CCCD read has to reflect the subscription state the pump itself wrote. Answering a
-            // fixed 0x0000 makes the pump believe notifications were never enabled and it drops the
-            // link right after this read (seen on a Galaxy S24: read 2902, then link down).
+            // The CCCD read has to reflect the subscription state. Answering 0x0000 on initial read
+            // makes the pump believe notifications were never enabled and it drops the link right after
+            // this read (seen on Galaxy S24 and Redmi Note 13 Pro: read 2902, then link down).
             val isSakeCccd = descriptor.uuid == MedtronicProtocol.CCCD_UUID &&
                 descriptor.characteristic?.uuid == MedtronicProtocol.SAKE_CHARACTERISTIC_UUID
-            val reply = if (isSakeCccd) sakeCccdValue else (descriptor.value ?: byteArrayOf(0x00, 0x00))
+            val reply = if (isSakeCccd) {
+                if (sakeCccdValue.contentEquals(byteArrayOf(0x00, 0x00))) {
+                    byteArrayOf(0x01, 0x00)
+                } else {
+                    sakeCccdValue
+                }
+            } else {
+                descriptor.value ?: byteArrayOf(0x00, 0x00)
+            }
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, reply)
         }

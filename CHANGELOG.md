@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta24
+
+- Parowanie BLE: poprawiono stabilność inicjalizacji subskrypcji SAKE (`2902`) dla
+  telefonów Xiaomi (Redmi Note 13 Pro 5G) oraz Samsung (Galaxy S24).
+- Wyeliminowano przedwczesne zrywanie połączenia GATT zaraz po odczycie deskryptora CCCD.
+
 ## 1.0-beta23
 
 - Aktualizacje: aplikacja nie ufa już pojedynczej odpowiedzi „brak nowszej wersji”.
