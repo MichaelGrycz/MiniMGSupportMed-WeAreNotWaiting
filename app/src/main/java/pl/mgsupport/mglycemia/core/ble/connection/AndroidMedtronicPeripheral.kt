@@ -156,11 +156,11 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         val characteristic = sakeCharacteristic
         val target = peer
         if (server == null || characteristic == null || target == null) {
-            Timber.w("Cannot notify SAKE: server/characteristic/peer not ready")
+            diag("Cannot notify SAKE: server/characteristic/peer not ready")
             return false
         }
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val success = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 server.notifyCharacteristicChanged(target, characteristic, false, payload) ==
                     BluetoothStatusCodes.SUCCESS
             } else {
@@ -169,8 +169,10 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 @Suppress("DEPRECATION")
                 server.notifyCharacteristicChanged(target, characteristic, false)
             }
+            diag("sake notify len=${payload.size} success=$success value=${hex(payload)}")
+            success
         } catch (e: SecurityException) {
-            Timber.w(e, "SAKE notification failed")
+            diag("sake notify failed: SecurityException")
             false
         }
     }
@@ -556,8 +558,10 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             if (isSakeCccd && reply.size >= 2 && (reply[0].toInt() and 0x01) != 0) {
                 if (sakeCccdValue.contentEquals(byteArrayOf(0x00, 0x00))) {
                     sakeCccdValue = reply.copyOf(2)
-                    diag("CCCD read confirmed subscription (0x0100); triggering SAKE start")
-                    listener?.onSakeSubscribed()
+                    diag("CCCD read confirmed subscription (0x0100); scheduling SAKE start in 150ms")
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        listener?.onSakeSubscribed()
+                    }, 150L)
                 }
             }
         }

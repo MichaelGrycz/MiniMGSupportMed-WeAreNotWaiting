@@ -3,6 +3,10 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta33
+
+- Parowanie BLE: Opóźniono start powiadomienia SAKE o 150 ms po odczycie deskryptora CCCD przez pompę. Daje to czas na poprawne zamknięcie i wysłanie pakietu potwierdzenia odczytu przez stos Bluetooth telefonu, eliminując race condition w trybie peryferyjnym na Samsungu i Xiaomi. Dodano także pełne logowanie wysyłanych ramek SAKE (`sake notify`).
+
 ## 1.0-beta32
 
 - Aktualizacje: Poprawiono źródło pobierania pliku APK wewnątrz aplikacji. Zamiast pobierać plik z GitHub Releases (co na niektórych telefonach powodowało błąd pobierania przez przekierowania S3), aplikacja pobiera teraz gotowy plik bezpośrednio z szybkiego i pewnego serwera VPS (`mgsupport.pl`).
