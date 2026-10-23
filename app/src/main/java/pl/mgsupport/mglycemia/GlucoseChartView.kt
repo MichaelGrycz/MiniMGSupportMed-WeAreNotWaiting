@@ -160,6 +160,8 @@ class GlucoseChartView @JvmOverloads constructor(
     init {
         contentDescription = context.getString(R.string.chart_canvas_description)
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        isClickable = true
+        isFocusable = true
     }
 
     /** Exact min/max over the whole window, straight from the store (not the downsampled curve). */
@@ -374,7 +376,12 @@ class GlucoseChartView @JvmOverloads constructor(
             .toLong()
             .coerceIn(min(MIN_VISIBLE_MILLIS, windowMillis), windowMillis)
 
-    private fun maxPanOffsetMs(visDuration: Long): Long = max(0L, windowMillis - visDuration)
+    private fun maxPanOffsetMs(visDuration: Long): Long {
+        val latest = latestTimestamp()
+        val oldest = samples.firstOrNull()?.time ?: (latest - windowMillis)
+        val availableSpan = max(0L, latest - oldest)
+        return max(0L, availableSpan - visDuration)
+    }
 
     private fun hasData() = samples.isNotEmpty() || insulinEvents.isNotEmpty()
 
@@ -633,12 +640,15 @@ class GlucoseChartView @JvmOverloads constructor(
 
         drawInsulinEvents(canvas, timeStart, timeEnd, ::xFor)
         if (visible.isEmpty()) {
-            canvas.drawText(context.getString(R.string.chart_no_glucose),
-                plotRect.centerX(), plotRect.centerY(), emptySubPaint)
+            canvas.drawText(
+                context.getString(R.string.chart_no_glucose),
+                plotRect.centerX(), plotRect.centerY(), emptySubPaint
+            )
         }
 
         // 4. Glucose curve + gradient area fill + colored dots
-        val firstVisibleIdx = samples.indexOfFirst { it.time >= timeStart }.let { if (it < 0) samples.lastIndex else it }
+        val firstVisibleIdx =
+            samples.indexOfFirst { it.time >= timeStart }.let { if (it < 0) samples.lastIndex else it }
         val lastVisibleIdx = samples.indexOfLast { it.time <= timeEnd }.let { if (it < 0) 0 else it }
         val startIdx = (firstVisibleIdx - 1).coerceAtLeast(0)
         val endIdx = (lastVisibleIdx + 1).coerceAtMost(samples.lastIndex)
@@ -759,15 +769,21 @@ class GlucoseChartView @JvmOverloads constructor(
     }
 
     private fun drawInsulinEvents(canvas: Canvas, start: Long, end: Long, xFor: (Long) -> Float) {
-        val laneLabels = intArrayOf(R.string.chart_lane_bolus, R.string.chart_lane_auto,
-            R.string.chart_lane_basal, R.string.chart_lane_unknown)
-        val colors = intArrayOf(0xFF38BDF8.toInt(), 0xFF22D3EE.toInt(),
-            0xFF818CF8.toInt(), 0xFFF59E0B.toInt())
+        val laneLabels = intArrayOf(
+            R.string.chart_lane_bolus, R.string.chart_lane_auto,
+            R.string.chart_lane_basal, R.string.chart_lane_unknown
+        )
+        val colors = intArrayOf(
+            0xFF38BDF8.toInt(), 0xFF22D3EE.toInt(),
+            0xFF818CF8.toInt(), 0xFFF59E0B.toInt()
+        )
         for (lane in ChartEventLane.entries) {
             val y = paddingTop + dp(26f + lane.ordinal * 48f)
             captionPaint.textAlign = Paint.Align.RIGHT
-            canvas.drawText(context.getString(laneLabels[lane.ordinal]), plotRect.left - dp(6f),
-                y + dp(4f), captionPaint)
+            canvas.drawText(
+                context.getString(laneLabels[lane.ordinal]), plotRect.left - dp(6f),
+                y + dp(4f), captionPaint
+            )
             canvas.drawLine(plotRect.left, y, plotRect.right, y, gridPaint)
         }
         // Buckets are screen-space groups, never summed or scaled insulin doses.
@@ -790,6 +806,7 @@ class GlucoseChartView @JvmOverloads constructor(
                     }
                     canvas.drawPath(triangle, eventPaint)
                 }
+
                 ChartEventLane.AUTOMATIC -> canvas.drawCircle(x, y, r, eventPaint)
                 ChartEventLane.BASAL -> canvas.drawRect(x - r, y - r, x + r, y + r, eventPaint)
                 ChartEventLane.UNKNOWN -> {
@@ -891,8 +908,10 @@ class GlucoseChartView @JvmOverloads constructor(
         val boxW = max(w1, w2) + dp(18f)
         val boxH = dp(38f)
 
-        val left = (sx - boxW / 2f).coerceIn(plotRect.left + dp(2f),
-            max(plotRect.left + dp(2f), plotRect.right - boxW - dp(2f)))
+        val left = (sx - boxW / 2f).coerceIn(
+            plotRect.left + dp(2f),
+            max(plotRect.left + dp(2f), plotRect.right - boxW - dp(2f))
+        )
         val top = plotRect.top + dp(4f)
         tooltipRect.set(left, top, left + boxW, top + boxH)
 
@@ -988,6 +1007,7 @@ internal object InsulinChartGeometry {
     fun lane(kind: InsulinEventKind): ChartEventLane = when (kind) {
         InsulinEventKind.MANUAL_BOLUS, InsulinEventKind.CORRECTION,
         InsulinEventKind.MEAL_BOLUS, InsulinEventKind.MEAL_CORRECTION -> ChartEventLane.BOLUS
+
         InsulinEventKind.AUTOMATIC_BOLUS -> ChartEventLane.AUTOMATIC
         InsulinEventKind.AUTO_BASAL -> ChartEventLane.BASAL
         InsulinEventKind.UNKNOWN_BOLUS -> ChartEventLane.UNKNOWN

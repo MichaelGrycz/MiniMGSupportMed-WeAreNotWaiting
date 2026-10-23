@@ -77,7 +77,7 @@ class UpdateChecker(private val context: Context) {
             if (version.isBlank()) return UpdateCheck.Failed
             if (compareVersions(version, BuildConfig.VERSION_NAME) <= 0) return UpdateCheck.None
 
-            val apkUrl = firstApkUrl(json) ?: return UpdateCheck.Failed
+            val apkUrl = firstApkUrl(json, version)
             return UpdateCheck.Found(
                 AvailableUpdate(
                     version = version,
@@ -122,7 +122,7 @@ class UpdateChecker(private val context: Context) {
             AvailableUpdate(
                 version = version,
                 notes = "",
-                apkUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/$APK_ASSET",
+                apkUrl = "https://mgsupport.pl/pobierz/MGLycemia-$version.apk",
                 pageUrl = "$RELEASES_LATEST/tag/$tag",
             ),
         )
@@ -256,15 +256,9 @@ class UpdateChecker(private val context: Context) {
             null
         }
 
-    private fun firstApkUrl(json: JSONObject): String? {
-        val assets = json.optJSONArray("assets") ?: return null
-        for (i in 0 until assets.length()) {
-            val asset = assets.optJSONObject(i) ?: continue
-            if (asset.optString("name").endsWith(".apk", ignoreCase = true)) {
-                return asset.optString("browser_download_url").takeIf { it.isNotBlank() }
-            }
-        }
-        return null
+    private fun firstApkUrl(json: JSONObject, version: String): String {
+        // Prefer our own direct VPS download URL where the APK is cleanly named MGLycemia-<version>.apk
+        return "https://mgsupport.pl/pobierz/MGLycemia-$version.apk"
     }
 
     private companion object {

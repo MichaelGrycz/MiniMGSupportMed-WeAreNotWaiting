@@ -3,6 +3,20 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta32
+
+- Aktualizacje: Poprawiono źródło pobierania pliku APK wewnątrz aplikacji. Zamiast pobierać plik z GitHub Releases (co na niektórych telefonach powodowało błąd pobierania przez przekierowania S3), aplikacja pobiera teraz gotowy plik bezpośrednio z szybkiego i pewnego serwera VPS (`mgsupport.pl`).
+
+## 1.0-beta31
+
+- Bateria / Doze: Dodano brakujące uprawnienie `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` w manifeście, dzięki czemu przyciski „Wyłącz optymalizację baterii” wreszcie poprawnie wywołują systemowe okno zwolnienia z oszczędzania energii na Samsungu i Xiaomi.
+
+## 1.0-beta30
+
+- Wykres: Przyciskach „Wcześniej” i „Później” nadano spójny wygląd (styl ciemnych chipów pasujący do reszty aplikacji, widoczny zarówno na pulpicie, jak i w trybie pełnoekranowym).
+- Wykres: Poprawiono obsługę dotyku — wykres reaguje na gesty od razu, bez konieczności wcześniejszego klikania w niego.
+- Wykres: Przyciski „Wcześniej” / „Później” pozwalają teraz przewijać historię aż do końca dostępnych w bazie danych próbek (zamiast blokować się po kilku kliknięciach w ramach wybranego okna).
+
 ## 1.0-beta29
 
 - Parowanie BLE: Naprawiono kluczowy problem ze stosem pomp MiniMed — część centrali (w tym na Xiaomi/Redmi i Samsungu) po połączeniu jedynie odczytuje stan deskryptora CCCD (`2902`) i oczekuje natychmiastowego startu SAKE, zamiast pisać do niego jawne żądanie subskrypcji. Teraz odczyt `01 00` przez pompę natychmiast uruchamia wysłanie ramki powitalnej SAKE.

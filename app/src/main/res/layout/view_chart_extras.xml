@@ -1,26 +1,71 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-    <com.google.android.material.button.MaterialButton android:id="@+id/btnChartFullscreen"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
-        android:text="@string/chart_fullscreen" android:textColor="@color/accent_primary_bright"
-        app:strokeColor="@color/border_highlight" />
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <Button android:id="@+id/btnChartEarlier" android:layout_width="0dp" android:layout_weight="1"
-            android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/chart_earlier" />
-        <Button android:id="@+id/btnChartLater" android:layout_width="0dp" android:layout_weight="1"
-            android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/chart_later" />
+<?xml version="1.0" encoding="utf-8" ?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:orientation="vertical"
+>
+    <com.google.android.material.button.MaterialButton
+    android:id="@+id/btnChartFullscreen"
+    style="@style/Widget.Material3.Button.OutlinedButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:text="@string/chart_fullscreen"
+    android:textColor="@color/accent_primary_bright"
+    app:strokeColor="@color/border_highlight"
+  />
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+  >
+        <Button
+      android:id="@+id/btnChartEarlier"
+      android:layout_width="0dp"
+      android:layout_weight="1"
+      android:layout_height="wrap_content"
+      android:minHeight="48dp"
+      android:text="@string/chart_earlier"
+      android:background="@drawable/bg_chip_inactive"
+      android:textColor="@color/text_secondary"
+      android:layout_marginEnd="2dp"
+    />
+        <Button
+      android:id="@+id/btnChartLater"
+      android:layout_width="0dp"
+      android:layout_weight="1"
+      android:layout_height="wrap_content"
+      android:minHeight="48dp"
+      android:text="@string/chart_later"
+      android:background="@drawable/bg_chip_inactive"
+      android:textColor="@color/text_secondary"
+      android:layout_marginStart="2dp"
+    />
     </LinearLayout>
-    <com.google.android.material.button.MaterialButton android:id="@+id/btnChartEvents"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
-        android:textColor="@color/accent_primary_bright" app:strokeColor="@color/border_highlight" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/chart_events_legend" android:textColor="@color/text_primary" android:textSize="12sp" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="4dp" android:text="@string/chart_events_hint"
-        android:textColor="@color/text_secondary" android:textSize="12sp" />
+    <com.google.android.material.button.MaterialButton
+    android:id="@+id/btnChartEvents"
+    style="@style/Widget.Material3.Button.OutlinedButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:textColor="@color/accent_primary_bright"
+    app:strokeColor="@color/border_highlight"
+  />
+    <TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/chart_events_legend"
+    android:textColor="@color/text_primary"
+    android:textSize="12sp"
+  />
+    <TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:text="@string/chart_events_hint"
+    android:textColor="@color/text_secondary"
+    android:textSize="12sp"
+  />
 </LinearLayout>

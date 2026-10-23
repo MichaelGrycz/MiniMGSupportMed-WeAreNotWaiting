@@ -1,78 +1,230 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/chartPanel" android:layout_width="match_parent"
-    android:layout_height="wrap_content" android:orientation="vertical">
+<?xml version="1.0" encoding="utf-8" ?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/chartPanel"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:orientation="vertical"
+>
 
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/chart_section_title" android:textColor="@color/text_primary"
-        android:textSize="15sp" android:textStyle="bold" />
-    <com.google.android.material.button.MaterialButton android:id="@+id/btnChartFullscreen"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
-        android:text="@string/chart_fullscreen" android:textColor="@color/accent_primary_bright"
-        app:strokeColor="@color/border_highlight" />
+    <TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/chart_section_title"
+    android:textColor="@color/text_primary"
+    android:textSize="15sp"
+    android:textStyle="bold"
+  />
+    <com.google.android.material.button.MaterialButton
+    android:id="@+id/btnChartFullscreen"
+    style="@style/Widget.Material3.Button.OutlinedButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:text="@string/chart_fullscreen"
+    android:textColor="@color/accent_primary_bright"
+    app:strokeColor="@color/border_highlight"
+  />
 
-    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:scrollbars="none">
-        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:paddingTop="4dp" android:paddingBottom="4dp">
-            <Button android:id="@+id/btn1h" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_1h"
-                android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
-            <Button android:id="@+id/btn3h" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_3h"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
-            <Button android:id="@+id/btn6h" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_6h"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
-            <Button android:id="@+id/btn12h" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_12h"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
-            <Button android:id="@+id/btn24h" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_24h"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
-            <Button android:id="@+id/btn7d" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_7d"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
-            <Button android:id="@+id/btn30d" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_30d"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
-            <Button android:id="@+id/btn1y" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:text="@string/chart_window_1y"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive" android:textColor="@color/text_secondary" />
+    <HorizontalScrollView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:scrollbars="none"
+  >
+        <LinearLayout
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:paddingTop="4dp"
+      android:paddingBottom="4dp"
+    >
+            <Button
+        android:id="@+id/btn1h"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_1h"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
+            <Button
+        android:id="@+id/btn3h"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_3h"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
+            <Button
+        android:id="@+id/btn6h"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_6h"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
+            <Button
+        android:id="@+id/btn12h"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_12h"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
+            <Button
+        android:id="@+id/btn24h"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_24h"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
+            <Button
+        android:id="@+id/btn7d"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_7d"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
+            <Button
+        android:id="@+id/btn30d"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_30d"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
+            <Button
+        android:id="@+id/btn1y"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="@string/chart_window_1y"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+      />
         </LinearLayout>
     </HorizontalScrollView>
-    <pl.mgsupport.mglycemia.GlucoseChartView android:id="@+id/chart"
-        android:layout_width="match_parent" android:layout_height="440dp" android:layout_marginTop="8dp" />
-    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:scrollbars="none">
-        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="8dp">
-            <ImageButton android:id="@+id/btnZoomOut" android:layout_width="48dp" android:layout_height="48dp"
-                android:background="@drawable/bg_chip_inactive" android:contentDescription="@string/btn_zoom_out"
-                android:padding="12dp" android:src="@drawable/ic_zoom_out" app:tint="@color/text_primary" />
-            <ImageButton android:id="@+id/btnZoomIn" android:layout_width="48dp" android:layout_height="48dp"
-                android:layout_marginStart="4dp" android:background="@drawable/bg_chip_inactive"
-                android:contentDescription="@string/btn_zoom_in" android:padding="12dp"
-                android:src="@drawable/ic_zoom_in" app:tint="@color/text_primary" />
-            <Button android:id="@+id/btnZoomReset" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minWidth="48dp" android:minHeight="48dp" android:layout_marginStart="4dp"
-                android:text="@string/btn_zoom_reset" android:background="@drawable/bg_chip_inactive"
-                android:textColor="@color/text_secondary" android:paddingHorizontal="12dp" />
-            <Button android:id="@+id/btnChartEarlier" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minHeight="48dp" android:text="@string/chart_earlier" />
-            <Button android:id="@+id/btnChartLater" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minHeight="48dp" android:text="@string/chart_later" />
+    <pl.mgsupport.mglycemia.GlucoseChartView
+    android:id="@+id/chart"
+    android:layout_width="match_parent"
+    android:layout_height="440dp"
+    android:layout_marginTop="8dp"
+  />
+    <HorizontalScrollView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:scrollbars="none"
+  >
+        <LinearLayout
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:gravity="center_vertical"
+      android:paddingTop="8dp"
+    >
+            <ImageButton
+        android:id="@+id/btnZoomOut"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:contentDescription="@string/btn_zoom_out"
+        android:padding="12dp"
+        android:src="@drawable/ic_zoom_out"
+        app:tint="@color/text_primary"
+      />
+            <ImageButton
+        android:id="@+id/btnZoomIn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:contentDescription="@string/btn_zoom_in"
+        android:padding="12dp"
+        android:src="@drawable/ic_zoom_in"
+        app:tint="@color/text_primary"
+      />
+            <Button
+        android:id="@+id/btnZoomReset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:layout_marginStart="4dp"
+        android:text="@string/btn_zoom_reset"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+        android:paddingHorizontal="12dp"
+      />
+            <Button
+        android:id="@+id/btnChartEarlier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/chart_earlier"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+        android:layout_marginStart="4dp"
+        android:paddingHorizontal="12dp"
+      />
+            <Button
+        android:id="@+id/btnChartLater"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/chart_later"
+        android:background="@drawable/bg_chip_inactive"
+        android:textColor="@color/text_secondary"
+        android:layout_marginStart="4dp"
+        android:paddingHorizontal="12dp"
+      />
         </LinearLayout>
     </HorizontalScrollView>
-    <com.google.android.material.button.MaterialButton android:id="@+id/btnChartEvents"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
-        android:textColor="@color/accent_primary_bright" app:strokeColor="@color/border_highlight" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/chart_events_legend" android:textColor="@color/text_primary" android:textSize="12sp" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="4dp" android:text="@string/chart_events_hint"
-        android:textColor="@color/text_secondary" android:textSize="12sp" />
+    <com.google.android.material.button.MaterialButton
+    android:id="@+id/btnChartEvents"
+    style="@style/Widget.Material3.Button.OutlinedButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:textColor="@color/accent_primary_bright"
+    app:strokeColor="@color/border_highlight"
+  />
+    <TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/chart_events_legend"
+    android:textColor="@color/text_primary"
+    android:textSize="12sp"
+  />
+    <TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:text="@string/chart_events_hint"
+    android:textColor="@color/text_secondary"
+    android:textSize="12sp"
+  />
 </LinearLayout>
