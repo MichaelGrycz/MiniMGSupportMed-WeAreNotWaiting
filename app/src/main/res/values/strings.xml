@@ -259,7 +259,7 @@
     <string name="log_auto_reconnect">Auto-reconnect: retrying…</string>
     <string name="log_pump">Pump: %1$s SN=%2$s</string>
     <string name="log_history_cursor">History: start cursor = %1$s</string>
-    <string name="log_history_sync">History: +%1$d events (up to seq %2$s)</string>
+    <string name="log_history_sync">History: +%1$d events (up to seq %2$d)</string>
     <string name="log_auth_failed">Could not finish authenticating with the pump</string>
     <string name="log_fault">Fault: %1$s</string>
     <string

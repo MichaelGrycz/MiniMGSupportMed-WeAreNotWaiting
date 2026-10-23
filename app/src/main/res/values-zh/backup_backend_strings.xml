@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="backup_backend_disclosure">CSV 备份未加密，包含血糖、胰岛素和警报数据。请选择自己的文件夹，例如“文档/MGlikemia”。卸载应用后文件仍会保留。重新安装后，请先选择该文件夹并恢复备份，再启用保存。文件夹访问权限取决于其提供方；云文件夹可能会同步您的数据。</string>
+    <string name="backup_backend_existing_folder">该文件夹不是空的。请先恢复其中的备份，或选择一个空文件夹。未覆盖任何文件。</string>
+    <string name="backup_backend_permission_error">无法访问备份文件夹。请重新选择并恢复备份，或选择一个空文件夹。</string>
+    <string name="backup_backend_io_error">备份操作失败。请检查文件夹是否可访问以及剩余空间。轮换时未覆盖上一次已验证的备份。</string>
+    <string name="backup_backend_preferences_error">无法保存设置。本次会话中已暂停备份；请重启应用后检查该设置。</string>
+</resources>

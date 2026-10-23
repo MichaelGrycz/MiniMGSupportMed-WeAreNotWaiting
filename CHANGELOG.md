@@ -3,6 +3,15 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta62
+
+- Poprawka zgodności: aplikacja działa teraz także na Androidzie 7.x. Warstwa BLE i historii używa `java.time`, które bez desugaringu mogło wywrócić aplikację na starszych telefonach.
+- Pełne tłumaczenia niemieckie i chińskie: wykres, zdarzenia insuliny i kopia zapasowa.
+- Polskie teksty kopii zapasowej wróciły do pliku polskiego; domyślne (angielskie) nie są już po polsku.
+- Poprawione formatowanie komunikatów: podział TIR i log synchronizacji historii.
+- Diagnostyka Bluetooth nie wywróci aplikacji, jeśli uprawnienia zostaną odebrane w trakcie sesji.
+- CI: lint przechodzi bez błędów (naprawiono 158 zastanych błędów lintu — bez wyłączania lintu i bez baseline).
+
 ## 1.0-beta61
 
 - Wykres dociąga historię w obie strony: „Earlier” działa teraz także po dojściu do krawędzi wcześniej wczytanych danych (tygodnie i miesiące wstecz), a „Later” wraca do teraźniejszości bez skoku i ponownego wczytywania całości.

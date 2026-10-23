@@ -13,8 +13,8 @@ android {
         applicationId = "pl.mgsupport.mglycemia"
         minSdk = 24
         targetSdk = 36
-        versionCode = 62
-        val appVersionName = "1.0-beta61"
+        versionCode = 63
+        val appVersionName = "1.0-beta62"
         versionName = appVersionName
 
         // Installer and launcher show the version, so testers can tell builds apart at a glance.
@@ -35,6 +35,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // java.time is used throughout the BLE/history layer; without desugaring it would crash on
+        // Android 7.x (minSdk 24). This also makes lint treat those APIs as available.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures {
@@ -71,6 +74,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

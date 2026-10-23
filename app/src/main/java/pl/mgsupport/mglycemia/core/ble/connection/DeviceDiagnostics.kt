@@ -8,6 +8,7 @@ import android.app.usage.UsageStatsManager
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
@@ -77,26 +78,37 @@ object DeviceDiagnostics {
         return lines
     }
 
+    /**
+     * BLUETOOTH_CONNECT backs [BluetoothAdapter.getName] on API 31+, and the local MAC address is a
+     * signature permission no app can hold. Both calls are already guarded by try/catch; lint cannot
+     * see through the adapter getter, so the suppression is scoped to this diagnostic only.
+     */
+    @SuppressLint("MissingPermission")
     private fun bluetoothLine(context: Context): String {
         val adapter =
             (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
         if (adapter == null) return "bluetooth adapter=unavailable"
         val fields = StringBuilder("bluetooth")
-        fields.append(" name=").append(adapter.name ?: "?")
-        fields.append(" enabled=").append(adapter.isEnabled)
-        fields.append(" state=").append(adapterStateLabel(adapter.state))
-        fields.append(" multiAdv=").append(adapter.isMultipleAdvertisementSupported)
-        fields.append(" advertiser=").append(adapter.bluetoothLeAdvertiser != null)
-        fields.append(" offloadFilter=").append(adapter.isOffloadedFilteringSupported)
-        fields.append(" offloadBatch=").append(adapter.isOffloadedScanBatchingSupported)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            fields.append(" le2m=").append(adapter.isLe2MPhySupported)
-            fields.append(" leCoded=").append(adapter.isLeCodedPhySupported)
-            fields.append(" extAdv=").append(adapter.isLeExtendedAdvertisingSupported)
-            fields.append(" periodicAdv=").append(adapter.isLePeriodicAdvertisingSupported)
+        return try {
+            fields.append(" name=").append(adapter.name ?: "?")
+            fields.append(" enabled=").append(adapter.isEnabled)
+            fields.append(" state=").append(adapterStateLabel(adapter.state))
+            fields.append(" multiAdv=").append(adapter.isMultipleAdvertisementSupported)
+            fields.append(" advertiser=").append(adapter.bluetoothLeAdvertiser != null)
+            fields.append(" offloadFilter=").append(adapter.isOffloadedFilteringSupported)
+            fields.append(" offloadBatch=").append(adapter.isOffloadedScanBatchingSupported)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                fields.append(" le2m=").append(adapter.isLe2MPhySupported)
+                fields.append(" leCoded=").append(adapter.isLeCodedPhySupported)
+                fields.append(" extAdv=").append(adapter.isLeExtendedAdvertisingSupported)
+                fields.append(" periodicAdv=").append(adapter.isLePeriodicAdvertisingSupported)
+            }
+            fields.append(" localHash=").append(localAddressHash(adapter))
+            fields.toString()
+        } catch (_: SecurityException) {
+            // Diagnostics must never crash because Bluetooth permissions were revoked mid-session.
+            "bluetooth adapter=permission-denied"
         }
-        fields.append(" localHash=").append(localAddressHash(adapter))
-        return fields.toString()
     }
 
     /**
@@ -104,6 +116,7 @@ object DeviceDiagnostics {
      * tells us whether it changes between sessions. If it stays the same, a stale bond on the pump
      * can still match this phone; if it changes, stale keys cannot be the cause.
      */
+    @SuppressLint("MissingPermission")
     private fun localAddressHash(adapter: BluetoothAdapter): String {
         val address =
             try {

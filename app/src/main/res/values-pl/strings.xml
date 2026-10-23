@@ -265,7 +265,7 @@
     <string name="log_auto_reconnect">Auto-reconnect: ponawiam połączenie…</string>
     <string name="log_pump">Pompa: %1$s SN=%2$s</string>
     <string name="log_history_cursor">Historia: kursor startowy = %1$s</string>
-    <string name="log_history_sync">Historia: +%1$d zdarzeń (do seq %2$s)</string>
+    <string name="log_history_sync">Historia: +%1$d zdarzeń (do seq %2$d)</string>
     <string name="log_auth_failed">Nie udało się dokończyć autoryzacji z pompą</string>
     <string name="log_fault">Błąd BLE: %1$s</string>
     <string

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="backup_backend_disclosure">CSV-Sicherungen sind nicht verschlüsselt und enthalten Glukose-, Insulin- und Alarmdaten. Wählen Sie einen eigenen Ordner, z. B. Dokumente/MGlikemia. Die Dateien bleiben nach dem Deinstallieren erhalten. Nach der Neuinstallation den Ordner auswählen und die Sicherung wiederherstellen, bevor das Speichern aktiviert wird. Der Ordnerzugriff hängt vom Anbieter ab; ein Cloud-Ordner kann Ihre Daten synchronisieren.</string>
+    <string name="backup_backend_existing_folder">Der Ordner ist nicht leer. Stellen Sie zuerst die enthaltene Sicherung wieder her oder wählen Sie einen leeren Ordner. Es wurde keine Datei überschrieben.</string>
+    <string name="backup_backend_permission_error">Kein Zugriff auf den Sicherungsordner. Wählen Sie ihn erneut und stellen Sie die Sicherung wieder her, oder wählen Sie einen leeren Ordner.</string>
+    <string name="backup_backend_io_error">Der Sicherungsvorgang ist fehlgeschlagen. Prüfen Sie die Erreichbarkeit des Ordners und den freien Speicherplatz. Die letzte geprüfte Sicherung wurde bei der Rotation nicht überschrieben.</string>
+    <string name="backup_backend_preferences_error">Die Einstellung konnte nicht gespeichert werden. Sicherungen sind in dieser Sitzung pausiert; prüfen Sie die Einstellung nach einem Neustart.</string>
+</resources>

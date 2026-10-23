@@ -1,6 +1,7 @@
 package pl.mgsupport.mglycemia
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -561,6 +562,9 @@ class PumpDashboardActivity : AppCompatActivity() {
             }.show()
     }
 
+    // The flags passed below are already masked to READ|WRITE; lint cannot prove that through the
+    // local variable, hence the scoped suppression instead of weakening the constant check globally.
+    @SuppressLint("WrongConstant")
     private fun handleBackupFolder(data: Intent?, restore: Boolean) {
         val uri = data?.data ?: return
         val flags = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)

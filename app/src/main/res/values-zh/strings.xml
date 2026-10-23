@@ -69,7 +69,7 @@
 
     <!-- TIR & Analytics -->
     <string name="label_tir">目标范围内时间 (TIR)</string>
-    <string name="label_tir_breakdown">偏低 %1$s%% · 范围内 %2$s%% · 偏高 %3$s%%</string>
+    <string name="label_tir_breakdown">偏低 %1$d%% · 范围内 %2$d%% · 偏高 %3$d%%</string>
     <string name="label_avg_glucose">平均血糖</string>
     <string name="label_gmi">GMI (估计糖化血红蛋白)</string>
     <string name="label_prediction">30分钟后预测</string>
@@ -239,7 +239,7 @@
     <string name="log_auto_reconnect">自动重连中…</string>
     <string name="log_pump">泵: %1$s SN=%2$s</string>
     <string name="log_history_cursor">历史游标 = %1$s</string>
-    <string name="log_history_sync">历史同步 +%1$d</string>
+    <string name="log_history_sync">历史同步：+%1$d 条记录（至序号 %2$d）</string>
     <string name="log_auth_failed">未能完成与泵的认证</string>
     <string name="log_fault">错误: %1$s</string>
     <string name="fault_peripheral_unsupported">此手机无法作为蓝牙 LE 外设广播，因此无法与泵配对。</string>

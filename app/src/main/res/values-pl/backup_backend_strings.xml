@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="backup_backend_disclosure">Kopie CSV nie są szyfrowane i zawierają dane o glikemii, insulinie i alertach. Wybierz własny folder, np. Dokumenty/MGlikemia. Pliki pozostaną po odinstalowaniu aplikacji. Po ponownej instalacji wskaż folder i przywróć kopię przed włączeniem zapisu. Dostęp do folderu zależy od jego dostawcy; folder w chmurze może synchronizować dane.</string>
+    <string name="backup_backend_existing_folder">Folder nie jest pusty. Najpierw przywróć znajdującą się w nim kopię lub wybierz pusty folder. Żaden plik nie został nadpisany.</string>
+    <string name="backup_backend_permission_error">Brak dostępu do folderu kopii. Wybierz go ponownie i przywróć kopię albo wskaż pusty folder.</string>
+    <string name="backup_backend_io_error">Operacja kopii nie powiodła się. Sprawdź dostępność folderu i wolne miejsce. Nie nadpisano ostatniej zweryfikowanej kopii podczas rotacji.</string>
+    <string name="backup_backend_preferences_error">Nie udało się zapisać ustawienia. Kopie zatrzymano w tej sesji; sprawdź ustawienie po ponownym uruchomieniu.</string>
+</resources>

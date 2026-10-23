@@ -98,5 +98,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- The camera is only used by the optional QR scanner; tablets without one stay installable. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
 </manifest>
