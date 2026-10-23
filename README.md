@@ -5,7 +5,11 @@ Niezależna aplikacja na Androida do podglądu glikemii z pomp Medtronic MiniMed
 niego i wysyła dane, które aplikacja odczytuje i zapisuje lokalnie.
 
 Aplikacja jest **tylko do odczytu**. Nie wysyła do pompy żadnych poleceń i nie
-zmienia jej ustawień. Nie jest wyrobem medycznym.
+zmienia jej ustawień.
+
+**Status projektu:** eksperymentalny, niekomercyjny projekt hobbystyczny. To nie jest
+certyfikowany wyrób medyczny. Nie zastępuje pompy, sensora, zaleceń lekarskich ani
+decyzji terapeutycznych i nie służy do ustalania dawek insuliny.
 
 Nazwa: **MGlikemia** po polsku, **MGlycemia** w pozostałych językach.
 
@@ -57,9 +61,9 @@ build nie wymaga dostępu do zewnętrznych repozytoriów.
 
 ## Wydawanie nowej wersji
 
-```bash
-tools/release.sh 1.0-beta14 "Co się zmieniło"
-```
+Wydania robimy **ręcznie** według [AGENTS.md](AGENTS.md) (kroki 1–10). Skrypt
+`tools/release.sh` nadpisuje stronę plikiem `tools/site/MGlikemia.astro` i szuka wersji
+w innym formacie niż obecna strona — używaj go tylko po sprawdzeniu, co robi.
 
 Szczegóły: [docs/RELEASE.md](docs/RELEASE.md).
 
@@ -68,6 +72,7 @@ Szczegóły: [docs/RELEASE.md](docs/RELEASE.md).
 - [Architektura](docs/ARCHITECTURE.md): komponenty, przepływ danych, baza, CSV
 - [Parowanie i diagnostyka BLE](docs/BLE-PAIRING.md): protokół, błędy, znane problemy
 - [Wydawanie wersji](docs/RELEASE.md): skrypt, publikacja, GitHub Releases
+- [Pozycjonowanie i komunikacja](docs/POSITIONING.md): jak mówić o projekcie bez obietnic medycznych
 - [Prywatność](docs/PRIVACY.md): jakie dane zostają na telefonie
 - [Historia zmian](CHANGELOG.md)
 
@@ -80,5 +85,11 @@ Szczegóły: [docs/RELEASE.md](docs/RELEASE.md).
 ## Licencja
 
 GNU GPL 3.0. Informacja o projektach, z których kod pochodzi, jest w pliku
-[NOTICE](NOTICE). MiniMed jest znakiem towarowym Medtronic; projekt nie jest
-powiązany z Medtronic.
+[NOTICE](NOTICE). ## Zastrzeżenia
+
+Projekt jest eksperymentalny i niekomercyjny. Nie jest certyfikowanym wyrobem medycznym
+(CE/MDR), nie zastępuje pompy, sensora ani opieki medycznej i nie służy do podejmowania
+decyzji o dawkowaniu insuliny. Używasz go na własną odpowiedzialność. Zasady komunikacji
+opisywania projektu: [docs/POSITIONING.md](docs/POSITIONING.md).
+
+MiniMed jest znakiem towarowym Medtronic; projekt nie jest powiązany z Medtronic.

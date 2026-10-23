@@ -119,3 +119,6 @@ android.gitignore hosted with ❤ by GitHub
 secrets.properties
 keystore.properties
 signing.properties
+
+# Scratch copies used while editing remote files
+.tmp_*

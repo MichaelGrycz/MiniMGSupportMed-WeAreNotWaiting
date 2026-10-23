@@ -22,7 +22,7 @@
     <string name="onboarding_title">Keine Pumpe gekoppelt</string>
     <string
     name="onboarding_desc"
-  >Koppeln Sie Ihre MiniMed 780G / 770G / 680G Pumpe in 3 einfachen Schritten für Live-CGM- &amp; Insulinüberwachung.</string>
+  >Koppeln Sie Ihre MiniMed 780G / 770G / 680G Pumpe in 3 einfachen Schritten, um die bereits gesendeten Werte zu sehen.</string>
     <string name="onboarding_cta">Kopplungsanleitung öffnen →</string>
 
     <!-- Hero Glucose Card -->
@@ -195,10 +195,10 @@
     <string name="logs_copied">Protokolle in die Zwischenablage kopiert</string>
     <string name="logs_empty">Keine Protokolle.</string>
 
-    <string name="safety_disclaimer_title">Medizinischer Haftungsausschluss (Read-Only)</string>
+    <string name="safety_disclaimer_title">Wichtiger Hinweis (nur Lesen)</string>
     <string
     name="safety_disclaimer_body"
-  >MGlycemia ist ein Open-Source-Begleittool (GPL-3.0) nur zum Lesen. Keine Dosierungsbefehle.</string>
+  >MGlycemia ist ein experimentelles, nicht kommerzielles Open-Source-Projekt (GPL-3.0) und kein zertifiziertes Medizinprodukt. Es arbeitet ausschließlich lesend: keine Dosierungsbefehle, keine Änderung der Pumpeneinstellungen. Es zeigt Daten, die die Pumpe bereits sendet, und ersetzt weder Pumpe, Sensor, ärztliche Beratung noch Therapieentscheidungen. Nutzung auf eigene Verantwortung.</string>
 
     <string name="notif_channel_status">Pumpenstatus</string>
     <string name="notif_connecting">Verbinde mit Pumpe…</string>

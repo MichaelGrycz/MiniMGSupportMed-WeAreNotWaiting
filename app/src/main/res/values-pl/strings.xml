@@ -22,7 +22,7 @@
     <string name="onboarding_title">Pompa nie jest jeszcze sparowana</string>
     <string
     name="onboarding_desc"
-  >Sparuj pompę MiniMed 780G / 770G / 680G w 3 prostych krokach, aby uruchomić podgląd glikemii i insuliny na żywo.</string>
+  >Sparuj pompę MiniMed 780G / 770G / 680G w 3 prostych krokach, aby zobaczyć odczyty, które pompa już wysyła.</string>
     <string name="onboarding_cta">Otwórz instrukcję i parowanie →</string>
 
     <!-- Karta główna glukozy -->
@@ -198,10 +198,10 @@
     <string name="logs_copied">Skopiowano logi diagnostyczne do schowka</string>
     <string name="logs_empty">Brak logów w bieżącej sesji.</string>
 
-    <string name="safety_disclaimer_title">Informacja o bezpieczeństwie (Tylko odczyt)</string>
+    <string name="safety_disclaimer_title">Ważna informacja (tylko odczyt)</string>
     <string
     name="safety_disclaimer_body"
-  >MGlikemia to otwartoźródłowe narzędzie pomocnicze (GPL-3.0) działające wyłącznie w trybie odczytu. Aplikacja nigdy nie wysyła poleceń dawkowania do pompy. Jedyny ruch sieciowy to sprawdzenie aktualizacji na GitHubie, bez wysyłania danych z telefonu. Nie zastępuje zaleceń lekarskich.</string>
+  >MGlikemia to eksperymentalny, niekomercyjny projekt open source (GPL-3.0), a nie certyfikowany wyrób medyczny. Działa tylko do odczytu: nigdy nie wysyła poleceń dawkowania ani nie zmienia ustawień pompy. Pokazuje dane, które pompa już wysyła, i nie zastępuje pompy, sensora, zaleceń lekarskich ani decyzji terapeutycznych. Używasz na własną odpowiedzialność.</string>
     <string name="credits_title">Wykonanie aplikacji</string>
     <string name="credits_author">Wykonał: MGSupport Michał Grycz</string>
     <string name="credits_link">Zobacz usługi MGSupport</string>

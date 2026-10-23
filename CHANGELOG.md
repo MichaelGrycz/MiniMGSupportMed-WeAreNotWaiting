@@ -3,6 +3,13 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta63
+
+- Ujednolicony język: aplikacja i strona jasno mówią, że to eksperymentalny, niekomercyjny projekt i niecertyfikowany wyrób medyczny. Usunięto sformułowania „monitorowanie” i „statystyki kliniczne”.
+- Informacja o alertach: mogą nie zadziałać (uśpienie telefonu, brak połączenia) i nie zastępują pompy ani zaleceń lekarza.
+- Nowy dokument `docs/POSITIONING.md`: jak mówić o projekcie, gotowy post i checklista przed Google Play.
+- README: jasny status projektu i ostrzeżenie przed `tools/release.sh`.
+
 ## 1.0-beta62
 
 - Poprawka zgodności: aplikacja działa teraz także na Androidzie 7.x. Warstwa BLE i historii używa `java.time`, które bez desugaringu mogło wywrócić aplikację na starszych telefonach.

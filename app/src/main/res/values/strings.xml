@@ -22,7 +22,7 @@
     <string name="onboarding_title">No pump paired yet</string>
     <string
     name="onboarding_desc"
-  >Pair your MiniMed 780G / 770G / 680G pump in 3 simple steps to start live CGM &amp; insulin monitoring.</string>
+  >Pair your MiniMed 780G / 770G / 680G pump in 3 simple steps to see the readings it already sends.</string>
     <string name="onboarding_cta">Open Pairing Guide →</string>
 
     <!-- Hero Glucose Card -->
@@ -192,10 +192,10 @@
     <string name="logs_copied">Diagnostic logs copied to clipboard</string>
     <string name="logs_empty">No diagnostic logs in current session.</string>
 
-    <string name="safety_disclaimer_title">Read-Only Medical Disclaimer</string>
+    <string name="safety_disclaimer_title">Important notice (read-only)</string>
     <string
     name="safety_disclaimer_body"
-  >MGlycemia is an open-source read-only companion tool (GPL-3.0). It never sends dosing commands to the pump. Do not use this app as a substitute for official medical advice or primary therapy decisions.</string>
+  >MGlycemia is an experimental, non-commercial open-source project (GPL-3.0), not a certified medical device. It is read-only: it never sends dosing commands or changes pump settings. It displays data the pump already sends and is not a substitute for the pump, the sensor, medical advice or therapy decisions. Use at your own risk.</string>
     <string name="credits_title">App credits</string>
     <string name="credits_author">Created by MGSupport Michał Grycz</string>
     <string name="credits_link">View MGSupport services</string>

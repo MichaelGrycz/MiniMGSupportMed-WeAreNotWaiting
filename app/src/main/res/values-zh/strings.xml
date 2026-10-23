@@ -22,7 +22,7 @@
     <string name="onboarding_title">尚未配对泵</string>
     <string
     name="onboarding_desc"
-  >只需 3 个简单步骤即可配对您的 MiniMed 780G / 770G / 680G 泵，以开始实时 CGM 和胰岛素监测。</string>
+  >只需 3 个简单步骤即可配对您的 MiniMed 780G / 770G / 680G 泵，查看泵已发送的读数。</string>
     <string name="onboarding_cta">打开配对指南 →</string>
 
     <!-- Hero Glucose Card -->
@@ -188,8 +188,10 @@
     <string name="logs_copied">诊断日志已复制到剪贴板</string>
     <string name="logs_empty">当前会话无日志。</string>
 
-    <string name="safety_disclaimer_title">只读医疗免责声明</string>
-    <string name="safety_disclaimer_body">MGlycemia 是开源只读伴侣工具 (GPL-3.0)，绝不向泵发送给药指令。</string>
+    <string name="safety_disclaimer_title">重要提示（只读）</string>
+    <string
+    name="safety_disclaimer_body"
+  >MGlycemia 是一个实验性、非商业的开源项目（GPL-3.0），不是经过认证的医疗器械。它仅以只读方式工作：绝不发送给药指令，也不更改泵的设置。它显示泵已发送的数据，不能替代泵、传感器、医疗建议或治疗决策。使用风险自负。</string>
 
     <string name="notif_channel_status">泵状态</string>
     <string name="notif_connecting">正在连接泵…</string>
