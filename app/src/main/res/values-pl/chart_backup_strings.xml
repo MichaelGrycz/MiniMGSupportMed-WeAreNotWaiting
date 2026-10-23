@@ -19,7 +19,7 @@
     <string name="chart_kind_meal_correction">Bolus posiłkowy i korekcyjny</string>
     <string name="chart_kind_automatic">Bolus automatyczny</string>
     <string name="chart_kind_basal">Automatyczne podanie bazy (nie korekta)</string>
-    <string name="chart_kind_unknown">Bolus — typ nieznany</string>
+    <string name="chart_kind_unknown">Bolus, typ nieznany</string>
     <string name="chart_event_detail">%1$s\n%2$s\nPodano: %3$s j.</string>
     <string name="chart_amount_unknown">brak danych</string>
     <string name="chart_no_glucose">Brak odczytów glukozy w tym widoku</string>

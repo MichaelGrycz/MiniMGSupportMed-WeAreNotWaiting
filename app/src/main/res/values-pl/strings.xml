@@ -29,9 +29,9 @@
     <string name="label_glucose">GLUKOZA Z SENSORA (CGM)</string>
     <string name="zone_in_range">W ZAKRESIE DOCELOWYM</string>
     <string name="zone_low">NISKI POZIOM (HIPO)</string>
-    <string name="zone_urgent_low">BARDZO NISKI — PILNE!</string>
+    <string name="zone_urgent_low">BARDZO NISKI, PILNE!</string>
     <string name="zone_high">WYSOKI POZIOM (HIPER)</string>
-    <string name="zone_urgent_high">BARDZO WYSOKI — PILNE!</string>
+    <string name="zone_urgent_high">BARDZO WYSOKI, PILNE!</string>
     <string name="zone_waiting">OCZEKIWANIE NA POMIAR</string>
     <string name="zone_sensor_updating">AKTUALIZACJA SENSORA</string>
     <string name="zone_sensor_initializing">INICJALIZACJA SENSORA</string>
@@ -40,7 +40,7 @@
   >Trwa aktualizacja sensora. Pompa nie podaje teraz odczytu, więc na ekranie zostaje ostatnia znana wartość.</string>
     <string
     name="sensor_initializing_banner"
-  >Trwa inicjalizacja sensora. Pompa nie poda odczytu do końca rozgrzewania — pozostało około %1$s. Ostatnia znana wartość zostaje na ekranie.</string>
+  >Trwa inicjalizacja sensora. Pompa nie poda odczytu do końca rozgrzewania. Zostało około %1$s. Ostatnia znana wartość zostaje na ekranie.</string>
     <string name="sensor_remaining_hm">%1$d godz. %2$d min</string>
     <string name="sensor_remaining_m">%1$d min</string>
     <string name="sensor_remaining_unknown">nieznany czas</string>
@@ -142,7 +142,7 @@
     <string name="howto_step3_title">Potwierdź na ekranie pompy</string>
     <string
     name="howto_step3_desc"
-  >Na pompie wybierz „Paruj nowe urządzenie”, poczekaj aż znajdzie nazwę „Mobile …” pokazaną w aplikacji i zatwierdź. Gdy telefon pokaże okno „Żądanie powiązania Bluetooth”, kliknij „Powiąż”. Szyfrowany handshake SAKE potrwa 5–10 sekund. Po połączeniu odczyty odświeżają się automatycznie co 15 sekund.</string>
+  >Na pompie wybierz „Paruj nowe urządzenie”, poczekaj aż znajdzie nazwę „Mobile …” pokazaną w aplikacji i zatwierdź. Gdy telefon pokaże okno „Żądanie powiązania Bluetooth”, kliknij „Powiąż”. Szyfrowany handshake SAKE trwa od 5 do 10 sekund. Po połączeniu odczyty odświeżają się automatycznie co 15 sekund.</string>
 
     <string name="howto_step4_title">Zabezpiecz pracę w tle 24/7 (Bateria)</string>
     <string
@@ -152,7 +152,7 @@
     <string name="faq_title">Częste pytania i rozwiązywanie problemów</string>
     <string
     name="faq_body"
-  >• Obsługiwane pompy: MiniMed 780G (MMT-1886, zweryfikowana), 770G oraz 680G.\n• Starsze pompy (640G, Veo, Paradigm): Używają radia sub-GHz zamiast Bluetooth — telefon nie połączy się z nimi bezpośrednio.\n• Błąd autoryzacji / odrzucone parowanie: Usuń wpis „Mobile …” z listy urządzeń mobilnych w pompie, wyłącz i włącz Bluetooth w telefonie i kliknij „Paruj nową pompę”.\n• Gwarancja bezpieczeństwa: Aplikacja działa w 100% w trybie TYLKO DO ODCZYTU (Read-Only). Nie ma możliwości podania insuliny ani zmiany ustawień pompy.</string>
+  >• Obsługiwane pompy: MiniMed 780G (MMT-1886, zweryfikowana), 770G oraz 680G.\n• Starsze pompy (640G, Veo, Paradigm): Używają radia sub-GHz zamiast Bluetooth, więc telefon nie połączy się z nimi bezpośrednio.\n• Gdy połączenie nie przechodzi: Usuń wpis „Mobile …” z listy urządzeń mobilnych w pompie, wyłącz i włącz Bluetooth w telefonie i kliknij „Paruj nową pompę”.\n• Gwarancja bezpieczeństwa: Aplikacja działa w 100% w trybie TYLKO DO ODCZYTU (Read-Only). Nie ma możliwości podania insuliny ani zmiany ustawień pompy.</string>
 
     <!-- Zakładka Ustawienia -->
     <string name="settings_title">Ustawienia i alerty</string>
@@ -252,7 +252,7 @@
     <string name="lang_zh">中文</string>
 
     <string name="log_connection_state">Stan połączenia: %1$s</string>
-    <string name="log_start_pairing">Start parowania — rozgłaszam jako %1$s</string>
+    <string name="log_start_pairing">Start parowania: rozgłaszam jako %1$s</string>
     <string name="log_new_identity">Nowa nazwa urządzenia: %1$s</string>
     <string name="log_reconnect">Próba ponownego połączenia…</string>
     <string name="log_disconnecting">Rozłączam…</string>

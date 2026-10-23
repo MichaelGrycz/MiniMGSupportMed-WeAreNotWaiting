@@ -27,7 +27,7 @@ object SystemShortcuts {
         if (!isBluetoothEnabled(context)) {
             shortcuts +=
                 Shortcut(
-                    "Bluetooth jest wyłączony — otwórz ustawienia",
+                    "Bluetooth jest wyłączony. Otwórz ustawienia",
                     "Bez włączonego adaptera parowanie nie wystartuje.",
                     Intent(Settings.ACTION_BLUETOOTH_SETTINGS),
                 )

@@ -57,7 +57,7 @@ object DeviceDiagnostics {
             "locale=${Locale.getDefault().toLanguageTag()} timezone=${TimeZone.getDefault().id}",
         )
 
-    /** Bluetooth adapter, permission, Doze, memory and clock facts — re-read on every session. */
+    /** Bluetooth adapter, permission, Doze, memory and clock facts: re-read on every session. */
     fun liveFacts(context: Context): List<String> {
         val lines = ArrayList<String>(6)
         lines += bluetoothLine(context)

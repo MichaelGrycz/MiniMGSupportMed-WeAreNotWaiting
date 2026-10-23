@@ -40,7 +40,7 @@ data class MedtronicIddStatusState(
  * shared domain models: reservoir ([ReservoirReading]), IOB ([IoBReading]), active
  * basal ([BasalReading]) and the therapy/sensor [MedtronicIddStatusState].
  *
- * Every numeric value is range-gated — reservoir/IOB by [MAX_RESERVOIR_UNITS]/[MAX_IOB_UNITS],
+ * Every numeric value is range-gated: reservoir/IOB by [MAX_RESERVOIR_UNITS]/[MAX_IOB_UNITS],
  * basal by [safetyLimits]: an out-of-physiological-range value is **rejected** (a
  * [MedtronicReadException]), never clamped, matching [CgmReader]. Over-the-air behavior rides with
  * 48.A2. The IOB read is live-verified on a MiniMed 780G (2026-07, matched the pump's on-screen

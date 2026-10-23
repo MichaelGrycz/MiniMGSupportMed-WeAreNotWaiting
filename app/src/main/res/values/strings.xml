@@ -40,7 +40,7 @@
   >Sensor update in progress. The pump is not sending a value right now, so the last known reading stays on screen.</string>
     <string
     name="sensor_initializing_banner"
-  >Sensor initialization in progress. The pump will not show a reading until warm-up ends — about %1$s left. The last known value stays on screen.</string>
+  >Sensor initialization in progress. The pump will not show a reading until warm-up ends. About %1$s left. The last known value stays on screen.</string>
     <string name="sensor_remaining_hm">%1$d h %2$d min</string>
     <string name="sensor_remaining_m">%1$d min</string>
     <string name="sensor_remaining_unknown">unknown time</string>
@@ -139,7 +139,7 @@
     <string name="howto_step3_title">Confirm on the pump screen</string>
     <string
     name="howto_step3_desc"
-  >On the pump, select "Pair New Device", wait until it finds the Mobile … name shown in the app and confirm. When the phone shows the Bluetooth pairing request, tap Pair. The encrypted SAKE handshake takes 5–10 seconds. Once connected, readings update every 15 seconds.</string>
+  >On the pump, select "Pair New Device", wait until it finds the Mobile … name shown in the app and confirm. When the phone shows the Bluetooth pairing request, tap Pair. The encrypted SAKE handshake takes 5 to 10 seconds. Once connected, readings update every 15 seconds.</string>
 
     <string name="howto_step4_title">Keep background monitoring alive 24/7</string>
     <string
@@ -150,7 +150,7 @@
     <string name="faq_title">FAQ &amp; Troubleshooting</string>
     <string
     name="faq_body"
-  >• Supported pumps: MiniMed 780G (MMT-1886, verified), 770G and 680G.\n• Older pumps (640G, Veo, Paradigm): Use sub-GHz radio, NOT Bluetooth — they cannot connect directly to a phone without hardware bridge.\n• Pairing rejected / Auth failed: Delete the Mobile … entry from the pump\'s Mobile Devices list, toggle Bluetooth off/on on the phone, and tap "Pair New Pump" again.\n• Safety guarantee: This app is 100% READ-ONLY. It cannot deliver boluses, change basal rates, or alter any pump setting.</string>
+  >• Supported pumps: MiniMed 780G (MMT-1886, verified), 770G and 680G.\n• Older pumps (640G, Veo, Paradigm): Use sub-GHz radio, not Bluetooth, so they cannot connect directly to a phone without a hardware bridge.\n• If pairing fails: Delete the Mobile … entry from the pump\'s Mobile Devices list, toggle Bluetooth off and on again on the phone, and tap "Pair New Pump".\n• Safety guarantee: This app is 100% READ-ONLY. It cannot deliver boluses, change basal rates, or alter any pump setting.</string>
 
     <!-- Settings Tab -->
     <string name="settings_title">Preferences &amp; Alerts</string>
@@ -246,7 +246,7 @@
     <string name="lang_zh">中文</string>
 
     <string name="log_connection_state">Connection state: %1$s</string>
-    <string name="log_start_pairing">Start pairing — advertising as %1$s</string>
+    <string name="log_start_pairing">Start pairing: advertising as %1$s</string>
     <string name="log_new_identity">New device identity: %1$s</string>
     <string name="log_reconnect">Reconnecting…</string>
     <string name="log_disconnecting">Disconnecting…</string>

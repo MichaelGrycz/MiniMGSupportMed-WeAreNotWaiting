@@ -37,7 +37,7 @@ class HistoryCursorDedupTest {
 
     @Test
     fun unsignedWrapAroundComparesAsWireValues() {
-        // Sekwencje są u32 na przewodzie, Int w modelu — -1 to 0xFFFFFFFF, czyli „dalej” niż 5.
+        // Sekwencje są u32 na przewodzie, Int w modelu: -1 to 0xFFFFFFFF, czyli „dalej” niż 5.
         assertEquals(-1, HistoryCursorPolicy.maxOf(listOf(5, -1)))
         assertEquals(-1, HistoryCursorPolicy.advance(5, listOf(-1)))
         // Po przepełnieniu licznika kursor celowo nie cofa się do niskich wartości. Pełny wrap

@@ -69,7 +69,7 @@ class FullscreenChartActivity : AppCompatActivity() {
         collection = scope.launch { controller.state.collect(::render) }
     }
 
-    /** Programowy przycisk „Ostatnie 24 h” — bez zmian XML; resetuje zoom/pan i okno 24 h. */
+    /** Programowy przycisk „Ostatnie 24 h”: bez zmian XML; resetuje zoom/pan i okno 24 h. */
     private fun addLast24hButton() {
         val reset = findViewById<View>(R.id.btnZoomReset)
         val parent = reset.parent as? ViewGroup ?: return

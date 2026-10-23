@@ -12,10 +12,10 @@ import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
  * Bitmapy powiadomienia z aktualną glikemią (mg/dL).
  *
  * Dwa warianty, bo Android traktuje je inaczej:
- *  - [get] — mała ikona paska statusu. System maluje ją jako monochromatyczną maskę alfa, więc tło
+ *  - [get]: mała ikona paska statusu. System maluje ją jako monochromatyczną maskę alfa, więc tło
  *    MUSI być przezroczyste; białe cyfry na czarnym tle dałyby biały kwadrat. To jedyny sposób,
  *    żeby wartość była widoczna w pasku statusu (tak jak procent baterii w aplikacjach systemowych).
- *  - [large] — duża ikona rozwiniętego powiadomienia i ekranu blokady. Renderowana w kolorze,
+ *  - [large]: duża ikona rozwiniętego powiadomienia i ekranu blokady. Renderowana w kolorze,
  *    więc dostaje ciemne tło, wartość i strzałkę trendu.
  *
  * Cache po (wartość, trend): bitmapa nie jest regenerowana przy każdym odświeżeniu powiadomienia.
@@ -44,7 +44,7 @@ object GlucoseIconFactory {
 
     /**
      * Mała ikona paska statusu: tylko cyfry, białe na przezroczystym tle (monochromatyczna maska).
-     * Bez strzałki trendu — przy ~24 dp staje się nieczytelna.
+     * Bez strzałki trendu: przy ~24 dp staje się nieczytelna.
      */
     @Synchronized
     fun get(mgDl: Int, trend: CgmTrend?): Bitmap {

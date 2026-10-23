@@ -21,7 +21,7 @@ skanuje, znajduje telefon i sama się z nim łączy. Aplikacja nie skanuje.
 
 Wartości Device Information są kopią tych z JavaPumpConnector. Puste ciągi
 w polach firmware/software powodowały zrywanie połączenia. `2A50` (PnP ID)
-musi mieć dokładnie 7 bajtów — jeden bajt powoduje odrzucenie tabeli przez pompę.
+musi mieć dokładnie 7 bajtów: jeden bajt powoduje odrzucenie tabeli przez pompę.
 
 ## Stany połączenia
 

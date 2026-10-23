@@ -13,8 +13,8 @@ android {
         applicationId = "pl.mgsupport.mglycemia"
         minSdk = 24
         targetSdk = 36
-        versionCode = 38
-        val appVersionName = "1.0-beta37"
+        versionCode = 39
+        val appVersionName = "1.0-beta38"
         versionName = appVersionName
 
         // Installer and launcher show the version, so testers can tell builds apart at a glance.

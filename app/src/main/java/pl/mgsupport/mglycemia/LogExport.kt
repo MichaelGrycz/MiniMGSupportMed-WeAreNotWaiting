@@ -14,7 +14,7 @@ import java.util.zip.ZipOutputStream
  * (`bond=`, `descriptor read/write 2902`, `read 2a50 len=`, `GATT link down`). Przed zapisem
  * każda linia przechodzi przez [redact] (adresy MAC, IP, e-maile, wartości sekretów).
  *
- * Pliki wynikowe (txt/zip) NIE SĄ SZYFROWANE — tak samo jak eksport CSV. Informacja o tym jest
+ * Pliki wynikowe (txt/zip) NIE SĄ SZYFROWANE: tak samo jak eksport CSV. Informacja o tym jest
  * dopisywana na początku każdego raportu ([UNENCRYPTED_NOTICE]).
  */
 object LogExport {
@@ -25,9 +25,10 @@ object LogExport {
     private val MAC = Regex("([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}")
     private val IPV4 = Regex("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b")
     private val EMAIL = Regex("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
-    private val SECRET_VALUE = Regex("(?i)\\b(token|password|passwd|secret|api[_-]?key|pairing[_-]?code)\\s*[:=]\\s*\\S+")
+    private val SECRET_VALUE =
+        Regex("(?i)\\b(token|password|passwd|secret|api[_-]?key|pairing[_-]?code)\\s*[:=]\\s*\\S+")
 
-    /** Kluczowe linie diagnostyczne parowania/BLE — sprawdzane case-insensitive. */
+    /** Kluczowe linie diagnostyczne parowania/BLE: sprawdzane case-insensitive. */
     fun isKeyLine(line: String): Boolean {
         val l = line.lowercase(Locale.ROOT)
         if ("bond=" in l || "bond state" in l || "pairing failed" in l) return true
@@ -60,7 +61,7 @@ object LogExport {
         val redactedLogcat = logcatLines.map(::redact)
         val keys = (appLines + redactedLogcat).filter(::isKeyLine)
         return buildString {
-            appendLine("MGlikemia — diagnostyka ($stamp)")
+            appendLine("MGlikemia: diagnostyka ($stamp)")
             appendLine(UNENCRYPTED_NOTICE)
             appendLine()
             appendLine("== Kluczowe linie (bond / 2902 / 2a50 / GATT) ==")
@@ -96,7 +97,12 @@ object LogExport {
     fun writeTxt(dir: File, appLog: String, logcatLines: List<String>): File {
         check(dir.isDirectory || dir.mkdirs()) { "Cannot create diagnostics directory" }
         val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(Date(System.currentTimeMillis()))
-        return File(dir, "diagnostyka-$stamp.txt").also { it.writeText(buildReport(appLog, logcatLines), Charsets.UTF_8) }
+        return File(dir, "diagnostyka-$stamp.txt").also {
+            it.writeText(
+                buildReport(appLog, logcatLines),
+                Charsets.UTF_8
+            )
+        }
     }
 
     /** Zapisuje zip z raportem txt + samym wyciągiem kluczowych linii. Zwraca plik zip. */

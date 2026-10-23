@@ -834,7 +834,7 @@ class GlucoseChartView @JvmOverloads constructor(
     /**
      * Long windows squeeze hundreds of samples into one pixel column. Drawing them as a polyline
      * turns the chart into a solid smear, so dense ranges render as a min/max band with the mean
-     * line on top — the daily rhythm stays readable at a glance.
+     * line on top: the daily rhythm stays readable at a glance.
      */
     private fun drawDenseBand(
         canvas: Canvas,

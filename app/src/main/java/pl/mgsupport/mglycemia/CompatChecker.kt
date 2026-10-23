@@ -18,7 +18,7 @@ data class DeviceCompatibility(
 
 /**
  * Honest capability check. The pump is a BLE central, so the phone must advertise and run a GATT
- * server (peripheral mode) — not every Android device exposes that. This is the real compatibility
+ * server (peripheral mode): not every Android device exposes that. This is the real compatibility
  * gate, alongside the pump family (only 700-series BLE/SAKE pumps are supported).
  */
 object CompatChecker {
@@ -28,7 +28,7 @@ object CompatChecker {
         val ble = pm.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 
         // isMultipleAdvertisementSupported is the closest public signal that the controller can
-        // advertise as a peripheral. Some devices support single advertising only — treated as
+        // advertise as a peripheral. Some devices support single advertising only: treated as
         // "limited" rather than a hard no.
         val peripheral =
             try {

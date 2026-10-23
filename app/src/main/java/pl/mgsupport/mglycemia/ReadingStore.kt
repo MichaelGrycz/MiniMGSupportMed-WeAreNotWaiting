@@ -55,8 +55,8 @@ data class ImportResult(
  * Pure backfill-cursor policy for pump history (unsigned 32-bit sequence space).
  *
  * The first fetch uses 0 ("from the oldest retained record"); every later fetch starts after the
- * durable cursor. The cursor only moves forward — a re-fetched (overlapping) window never moves it
- * back — and re-inserting the same batch is a no-op. Free of Android APIs so unit tests cover it on
+ * durable cursor. The cursor only moves forward: a re-fetched (overlapping) window never moves it
+ * back: and re-inserting the same batch is a no-op. Free of Android APIs so unit tests cover it on
  * the JVM; [ReadingStore] persists the result in `history_cursors`.
  */
 object HistoryCursorPolicy {
@@ -75,7 +75,7 @@ object HistoryCursorPolicy {
 
     /**
      * Monotonic advance: unsigned max of [seen] when it passes [cursor], else [cursor] unchanged.
-     * Empty [seen] never moves the cursor. Null [cursor] means "no backfill yet" — the batch max
+     * Empty [seen] never moves the cursor. Null [cursor] means "no backfill yet": the batch max
      * (if any) becomes the cursor.
      */
     fun advance(cursor: Int?, seen: Iterable<Int>): Int? {
@@ -88,7 +88,7 @@ object HistoryCursorPolicy {
 /**
  * Local SQLite store for long-term readings and pump events, plus CSV export.
  *
- * Readings are written once per CGM sample (~5 min) so a year is ~100k rows — comfortably small.
+ * Readings are written once per CGM sample (~5 min) so a year is ~100k rows: comfortably small.
  * CSV export produces `readings.csv` / `events.csv` in the app-specific external directory, which
  * needs no storage permission and can be shared via FileProvider.
  */
@@ -186,7 +186,7 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
      *
      * Dedup: `(source_id, seq)` is the primary key, so re-inserting an already stored range is a
      * no-op when the raw bytes are identical. A conflicting payload under an existing seq fails the
-     * whole batch (rollback, cursor stays put) — that means the pump log was reset and the caller
+     * whole batch (rollback, cursor stays put): that means the pump log was reset and the caller
      * must switch to a new source ID, never silently overwrite. Returns only after commit; callers
      * may then fetch incrementally from [nextHistoryFetchStart].
      */

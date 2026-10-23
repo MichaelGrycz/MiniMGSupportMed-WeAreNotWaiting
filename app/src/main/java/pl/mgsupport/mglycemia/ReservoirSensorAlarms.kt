@@ -8,7 +8,7 @@ package pl.mgsupport.mglycemia
  * - wiek sensora: `CgmMeasurement.timeOffsetMinutes / 60.0` (minuty od startu sesji;
  *   fazę liczy `CgmReader.sensorPhaseFor`). Pompa nie podaje absolutnego startu sesji
  *   ani maksymalnego czasu życia, a `HistoryLogRecord.pumpTimeSeconds` to względny
- *   offset bez kotwicy i `ReadingStore` nie przechowuje startu sesji — wywołujący musi
+ *   offset bez kotwicy i `ReadingStore` nie przechowuje startu sesji: wywołujący musi
  *   wyliczyć wiek (np. maksymalny offset z sesji albo czas od pierwszego pakietu sesji)
  *   i przekazać go jako [shouldWarnSensorExpiry]. Brak wieku (`null`) = brak alarmu.
  *
@@ -17,7 +17,7 @@ package pl.mgsupport.mglycemia
  * sensory noszone dłużej (extended wear) potrafią pracować 10-14 dni. Dlatego limit jest
  * parametrem ([shouldWarnSensorExpiry]) z domyślną wartością [DEFAULT_SENSOR_MAX_AGE_HOURS],
  * a nie stałą prawdą. Autorytatywnym źródłem jest annuncjacja pompy `CHANGE_SENSOR`
- * ([pl.mgsupport.mglycemia.core.ble.read.SensorMessageState]) — gdy pompa sama woła o wymianę,
+ * ([pl.mgsupport.mglycemia.core.ble.read.SensorMessageState]): gdy pompa sama woła o wymianę,
  * żaden wiek nie jest potrzebny.
  */
 object ReservoirSensorAlarms {
@@ -31,7 +31,7 @@ object ReservoirSensorAlarms {
 
     /**
      * Domyślny maksymalny czas życia sensora w godzinach (Guardian 4 / Simplera, 7 dni).
-     * Tylko wartość startowa — użytkownik może podać własną dla dłużej noszonych sensorów.
+     * Tylko wartość startowa: użytkownik może podać własną dla dłużej noszonych sensorów.
      */
     const val DEFAULT_SENSOR_MAX_AGE_HOURS = 168.0
 
@@ -42,7 +42,7 @@ object ReservoirSensorAlarms {
     const val MIN_SENSOR_MAX_AGE_HOURS = 24.0
     const val MAX_SENSOR_MAX_AGE_HOURS = 336.0
 
-    /** Znane czasy życia sensorów (godziny) — punkt startowy dla ustawienia, nie twarda prawda. */
+    /** Znane czasy życia sensorów (godziny): punkt startowy dla ustawienia, nie twarda prawda. */
     val KNOWN_SENSOR_MAX_AGE_HOURS =
         linkedMapOf(
             "Guardian 4 / Simplera" to 168.0,

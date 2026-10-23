@@ -29,9 +29,9 @@
     <string name="label_glucose">传感器葡萄糖 (CGM)</string>
     <string name="zone_in_range">目标范围内</string>
     <string name="zone_low">血糖偏低</string>
-    <string name="zone_urgent_low">严重偏低 — 紧急！</string>
+    <string name="zone_urgent_low">严重偏低，紧急！</string>
     <string name="zone_high">血糖偏高</string>
-    <string name="zone_urgent_high">严重偏高 — 紧急！</string>
+    <string name="zone_urgent_high">严重偏高，紧急！</string>
     <string name="zone_waiting">正在等待数据</string>
     <string name="zone_sensor_updating">传感器更新中</string>
     <string name="zone_sensor_initializing">传感器初始化中</string>
@@ -226,7 +226,7 @@
     <string name="lang_zh">中文</string>
 
     <string name="log_connection_state">连接状态: %1$s</string>
-    <string name="log_start_pairing">开始配对 — 广播为 %1$s</string>
+    <string name="log_start_pairing">开始配对：广播为 %1$s</string>
     <string name="log_new_identity">新的设备名称: %1$s</string>
     <string name="log_reconnect">正在重新连接…</string>
     <string name="log_disconnecting">正在断开连接…</string>

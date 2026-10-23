@@ -19,7 +19,7 @@
     <string name="chart_kind_meal_correction">Meal and correction bolus</string>
     <string name="chart_kind_automatic">Automatic bolus</string>
     <string name="chart_kind_basal">Automatic basal delivery (not a correction)</string>
-    <string name="chart_kind_unknown">Bolus — type unknown</string>
+    <string name="chart_kind_unknown">Bolus, type unknown</string>
     <string name="chart_event_detail">%1$s\n%2$s\nDelivered: %3$s U</string>
     <string name="chart_amount_unknown">not available</string>
     <string name="chart_no_glucose">No glucose readings in this view</string>

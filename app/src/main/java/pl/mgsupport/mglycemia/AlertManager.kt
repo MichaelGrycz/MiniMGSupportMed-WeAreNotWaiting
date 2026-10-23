@@ -147,7 +147,7 @@ class AlertManager(private val context: Context) {
      * Ostrzeżenie o końcu sensora: wiek >= ([maxAgeHours] - [warnBeforeHours]).
      *
      * Wiek sensora wylicza wywołujący (`CgmReading.sensorSessionMinutes / 60.0`); `null` = brak
-     * danych = kasuje alarm. [maxAgeHours] dobiera się do modelu sensora — nie zakładamy 7 dni,
+     * danych = kasuje alarm. [maxAgeHours] dobiera się do modelu sensora: nie zakładamy 7 dni,
      * bo część sensorów pracuje dłużej. Debounce niezależny, jak w [checkReservoir].
      */
     fun checkSensorExpiry(

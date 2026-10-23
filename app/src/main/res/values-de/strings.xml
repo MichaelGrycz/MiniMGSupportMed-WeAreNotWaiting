@@ -29,9 +29,9 @@
     <string name="label_glucose">SENSOR-GLUKOSE (CGM)</string>
     <string name="zone_in_range">IM ZIELBEREICH</string>
     <string name="zone_low">NIEDRIG</string>
-    <string name="zone_urgent_low">SEHR NIEDRIG — DRINGEND!</string>
+    <string name="zone_urgent_low">SEHR NIEDRIG, DRINGEND!</string>
     <string name="zone_high">HOCH</string>
-    <string name="zone_urgent_high">SEHR HOCH — DRINGEND!</string>
+    <string name="zone_urgent_high">SEHR HOCH, DRINGEND!</string>
     <string name="zone_waiting">WARTE AUF DATEN</string>
     <string name="zone_sensor_updating">SENSOR-UPDATE</string>
     <string name="zone_sensor_initializing">SENSOR-INITIALISIERUNG</string>
@@ -40,7 +40,7 @@
   >Der Sensor wird aktualisiert. Die Pumpe liefert gerade keinen Wert, daher bleibt der letzte bekannte Messwert sichtbar.</string>
     <string
     name="sensor_initializing_banner"
-  >Der Sensor wird initialisiert. Die Pumpe liefert erst nach der Aufwärmphase einen Wert — noch etwa %1$s. Der letzte bekannte Wert bleibt sichtbar.</string>
+  >Der Sensor wird initialisiert. Die Pumpe liefert erst nach der Aufwärmphase einen Wert. Noch etwa %1$s. Der letzte bekannte Wert bleibt sichtbar.</string>
     <string name="sensor_remaining_hm">%1$d Std. %2$d Min.</string>
     <string name="sensor_remaining_m">%1$d Min.</string>
     <string name="sensor_remaining_unknown">unbekannte Zeit</string>

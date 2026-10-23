@@ -1,4 +1,4 @@
-# AGENTS.md — MGlikemia / MGlycemia
+# AGENTS.md: MGlikemia / MGlycemia
 
 Ten plik opisuje stałe zasady pracy w tym repozytorium. Czytaj go przed każdą zmianą.
 
@@ -26,7 +26,7 @@ zmieniać bazy ani wysyłać do pompy poleceń terapeutycznych.
 
 ## Build i testy (Windows, `sh`)
 
-Systemowy Java to 1.8 — **zawsze używaj JBR z Android Studio**:
+Systemowy Java to 1.8: **zawsze używaj JBR z Android Studio**:
 
 ```bash
 export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
@@ -41,7 +41,7 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`.
 Przed wydaniem zawsze uruchom testy jednostkowe i `assembleDebug`. Nową logikę czystą
 (parsery, klasyfikację, formatowanie) pokrywaj testem JUnit.
 
-## Wydanie — zawsze GitHub **i** strona
+## Wydanie: zawsze GitHub **i** strona
 
 Każda nowa wersja musi trafić jednocześnie na GitHub Releases i na `mgsupport.pl`.
 Nie wystarczy `git push`.
@@ -65,8 +65,8 @@ Nie wystarczy `git push`.
 9. `gh release create v<wersja> app/build/outputs/apk/debug/app-debug.apk ...`.
 10. Zweryfikuj stronę i plik APK przez `curl` (HTTP 200, właściwa wersja w tytule).
 
-`tools/release.sh` robi kroki 1–9, ale **domyślnie usuwa stare APK z serwera**.
-Nie uruchamiaj go, jeśli stare wersje mają zostać — wtedy wykonaj kroki ręcznie.
+`tools/release.sh` robi kroki 1-9, ale **domyślnie usuwa stare APK z serwera**.
+Nie uruchamiaj go, jeśli stare wersje mają zostać: wtedy wykonaj kroki ręcznie.
 
 Repozytorium musi być **publiczne**, inaczej `UpdateChecker` nie widzi wydań.
 
@@ -78,10 +78,10 @@ Repozytorium musi być **publiczne**, inaczej `UpdateChecker` nie widzi wydań.
   `https://github.com/<owner>/<repo>/releases/latest` i tag z finalnego URL.
 - Powiadomienie + okno z przyciskiem pobierania. Osobnego widgetu home-screen nie ma.
 - Plik w release musi nazywać się `app-debug.apk` (fallback buduje URL do tej nazwy).
-- Stare wersje (np. beta15) nie mają fallbacku — przy limicie API pokażą błąd;
+- Stare wersje (np. beta15) nie mają fallbacku: przy limicie API pokażą błąd;
   wtedy trzeba raz ręcznie zainstalować nowszą wersję.
 
-## BLE i parowanie — nie regresować
+## BLE i parowanie: nie regresować
 
 - Serwisy: `0900` na bazie vendora, `FE82` na bazie SIG.
 - Charakterystyka SAKE: `0000fe82-...-009132591325` (vendor), CCCD `2902`.
@@ -91,12 +91,12 @@ Repozytorium musi być **publiczne**, inaczej `UpdateChecker` nie widzi wydań.
   `14587043`, `2.9.0 f1093d1`, 8 zer System ID, 7 zer PnP ID.
 - Nazwa urządzenia: unikalne `Mobile NNNNNN` na instalację (`PumpIdentity`).
   Przy „Usuń parowanie” i ponownym parowaniu nazwa się zmienia, żeby ominąć stary wpis w pompie.
-- **Nie wywołuj `createBond()` po połączeniu** — powodowało natychmiastowe zerwanie linku.
+- **Nie wywołuj `createBond()` po połączeniu**: powodowało natychmiastowe zerwanie linku.
 - Rozgłaszanie zatrzymuj po połączeniu pompy.
 - Odpowiedź ATT wysyłaj **przed** uruchomieniem SAKE.
 - Resetuj `sakeCccdValue` przy każdym połączeniu.
 - Loguj `bond state previous -> state reason=…`; nieudane parowanie ustawia `PAIRING_FAILED`.
-- `removeBond()` jest zablokowane dla zwykłych aplikacji od Androida 14 — użytkownik musi
+- `removeBond()` jest zablokowane dla zwykłych aplikacji od Androida 14: użytkownik musi
   usunąć wpis pompy w Ustawieniach Bluetooth.
 - Pamiętaj o stałej diagnostyce: `read 2a50 len=7`, `descriptor write 2902 len=2`.
 
@@ -111,13 +111,13 @@ Repozytorium musi być **publiczne**, inaczej `UpdateChecker` nie widzi wydań.
 - `AUTO_BASAL_DELIVERY` to automatyczna baza/mikrobolus, **nie** bolus korekcyjny.
 - Nie klasyfikuj braku szczegółów jako „ręczny”.
 
-## Sensor — inicjalizacja vs aktualizacja
+## Sensor: inicjalizacja vs aktualizacja
 
 - `CgmMeasurement.timeOffsetMinutes` to minuty od startu sesji.
-- `0–119 min` → `SensorPhase.INITIALIZING`, pozostało `120 − offset`.
+- `0-119 min` → `SensorPhase.INITIALIZING`, pozostało `120 − offset`.
 - `≥ 120 min` → `SensorPhase.UPDATING`.
 - Pokazuj to w banerze, plakietce i powiadomieniu; format `1 godz. 45 min`.
-- Gdy pompa nie poda offsetu — wracaj do „Aktualizacja sensora”, nie zgaduj.
+- Gdy pompa nie poda offsetu: wracaj do „Aktualizacja sensora”, nie zgaduj.
 
 ## Kopia zapasowa
 
@@ -125,7 +125,7 @@ Repozytorium musi być **publiczne**, inaczej `UpdateChecker` nie widzi wydań.
 - Kopia ma przeżyć odinstalowanie, ale uprawnienie do folderu przepada po reinstalacji.
 - Po reinstalacji użytkownik musi wskazać folder i jawnie przywrócić dane.
 - Nie dodawaj szerokich uprawnień do pamięci ani ukrytych katalogów.
-- CSV nie jest szyfrowany — informuj o tym w interfejsie.
+- CSV nie jest szyfrowany: informuj o tym w interfejsie.
 
 ## Git
 
@@ -133,7 +133,7 @@ Repozytorium musi być **publiczne**, inaczej `UpdateChecker` nie widzi wydań.
 - Nie zmieniaj nazw plików ani nie rób masowych refaktorów bez powodu.
 - Przed commitem sprawdź `git status` i usuń pliki tymczasowe (`.page.astro`, skopiowane APK).
 - Nie pushuj na `main` bez świadomej decyzji; bieżąca gałąź to `public/main`.
-- `tools/release.sh` pushuje `public/main:main` — pamiętaj o tym przy wydaniu.
+- `tools/release.sh` pushuje `public/main:main`: pamiętaj o tym przy wydaniu.
 
 ## Diagnostyka
 

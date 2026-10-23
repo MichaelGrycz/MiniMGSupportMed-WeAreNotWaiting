@@ -133,7 +133,7 @@ class PumpController(context: Context) {
     private val alerts = AlertManager(appContext)
 
     /**
-     * Progi alarmów urządzenia. Trzymane w pamięci procesu — do ustawień użytkownika trafią przez
+     * Progi alarmów urządzenia. Trzymane w pamięci procesu: do ustawień użytkownika trafią przez
      * [setReservoirWarnThresholdIu] / [setSensorMaxAgeHours] (np. sensor noszony dłużej niż 7 dni).
      */
     @Volatile
@@ -504,7 +504,7 @@ class PumpController(context: Context) {
         val nowMs = at.toEpochMilli()
         alerts.check(mgDl, _state.value.thresholds)
         // Wiek sesji podaje pompa (offset CGM); limit życia zależy od modelu sensora, więc jest
-        // ustawialny — sensory extended wear pracują dłużej niż 7 dni.
+        // ustawialny: sensory extended wear pracują dłużej niż 7 dni.
         sensorSessionMinutes?.let { minutes ->
             alerts.checkSensorExpiry(minutes / 60.0, sensorMaxAgeHours)
         }

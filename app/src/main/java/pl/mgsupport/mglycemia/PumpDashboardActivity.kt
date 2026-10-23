@@ -451,7 +451,7 @@ class PumpDashboardActivity : AppCompatActivity() {
                 try {
                     startActivity(intent)
                 } catch (e: Exception) {
-                    // Niektóre nakładki nie wystawiają danego ekranu — otwieramy ogólne ustawienia.
+                    // Niektóre nakładki nie wystawiają danego ekranu: otwieramy ogólne ustawienia.
                     try {
                         startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
                     } catch (ignored: Exception) {
@@ -1037,7 +1037,7 @@ class PumpDashboardActivity : AppCompatActivity() {
             setWeight(barAbove, above.toFloat())
         } else {
             tirText.text = "-- %"
-            tirBreakdownText.text = "—"
+            tirBreakdownText.text = "--"
             setWeight(barBelow, 0f)
             setWeight(barInRange, 100f)
             setWeight(barAbove, 0f)
@@ -1123,7 +1123,7 @@ class PumpDashboardActivity : AppCompatActivity() {
 
         val pumpDetails =
             buildString {
-                append(s.deviceInfo ?: "—")
+                append(s.deviceInfo ?: "--")
                 s.pumpModel?.let { append(" · MiniMed $it") }
             }
         deviceInfoText.text = getString(R.string.pump_format, pumpDetails)
@@ -1248,7 +1248,7 @@ class PumpDashboardActivity : AppCompatActivity() {
     }
 
     /**
-     * Jedna zwięzła linia statusu pod kartą glikemii. Pulpit ma dawać liczby, nie instrukcje —
+     * Jedna zwięzła linia statusu pod kartą glikemii. Pulpit ma dawać liczby, nie instrukcje -
      * pełny opis pracy w tle i oszczędzania baterii mieszka w Ustawieniach ([ensureDozeHelpInSettings]).
      */
     private fun ensureStatusTiles() {
@@ -1278,7 +1278,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         dozeWarnText = TextView(this).apply {
             textSize = 12.5f
             setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.glucose_high))
-            text = "Oszczędzanie baterii może wstrzymywać odczyty — dotknij, aby to zmienić"
+            text = "Oszczędzanie baterii może wstrzymywać odczyty. Dotknij, aby to zmienić"
             visibility = View.GONE
             setOnClickListener { requestIgnoreBatteryOptimizations() }
             setPadding(0, dpi(4), 0, 0)
@@ -1317,7 +1317,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         })
         box.addView(TextView(this).apply {
             text = "Android (Doze) oraz nakładki Samsung i Xiaomi potrafią usypiać aplikację po " +
-                "zgaszeniu ekranu i wstrzymywać Bluetooth — wtedy odczyty i alarmy nocne przestają " +
+                "zgaszeniu ekranu i wstrzymywać Bluetooth, wtedy odczyty i alarmy nocne przestają " +
                 "napływać. Wyłączenie optymalizacji dla MGlikemii pozwala działać w tle. Na Xiaomi " +
                 "sprawdź też Autostart i blokadę w menedżerze zadań, na Samsungu opcję „Nigdy nie usypiaj”."
             textSize = 12.5f
@@ -1379,8 +1379,8 @@ class PumpDashboardActivity : AppCompatActivity() {
         val ignoring = pm?.isIgnoringBatteryOptimizations(packageName) ?: false
         dozeWarnText?.visibility = if (ignoring) View.GONE else View.VISIBLE
         dozeStatusText?.text =
-            if (ignoring) "Stan optymalizacji: wyłączona — praca w tle OK"
-            else "Stan optymalizacji: włączona — Doze może wstrzymywać odczyty"
+            if (ignoring) "Stan optymalizacji: wyłączona. Praca w tle OK"
+            else "Stan optymalizacji: włączona. Doze może wstrzymywać odczyty"
         dozeStatusText?.setTextColor(
             ContextCompat.getColor(
                 this,
@@ -1402,7 +1402,7 @@ class PumpDashboardActivity : AppCompatActivity() {
             openBatteryOptimizationSettings()
         } catch (_: SecurityException) {
             // Bez REQUEST_IGNORE_BATTERY_OPTIMIZATIONS w manifeście system może odmówić
-            // bezpośredniego intentu — wtedy otwórz ogólne ustawienia optymalizacji.
+            // bezpośredniego intentu: wtedy otwórz ogólne ustawienia optymalizacji.
             openBatteryOptimizationSettings()
         } catch (_: Exception) {
             openBatteryOptimizationSettings()
@@ -1602,7 +1602,7 @@ class PumpDashboardActivity : AppCompatActivity() {
             CgmTrend.FORTY_FIVE_DOWN -> "↘"
             CgmTrend.SINGLE_DOWN -> "↓"
             CgmTrend.DOUBLE_DOWN -> "↓↓"
-            else -> "—"
+            else -> "--"
         }
 
     private fun trendDescription(t: CgmTrend?): String =

@@ -379,7 +379,7 @@
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
                   android:includeFontPadding="false"
-                  android:text="—"
+                  android:text="--"
                   android:textColor="@color/accent_primary_bright"
                   android:textSize="30sp"
                   android:textStyle="bold"
@@ -724,7 +724,7 @@
               android:layout_marginTop="5dp"
               android:fontFeatureSettings="tnum"
               android:gravity="center"
-              android:text="—"
+              android:text="--"
               android:textColor="@color/text_secondary"
               android:textSize="11.5sp"
             />

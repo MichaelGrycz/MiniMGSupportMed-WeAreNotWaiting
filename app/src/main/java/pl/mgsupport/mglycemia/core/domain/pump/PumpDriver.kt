@@ -53,8 +53,8 @@ interface PumpDriver {
      *  2. **Nothing is consumed until [acknowledgeHistoryLogs].** Returning records is not
      *     delivery; see that method.
      *
-     * The caller verifies contract 1 as far as it can — a batch whose span exceeds its own record
-     * count is refused — but it cannot see what the pump was asked for, so a driver that breaks
+     * The caller verifies contract 1 as far as it can: a batch whose span exceeds its own record
+     * count is refused: but it cannot see what the pump was asked for, so a driver that breaks
      * the contract in a way that stays span-consistent is only caught by the driver's own checks.
      * Failing the call is always safe: the cursor stays put and the batch is re-fetched.
      */

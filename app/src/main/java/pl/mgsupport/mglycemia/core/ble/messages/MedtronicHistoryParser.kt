@@ -440,7 +440,7 @@ object MedtronicHistoryParser {
         require(p.size >= 8) { "reference-time body too short: ${p.size}" }
         val time =
             try {
-                // The pump stores naive LOCAL wall-clock (no TZ/DST field) — it's set to the
+                // The pump stores naive LOCAL wall-clock (no TZ/DST field): it's set to the
                 // user's local time. Interpreting it as UTC shifts every history timestamp by the
                 // local offset (into the future east of UTC, e.g. +2h in CEST; into the past west
                 // of it). Anchor in the device's zone instead.

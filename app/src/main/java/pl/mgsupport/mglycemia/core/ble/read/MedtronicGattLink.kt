@@ -11,7 +11,7 @@ import java.util.UUID
  *
  * In the inverted topology the pump connects to the phone (peripheral) but exposes its CGM / IDD /
  * Device-Info services as a GATT **server**; over that same link the phone acts as a GATT **client**
- * to read them — exactly as OpenMinimed's PythonPumpConnector does over BlueZ (write the control
+ * to read them: exactly as OpenMinimed's PythonPumpConnector does over BlueZ (write the control
  * point, subscribe for notifications, read static characteristics). The concrete Android
  * `BluetoothGatt`-client implementation of this interface is wired in Milestone C3; the connection
  * manager already owns the link and the post-handshake [pl.mgsupport.mglycemia.core.ble.sake.MedtronicSakeSession].

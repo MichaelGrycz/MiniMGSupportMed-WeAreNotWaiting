@@ -24,7 +24,7 @@ fun sensorPhaseLabelPl(phase: SensorPhase): String =
 
 /**
  * Jednolinijkowy status sensora do kafelka: faza + pozostały czas z [formatSensorRemaining].
- * Poza rozgrzewką/aktualizacją brak komunikatu — zwraca "Sensor: OK".
+ * Poza rozgrzewką/aktualizacją brak komunikatu: zwraca "Sensor: OK".
  */
 fun formatSensorStatusPl(
     context: Context,

@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta38
+
+- Teksty: usunięto wszystkie długie i krótkie myślniki z interfejsu, dokumentacji i komentarzy. Zdania są krótsze, z normalną interpunkcją zamiast wtrąceń.
+- Teksty: poprawiono kilka sformułowań w ekranie pomocy i FAQ, żeby brzmiały rzeczowo, bez marketingowego tonu.
+- Komunikaty stanu: puste wartości pokazują `--` zamiast myślnika.
+
 ## 1.0-beta37
 
 - Parowanie BLE: Wydłużono watchdog SAKE z 15 do 30 sekund. Na realnym sprzęcie pompa czyta CCCD dopiero po ~12 s i subskrybuje po ~19 s od połączenia, więc poprzedni limit mógł ubić poprawną sesję na wolniejszych telefonach.
@@ -15,7 +21,7 @@ https://mgsupport.pl/pobierz/minimgsupportmed
 
 ## 1.0-beta35
 
-- Parowanie BLE: Przywrócono zachowanie referencyjnej implementacji JavaPumpConnector — odczyt deskryptora CCCD (`2902`) zwraca prawdziwy stan subskrypcji (`0x0000`), a nie sztuczne `0x0100`. Wymusza to na pompie zapis CCCD i zarejestrowanie subskrypcji w stosie Androida, bez czego notyfikacje SAKE nie są w ogóle wysyłane w eter.
+- Parowanie BLE: Przywrócono zachowanie referencyjnej implementacji JavaPumpConnector. Odczyt deskryptora CCCD (`2902`) zwraca prawdziwy stan subskrypcji (`0x0000`), a nie sztuczne `0x0100`. Wymusza to na pompie zapis CCCD i zarejestrowanie subskrypcji w stosie Androida. Bez tego notyfikacje SAKE nie są wysyłane w ogóle.
 - Parowanie BLE: Dodano diagnostykę `pump read CCCD but did not subscribe within 2s`, która jednoznacznie rozstrzyga, czy pompa w ogóle próbuje się zasubskrybować.
 - Instalator i launcher pokazują teraz numer wersji w nazwie aplikacji (np. `MGlikemia 1.0-beta35`), żeby łatwo odróżnić buildy.
 
@@ -38,12 +44,12 @@ https://mgsupport.pl/pobierz/minimgsupportmed
 ## 1.0-beta30
 
 - Wykres: Przyciskach „Wcześniej” i „Później” nadano spójny wygląd (styl ciemnych chipów pasujący do reszty aplikacji, widoczny zarówno na pulpicie, jak i w trybie pełnoekranowym).
-- Wykres: Poprawiono obsługę dotyku — wykres reaguje na gesty od razu, bez konieczności wcześniejszego klikania w niego.
+- Wykres: Poprawiono obsługę dotyku. Wykres reaguje na gesty od razu, bez wcześniejszego klikania w niego.
 - Wykres: Przyciski „Wcześniej” / „Później” pozwalają teraz przewijać historię aż do końca dostępnych w bazie danych próbek (zamiast blokować się po kilku kliknięciach w ramach wybranego okna).
 
 ## 1.0-beta29
 
-- Parowanie BLE: Naprawiono kluczowy problem ze stosem pomp MiniMed — część centrali (w tym na Xiaomi/Redmi i Samsungu) po połączeniu jedynie odczytuje stan deskryptora CCCD (`2902`) i oczekuje natychmiastowego startu SAKE, zamiast pisać do niego jawne żądanie subskrypcji. Teraz odczyt `01 00` przez pompę natychmiast uruchamia wysłanie ramki powitalnej SAKE.
+- Parowanie BLE: Naprawiono problem ze stosem pomp MiniMed. Część centrali (w tym na Xiaomi, Redmi i Samsungu) po połączeniu jedynie odczytuje stan deskryptora CCCD (`2902`) i oczekuje natychmiastowego startu SAKE, zamiast pisać do niego jawne żądanie subskrypcji. Teraz odczyt `01 00` przez pompę natychmiast uruchamia wysłanie ramki powitalnej SAKE.
 
 ## 1.0-beta28
 
@@ -63,18 +69,18 @@ https://mgsupport.pl/pobierz/minimgsupportmed
 
 - Powiadomienie o pracy aplikacji pokazuje aktualny cukier w tytule, więc wartość jest czytelna
   od razu w belce i na ekranie blokady, bez rozwijania powiadomienia.
-- Treść powiadomienia nie powtarza już tej samej wartości — została w niej insulina na pokładzie,
+- Treść powiadomienia nie powtarza już tej samej wartości. Została w niej insulina na pokładzie,
   stan połączenia i wiek danych.
 - Uwaga: w pasku statusu (obok baterii i Wi-Fi) telefony Samsung pokazują ikonę aplikacji,
   a nie ikonę powiadomienia. Cyfry w małej ikonie widać na urządzeniach z czystym Androidem.
 
 ## 1.0-beta26
 
-- Diagnostyka: log techniczny zawiera teraz pełny opis telefonu i Bluetooth — model,
+- Diagnostyka: log techniczny zawiera teraz pełny opis telefonu i Bluetooth: model,
   producent, wersję Androida, cechy adaptera, uprawnienia, stan oszczędzania baterii
   i zużycie pamięci. Łatwiej ustalić, dlaczego konkretny telefon nie łączy się z pompą.
 - Ustawienia systemowe: nowy skrót w aplikacji otwiera ekrany Bluetooth, listę aplikacji
-  systemowych, uprawnienia, powiadomienia i oszczędzanie baterii — bez szukania ich w menu.
+  systemowych, uprawnienia, powiadomienia i oszczędzanie baterii: bez szukania ich w menu.
 - Nowe powiadomienia: niski poziom insuliny w zbiorniku (próg do ustawienia), zbliżający się
   koniec ważności sensora oraz brak danych z pompy przez dłuższy czas.
 - Czas życia sensora nie jest już z góry zakładany jako 7 dni. Limity dla znanych modeli
