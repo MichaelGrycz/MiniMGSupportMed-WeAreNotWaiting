@@ -76,30 +76,40 @@ class PumpForegroundService : Service() {
 
     private fun statusText(s: PumpUiState): String =
         when {
-            s.connection != ConnectionState.CONNECTED ->
-                getString(R.string.notif_status_format, connectionLabel(s.connection))
+            s.connection != ConnectionState.CONNECTED -> {
+                // When the link is down the last value and its age matter more than the state label.
+                val age = freshnessSuffix(s.glucoseAt)
+                val mgDl = s.glucoseMgDl
+                if (mgDl != null && age.isNotEmpty()) {
+                    getString(R.string.notif_last_reading, mgDl, age) +
+                        " \u00b7 " + connectionLabel(s.connection)
+                } else {
+                    getString(R.string.notif_status_format, connectionLabel(s.connection))
+                }
+            }
 
             s.sensorUpdating && s.sensorPhase == SensorPhase.INITIALIZING ->
                 getString(
-                    R.string.notif_sensor_initializing,
+                    R.string.notif_sensor_initializing_simple,
                     formatSensorRemaining(this, s.sensorRemainingMinutes),
-                    connectionLabel(s.connection),
                 )
 
-            s.sensorUpdating ->
-                getString(R.string.notif_sensor_updating, connectionLabel(s.connection))
+            s.sensorUpdating -> getString(R.string.notif_sensor_updating_simple)
 
             s.glucoseMgDl != null -> {
-                val iob = s.iob?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "--"
-                val base =
-                    getString(
-                        R.string.notif_reading_detail,
-                        iob,
-                        getString(R.string.unit_insulin_amount),
-                        connectionLabel(s.connection),
-                    )
+                val parts = mutableListOf<String>()
+                val arrow = GlucoseIconFactory.trendArrow(s.trend)
+                if (arrow.isNotEmpty()) parts += arrow
+                s.iob?.let {
+                    parts +=
+                        getString(
+                            R.string.notif_active_insulin,
+                            String.format(Locale.getDefault(), "%.2f", it),
+                        )
+                }
                 val age = freshnessSuffix(s.glucoseAt)
-                if (age.isEmpty()) base else "$base \u00b7 $age"
+                if (age.isNotEmpty()) parts += age
+                if (parts.isEmpty()) getString(R.string.notif_waiting) else parts.joinToString(" \u00b7 ")
             }
 
             else -> getString(R.string.notif_waiting)

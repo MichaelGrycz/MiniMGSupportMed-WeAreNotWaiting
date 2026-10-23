@@ -204,6 +204,10 @@
     <string name="notif_status_format">Status: %1$s</string>
     <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
     <string name="notif_reading_detail">IOB %1$s %2$s · %3$s</string>
+    <string name="notif_active_insulin">aktives Insulin %1$s E</string>
+    <string name="notif_last_reading">Letzter Wert: %1$d mg/dL · %2$s</string>
+    <string name="notif_sensor_initializing_simple">Sensor wird initialisiert · noch %1$s</string>
+    <string name="notif_sensor_updating_simple">Sensor wird aktualisiert</string>
     <string name="notif_waiting">Verbunden · warte auf Messwert</string>
     <string name="notif_sensor_updating">Sensor wird aktualisiert · %1$s</string>
     <string name="notif_sensor_initializing">Sensor wird initialisiert · noch %1$s · %2$s</string>

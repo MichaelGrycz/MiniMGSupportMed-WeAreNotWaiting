@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta39
+
+- Powiadomienia: zamiast „IOB 1,00 jednostki insuliny” jest teraz „aktywna insulina 1,00 j.”, a na początku strzałka trendu.
+- Powiadomienia: gdy nie ma połączenia, pokazują ostatni odczyt i jego wiek zamiast samego stanu. Łatwiej ocenić, czy dane są świeże.
+- Powiadomienia: podczas rozgrzewania i aktualizacji sensora usunięto zbędne „Połączono”. Zostaje sam stan sensora i pozostały czas.
+
 ## 1.0-beta38
 
 - Teksty: usunięto wszystkie długie i krótkie myślniki z interfejsu, dokumentacji i komentarzy. Zdania są krótsze, z normalną interpunkcją zamiast wtrąceń.
