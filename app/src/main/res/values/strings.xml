@@ -278,7 +278,7 @@
   >Android could not finish pairing with the pump. Confirm the system Bluetooth pairing prompt, or remove the pump from Android Bluetooth settings and pair again.</string>
     <string
     name="fault_bound_elsewhere"
-  >The pump connects and drops the link right away. This is usually a stale pairing: remove the Mobile … entry from the pump’s mobile devices list, remove the pump from Android Bluetooth settings, then try again.</string>
+  >The pump connects and drops the link before it starts sending data. Look at the pump screen: if it asks about adding a device, confirm it. If there is no prompt, remove the Mobile … entry from the pump’s mobile devices list and pair again.</string>
     <string name="log_sensor_updating">CGM: sensor reports no value (warm-up or sensor update)</string>
     <string name="log_sensor_ready">CGM: readings are back</string>
     <string name="read_error">read error</string>

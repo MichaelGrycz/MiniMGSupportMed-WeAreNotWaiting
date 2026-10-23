@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta45
+
+- Parowanie: log z Redmi Note 13 Pro pokazał, że telefon nie ma żadnego starego wpisu parowania (`bondedDevices count=0`), a samo parowanie przechodzi czysto. Poprzednia teoria o zaległym wpisie w telefonie była błędna.
+- Diagnostyka: linie o parowaniu mają teraz godzinę i czas od połączenia, tak jak reszta logu. Wcześniej jako jedyne nie miały znacznika czasu, więc nie było widać, ile sekund mija między parowaniem a kolejnym krokiem pompy.
+- Komunikat przy zerwanym połączeniu mówi teraz to, co naprawdę widać w logu: pompa łączy się i odchodzi, zanim zacznie wysyłać dane. Podpowiada sprawdzenie ekranu pompy.
+
 ## 1.0-beta44
 
 - Parowanie: aplikacja nie próbuje już sama rozpoczynać parowania systemowego podczas łączenia z pompą. Ta próba i tak zawsze kończyła się niepowodzeniem, a mogła przeszkadzać. Parowanie prowadzi pompa.

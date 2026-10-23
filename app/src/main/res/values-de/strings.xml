@@ -267,7 +267,7 @@
   >Android konnte die Kopplung mit der Pumpe nicht abschließen. Bestätige die Bluetooth-Kopplungsanfrage oder entferne die Pumpe in den Bluetooth-Einstellungen und versuche es erneut.</string>
     <string
     name="fault_bound_elsewhere"
-  >Die Pumpe verbindet sich und trennt sofort wieder. Meist ist das ein alter Kopplungseintrag: den Eintrag „Mobile …“ in der Pumpe entfernen, die Pumpe in den Bluetooth-Einstellungen löschen und erneut versuchen.</string>
+  >Die Pumpe verbindet sich und trennt die Verbindung, bevor sie Daten sendet. Schau auf das Display der Pumpe: fragt sie nach dem Hinzufügen eines Geräts, bestätige das. Ohne Abfrage den Eintrag „Mobile …“ in der Pumpe entfernen und neu koppeln.</string>
     <string name="log_sensor_updating">CGM: Sensor liefert keinen Wert (Aufwärmphase oder Update)</string>
     <string name="log_sensor_ready">CGM: Werte sind wieder da</string>
     <string name="read_error">Lesefehler</string>

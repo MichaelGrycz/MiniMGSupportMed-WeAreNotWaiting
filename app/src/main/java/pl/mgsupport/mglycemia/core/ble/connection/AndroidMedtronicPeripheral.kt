@@ -691,7 +691,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                             val variant =
                                 intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.ERROR)
                             val passkey = intent.getIntExtra(EXTRA_PAIRING_PASSKEY, BluetoothDevice.ERROR)
-                            listener?.onDiagnostic(
+                            diag(
                                 "pairing request variant=${pairingVariantLabel(variant)} " +
                                     "passkey=${if (passkey == BluetoothDevice.ERROR) "none" else passkey} " +
                                     "bond=${bondLabel(device.bondState)} $addrNote",
@@ -705,7 +705,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                             val reason = intent.getIntExtra(EXTRA_BOND_REASON, 0)
                             val failed =
                                 state == BluetoothDevice.BOND_NONE && previous == BluetoothDevice.BOND_BONDING
-                            listener?.onDiagnostic(
+                            // diag(), not onDiagnostic(): the time since link-up is what tells whether
+                            // the pump waits seconds or milliseconds before its next step.
+                            diag(
                                 "bond state ${bondLabel(previous)} -> ${bondLabel(state)} reason=$reason $addrNote" +
                                     if (failed) " (pairing failed)" else "",
                             )
