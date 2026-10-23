@@ -3,6 +3,15 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta27
+
+- Powiadomienie o pracy aplikacji pokazuje aktualny cukier w tytule, więc wartość jest czytelna
+  od razu w belce i na ekranie blokady, bez rozwijania powiadomienia.
+- Treść powiadomienia nie powtarza już tej samej wartości — została w niej insulina na pokładzie,
+  stan połączenia i wiek danych.
+- Uwaga: w pasku statusu (obok baterii i Wi-Fi) telefony Samsung pokazują ikonę aplikacji,
+  a nie ikonę powiadomienia. Cyfry w małej ikonie widać na urządzeniach z czystym Androidem.
+
 ## 1.0-beta26
 
 - Diagnostyka: log techniczny zawiera teraz pełny opis telefonu i Bluetooth — model,

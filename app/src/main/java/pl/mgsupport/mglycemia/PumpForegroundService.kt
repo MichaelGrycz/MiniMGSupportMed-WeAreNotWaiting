@@ -93,8 +93,7 @@ class PumpForegroundService : Service() {
                 val iob = s.iob?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "--"
                 val base =
                     getString(
-                        R.string.notif_reading_format,
-                        s.glucoseMgDl,
+                        R.string.notif_reading_detail,
                         iob,
                         getString(R.string.unit_insulin_amount),
                         connectionLabel(s.connection),
@@ -105,6 +104,15 @@ class PumpForegroundService : Service() {
 
             else -> getString(R.string.notif_waiting)
         }
+
+    /** Wartość jako tytuł powiadomienia, tylko gdy jest świeży odczyt i sensor nie jest w rozgrzewaniu. */
+    private fun readingTitle(state: PumpUiState?): String? {
+        if (state == null) return null
+        if (state.connection != ConnectionState.CONNECTED) return null
+        if (state.sensorUpdating) return null
+        val mgDl = state.glucoseMgDl ?: return null
+        return "$mgDl mg/dL"
+    }
 
     private fun connectionLabel(state: ConnectionState): String =
         getString(
@@ -135,9 +143,13 @@ class PumpForegroundService : Service() {
     }
 
     private fun buildNotification(text: String, state: PumpUiState? = null): Notification {
+        // Samsung One UI w pasku statusu pokazuje ikonę aplikacji, nie ikonę powiadomienia, więc
+        // cyfry w małej ikonie nie są tam widoczne. Wartość eksponujemy więc w tytule, który jest
+        // czytelny w belce i na ekranie blokady na każdym urządzeniu.
+        val readingTitle = readingTitle(state)
         val builder =
             NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.app_name))
+                .setContentTitle(readingTitle ?: getString(R.string.app_name))
                 .setContentText(text)
                 .setContentIntent(openAppIntent())
                 .setOngoing(true)

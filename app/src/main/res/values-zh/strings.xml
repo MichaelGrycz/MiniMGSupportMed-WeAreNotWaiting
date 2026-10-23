@@ -194,6 +194,7 @@
     <string name="notif_connecting">正在连接泵…</string>
     <string name="notif_status_format">状态：%1$s</string>
     <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
+    <string name="notif_reading_detail">IOB %1$s %2$s · %3$s</string>
     <string name="notif_waiting">已连接 · 等待读数</string>
     <string name="notif_sensor_updating">传感器更新中 · %1$s</string>
     <string name="notif_sensor_initializing">传感器初始化中 · 还需 %1$s · %2$s</string>

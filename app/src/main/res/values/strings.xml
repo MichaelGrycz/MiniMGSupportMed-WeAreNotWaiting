@@ -214,6 +214,7 @@
     <string name="notif_connecting">Connecting to pump…</string>
     <string name="notif_status_format">Status: %1$s</string>
     <string name="notif_reading_format">%1$d mg/dL · IOB %2$s %3$s · %4$s</string>
+    <string name="notif_reading_detail">IOB %1$s %2$s · %3$s</string>
     <string name="notif_waiting">Connected · waiting for reading</string>
     <string name="notif_sensor_updating">Sensor updating · %1$s</string>
     <string name="notif_sensor_initializing">Sensor initializing · %1$s left · %2$s</string>

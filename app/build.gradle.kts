@@ -13,8 +13,8 @@ android {
         applicationId = "pl.mgsupport.mglycemia"
         minSdk = 24
         targetSdk = 36
-        versionCode = 27
-        versionName = "1.0-beta26"
+        versionCode = 28
+        versionName = "1.0-beta27"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
