@@ -66,7 +66,9 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var updateStatusText: TextView
     private var updateChecking = false
 
-    private val updateCheckIntervalMs = 24L * 60 * 60 * 1000
+    // Re-check on app open at most every 15 minutes. The previous 24-hour throttle hid fresh
+    // releases for a whole day, which looked like the updater was broken.
+    private val updateCheckIntervalMs = 15L * 60 * 1000
     private val timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
 
     private var currentTab: Tab = Tab.DASHBOARD

@@ -3,6 +3,13 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta20
+
+- Aktualizacje: gdy GitHub API jest zablokowane limitem zapytań (HTTP 403), aplikacja
+  czyta najnowszy tag z publicznego przekierowania GitHub Releases, które nie ma tego limitu.
+- Automatyczne sprawdzanie przy otwarciu aplikacji co 15 minut zamiast raz na dobę.
+- Komunikat o nieudanym sprawdzeniu pojawia się już tylko wtedy, gdy obie ścieżki zawiodą.
+
 ## 1.0-beta19
 
 - Parowanie: PnP ID (`2A50`) ma teraz wymagane 7 bajtów zamiast 1. Pompa czytająca

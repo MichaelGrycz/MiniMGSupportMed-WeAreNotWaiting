@@ -41,18 +41,28 @@ sealed interface UpdateCheck {
 class UpdateChecker(private val context: Context) {
 
     suspend fun latest(): UpdateCheck = withContext(Dispatchers.IO) {
-        val conn = open(RELEASES_API) ?: return@withContext UpdateCheck.Failed
+        // The unauthenticated GitHub API is limited to 60 requests/hour per IP, so phones behind a
+        // shared carrier NAT regularly get HTTP 403. Fall back to the public release redirect, which
+        // is served by GitHub's web frontend and is not subject to that API quota.
+        when (val api = latestFromApi()) {
+            is UpdateCheck.Found, UpdateCheck.None -> api
+            UpdateCheck.Failed -> latestFromRedirect()
+        }
+    }
+
+    private fun latestFromApi(): UpdateCheck {
+        val conn = open(RELEASES_API) ?: return UpdateCheck.Failed
         try {
-            if (conn.responseCode == HttpURLConnection.HTTP_NOT_FOUND) return@withContext UpdateCheck.None
-            if (conn.responseCode != HttpURLConnection.HTTP_OK) return@withContext UpdateCheck.Failed
+            if (conn.responseCode == HttpURLConnection.HTTP_NOT_FOUND) return UpdateCheck.None
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) return UpdateCheck.Failed
             val body = conn.inputStream.bufferedReader().use { it.readText() }
             val json = JSONObject(body)
             val version = json.optString("tag_name").trim().removePrefix("v").removePrefix("V")
-            if (version.isBlank()) return@withContext UpdateCheck.Failed
-            if (compareVersions(version, BuildConfig.VERSION_NAME) <= 0) return@withContext UpdateCheck.None
+            if (version.isBlank()) return UpdateCheck.Failed
+            if (compareVersions(version, BuildConfig.VERSION_NAME) <= 0) return UpdateCheck.None
 
-            val apkUrl = firstApkUrl(json) ?: return@withContext UpdateCheck.Failed
-            UpdateCheck.Found(
+            val apkUrl = firstApkUrl(json) ?: return UpdateCheck.Failed
+            return UpdateCheck.Found(
                 AvailableUpdate(
                     version = version,
                     notes = json.optString("body").trim(),
@@ -61,10 +71,48 @@ class UpdateChecker(private val context: Context) {
                 ),
             )
         } catch (_: Exception) {
-            UpdateCheck.Failed
+            return UpdateCheck.Failed
         } finally {
             conn.disconnect()
         }
+    }
+
+    /** Fallback used when the REST API is rate-limited or unavailable. */
+    private fun latestFromRedirect(): UpdateCheck {
+        val tag = resolveLatestTag() ?: return UpdateCheck.Failed
+        val version = tag.removePrefix("v").removePrefix("V")
+        if (version.isBlank()) return UpdateCheck.Failed
+        if (compareVersions(version, BuildConfig.VERSION_NAME) <= 0) return UpdateCheck.None
+        return UpdateCheck.Found(
+            AvailableUpdate(
+                version = version,
+                notes = "",
+                apkUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/$APK_ASSET",
+                pageUrl = "$RELEASES_LATEST/tag/$tag",
+            ),
+        )
+    }
+
+    /** Follow GitHub's `/releases/latest` redirect and read the tag from the final URL. */
+    private fun resolveLatestTag(): String? {
+        var url = URL(RELEASES_LATEST)
+        var hops = 0
+        while (hops++ < MAX_REDIRECTS) {
+            val conn = openWeb(url.toString()) ?: return null
+            try {
+                val code = conn.responseCode
+                if (code in 300..399) {
+                    val location = conn.getHeaderField("Location") ?: return null
+                    url = URL(url, location)
+                    continue
+                }
+                if (code != HttpURLConnection.HTTP_OK) return null
+                return parseTagFromReleaseUrl(url.toString())
+            } finally {
+                conn.disconnect()
+            }
+        }
+        return null
     }
 
     /** Downloads the release APK into the cache directory. Returns null when the transfer failed. */
@@ -147,6 +195,19 @@ class UpdateChecker(private val context: Context) {
             null
         }
 
+    private fun openWeb(rawUrl: String): HttpURLConnection? =
+        try {
+            (URL(rawUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 10_000
+                readTimeout = 20_000
+                instanceFollowRedirects = false
+                setRequestProperty("Accept", "text/html")
+                setRequestProperty("User-Agent", "MGSupportCGM/${BuildConfig.VERSION_NAME}")
+            }
+        } catch (_: Exception) {
+            null
+        }
+
     private fun firstApkUrl(json: JSONObject): String? {
         val assets = json.optJSONArray("assets") ?: return null
         for (i in 0 until assets.length()) {
@@ -159,11 +220,20 @@ class UpdateChecker(private val context: Context) {
     }
 
     private companion object {
-        const val RELEASES_API = "https://api.github.com/repos/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting/releases/latest"
+        const val REPO_OWNER = "MichaelGrycz"
+        const val REPO_NAME = "MiniMGSupportMed-WeAreNotWaiting"
+        const val RELEASES_API = "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
+        const val RELEASES_LATEST = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/latest"
+        const val APK_ASSET = "app-debug.apk"
+        const val MAX_REDIRECTS = 5
         const val CHANNEL_ID = "app_updates"
         const val NOTIF_ID = 2001
     }
 }
+
+/** Extracts `v1.0-beta19` from a GitHub release URL. */
+internal fun parseTagFromReleaseUrl(url: String): String? =
+    Regex("/releases/tag/([^/?#]+)").find(url)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }
 
 /** Numeric segment comparison so `1.0-beta10` counts as newer than `1.0-beta9`. */
 internal fun compareVersions(candidate: String, current: String): Int {
