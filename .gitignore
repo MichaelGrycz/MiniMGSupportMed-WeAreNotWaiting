@@ -105,3 +105,6 @@ android.gitignore hosted with ❤ by GitHub
 /docs/local/
 /tools/local/
 /tools/demo/demo_year_backup.csv
+
+# Local emulator screenshots and demo seed
+.screens/
