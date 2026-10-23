@@ -349,4 +349,9 @@
     name="prediction_disclaimer"
   >仅作视觉参考，非医疗建议。使用谨慎的 IOB 估算，而非您的个人胰岛素敏感度。</string>
     <string name="family_code_qr_desc">用家庭手机扫描此代码</string>
+    <string name="family_code_scan">扫描代码</string>
+    <string name="family_code_scan_prompt">扫描家庭二维码</string>
+    <string name="family_code_scan_invalid">这不是有效的家庭代码</string>
+    <string name="isf_label">胰岛素敏感度（mg/dL / 1 U）</string>
+    <string name="isf_note">仅用于减弱预测。请咨询医生确定您的 ISF。</string>
 </resources>

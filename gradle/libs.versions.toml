@@ -13,6 +13,7 @@ kotlin = "2.2.20"
 coroutines = "1.10.2"
 timber = "4.7.1"
 zxing = "3.5.3"
+zxingEmbedded = "4.3.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -25,6 +26,7 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingEmbedded" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

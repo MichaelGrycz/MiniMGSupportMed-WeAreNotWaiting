@@ -2592,6 +2592,41 @@
               android:textSize="11sp"
             />
 
+                        <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="10dp"
+              android:text="@string/isf_label"
+              android:textColor="@color/text_secondary"
+              android:textSize="12sp"
+              android:textStyle="bold"
+            />
+
+                        <EditText
+              android:id="@+id/etIsf"
+              android:layout_width="match_parent"
+              android:layout_height="42dp"
+              android:layout_marginTop="4dp"
+              android:background="@drawable/bg_input_field"
+              android:gravity="center"
+              android:hint="40"
+              android:importantForAutofill="no"
+              android:inputType="numberDecimal"
+              android:textColor="@color/text_primary"
+              android:textColorHint="@color/text_muted"
+              android:textSize="14sp"
+              android:textStyle="bold"
+            />
+
+                        <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="2dp"
+              android:text="@string/isf_note"
+              android:textColor="@color/text_muted"
+              android:textSize="11sp"
+            />
+
                         <com.google.android.material.button.MaterialButton
               android:id="@+id/btnSaveThresholds"
               style="@style/Widget.Material3.Button.OutlinedButton"
@@ -2734,6 +2769,20 @@
               android:textColor="@color/text_secondary"
               app:cornerRadius="12dp"
               app:strokeColor="@color/border_subtle"
+            />
+
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnScanFamilyCode"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="8dp"
+              android:maxLines="2"
+              android:text="@string/family_code_scan"
+              android:textColor="@color/accent_primary_bright"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/accent_primary"
             />
 
                         <ImageView

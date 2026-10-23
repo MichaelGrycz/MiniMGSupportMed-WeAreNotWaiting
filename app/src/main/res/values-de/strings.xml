@@ -374,4 +374,9 @@
     name="prediction_disclaimer"
   >Visuelle Hilfe, keine medizinische Beratung. Nutzt eine vorsichtige IOB-Schätzung, nicht Ihre persönliche Insulinempfindlichkeit.</string>
     <string name="family_code_qr_desc">Diesen Code mit dem Familientelefon scannen</string>
+    <string name="family_code_scan">Code scannen</string>
+    <string name="family_code_scan_prompt">Familien-QR-Code scannen</string>
+    <string name="family_code_scan_invalid">Das ist kein gültiger Familiencode</string>
+    <string name="isf_label">Insulinempfindlichkeit (mg/dL pro 1 U)</string>
+    <string name="isf_note">Wird nur zur Dämpfung der Prognose verwendet. Fragen Sie Ihren Arzt nach Ihrem ISF.</string>
 </resources>

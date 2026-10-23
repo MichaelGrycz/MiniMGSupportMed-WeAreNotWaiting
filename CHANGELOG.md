@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta56
+
+- Tryb rodziny: skaner QR w aplikacji (ZXing embedded + kamera) — telefon rodziny może zeskanować kod zamiast wpisywać go ręcznie.
+- Prognoza: personalizowany ISF (mg/dL na 1 j.) w Ustawieniach, z walidacją 10–150; używany do tłumienia wzrostu przez IOB.
+- Prognoza: zastrzeżenie i pole ISF przetłumaczone na pl/en/de/zh.
+
 ## 1.0-beta55
 
 - Prognoza: opcjonalna (przełącznik w Ustawieniach) i wyraźnie opisana jako pomoc wizualna, nie porada medyczna.

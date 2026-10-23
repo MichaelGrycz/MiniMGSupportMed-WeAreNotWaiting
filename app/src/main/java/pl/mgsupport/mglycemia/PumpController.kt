@@ -312,7 +312,21 @@ class PumpController(context: Context) {
     @Volatile
     private var showPrediction: Boolean = true
 
+    /** Indywidualna wrażliwość na insulinę (mg/dL na 1 j.) używana do tłumienia prognozy. */
+    @Volatile
+    private var insulinSensitivityMgDlPerUnit: Double = GlucoseForecast.DEFAULT_INSULIN_SENSITIVITY_MG_DL_PER_UNIT
+
     fun isPredictionEnabled(): Boolean = showPrediction
+
+    fun getInsulinSensitivity(): Double = insulinSensitivityMgDlPerUnit
+
+    /** Ustawia ISF (10-150 mg/dL na jednostkę) i natychmiast przelicza prognozę. */
+    fun setInsulinSensitivity(value: Double) {
+        insulinSensitivityMgDlPerUnit =
+            value.coerceIn(GlucoseForecast.MIN_INSULIN_SENSITIVITY, GlucoseForecast.MAX_INSULIN_SENSITIVITY)
+        prefs().edit().putFloat(PREF_INSULIN_SENSITIVITY, insulinSensitivityMgDlPerUnit.toFloat()).apply()
+        scope.launch { recomputeDerived() }
+    }
 
     fun setPredictionEnabled(enabled: Boolean) {
         showPrediction = enabled
@@ -841,7 +855,12 @@ class PumpController(context: Context) {
         val recentForForecast = store.queryGlucose(nowMs - 20 * 60_000L, nowMs)
         val predicted =
             if (showPrediction) {
-                GlucoseForecast.predict30(recentForForecast, nowMs, s.iob?.toDouble())
+                GlucoseForecast.predict30(
+                    recentForForecast,
+                    nowMs,
+                    s.iob?.toDouble(),
+                    insulinSensitivityMgDlPerUnit,
+                )
             } else {
                 null
             }
@@ -1083,6 +1102,14 @@ class PumpController(context: Context) {
         alertRepeatMin = p.getLong(PREF_ALERT_REPEAT_MIN, 5L).coerceIn(1L, 60L)
         silentAlertsEnabled = p.getBoolean(PREF_SILENT_ALERTS, false)
         showPrediction = p.getBoolean(PREF_SHOW_PREDICTION, true)
+        insulinSensitivityMgDlPerUnit =
+            p.getFloat(
+                PREF_INSULIN_SENSITIVITY,
+                GlucoseForecast.DEFAULT_INSULIN_SENSITIVITY_MG_DL_PER_UNIT.toFloat(),
+            ).toDouble().coerceIn(
+                GlucoseForecast.MIN_INSULIN_SENSITIVITY,
+                GlucoseForecast.MAX_INSULIN_SENSITIVITY,
+            )
         alerts.setRepeatInterval(alertRepeatMin)
         alerts.setSilentAlerts(silentAlertsEnabled)
     }
@@ -1109,6 +1136,7 @@ class PumpController(context: Context) {
         const val PREF_ALERT_REPEAT_MIN = "alert_repeat_min"
         const val PREF_SILENT_ALERTS = "silent_alerts"
         const val PREF_SHOW_PREDICTION = "show_prediction"
+        const val PREF_INSULIN_SENSITIVITY = "insulin_sensitivity"
         const val COMPANION_POLL_INTERVAL_MS = 30_000L
     }
 }

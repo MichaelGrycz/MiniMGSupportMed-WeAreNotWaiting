@@ -39,6 +39,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.ImageViewCompat
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import pl.mgsupport.mglycemia.core.domain.model.CgmTrend
 import pl.mgsupport.mglycemia.core.domain.model.ConnectionState
 import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
@@ -222,6 +224,25 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var btnShareFamilyCode: Button
     private lateinit var familyCodeQr: ImageView
     private lateinit var switchShowPrediction: MaterialSwitch
+    private lateinit var btnScanFamilyCode: Button
+    private lateinit var etIsf: EditText
+
+    private val scanLauncher =
+        registerForActivityResult(ScanContract()) { result ->
+            val raw = result.contents?.trim().orEmpty()
+            if (raw.isBlank()) return@registerForActivityResult
+            val candidate = raw.removePrefix("MGlikemia:").removePrefix("mglycemia:")
+            val normalized = candidate.replace(Regex("[^A-Za-z0-9]"), "")
+            if (normalized.length in 4..16) {
+                controller.setFamilyCode(normalized)
+                familyCodeValue.text = controller.getFamilyCode()
+                etFamilyCode.setText(controller.getFamilyCode())
+                renderFamilyQr()
+                Toast.makeText(this, getString(R.string.family_code_saved), Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, getString(R.string.family_code_scan_invalid), Toast.LENGTH_LONG).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -400,8 +421,10 @@ class PumpDashboardActivity : AppCompatActivity() {
         familyCodeValue = findViewById(R.id.familyCodeValue)
         etFamilyCode = findViewById(R.id.etFamilyCode)
         btnShareFamilyCode = findViewById(R.id.btnShareFamilyCode)
+        btnScanFamilyCode = findViewById(R.id.btnScanFamilyCode)
         familyCodeQr = findViewById(R.id.familyCodeQr)
         switchShowPrediction = findViewById(R.id.switchShowPrediction)
+        etIsf = findViewById(R.id.etIsf)
         dbStatsText = findViewById(R.id.dbStatsText)
         btnToggleLogs = findViewById(R.id.btnToggleLogs)
         logsContainer = findViewById(R.id.logsContainer)
@@ -725,6 +748,16 @@ class PumpDashboardActivity : AppCompatActivity() {
             controller.setPredictionEnabled(checked)
         }
         btnShareFamilyCode.setOnClickListener { shareFamilyCode() }
+        btnScanFamilyCode.setOnClickListener {
+            scanLauncher.launch(
+                ScanOptions().apply {
+                    setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                    setPrompt(getString(R.string.family_code_scan_prompt))
+                    setBeepEnabled(false)
+                    setOrientationLocked(false)
+                },
+            )
+        }
         btnSaveSyncUrl.setOnClickListener {
             val code = etFamilyCode.text.toString().trim()
             val normalized = code.replace(Regex("[^A-Za-z0-9]"), "")
@@ -1044,6 +1077,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         etSensorMaxHours.setText(formatNumber(controller.sensorMaxAgeHoursHours()))
         etStaleLinkMin.setText(controller.staleLinkTimeoutMin().toString())
         etAlertRepeatMin.setText(controller.alertRepeatMinutes().toString())
+        etIsf.setText(formatNumber(controller.getInsulinSensitivity()))
         listOf(
             etUrgentLow,
             etLow,
@@ -1052,7 +1086,8 @@ class PumpDashboardActivity : AppCompatActivity() {
             etReservoirThreshold,
             etSensorMaxHours,
             etStaleLinkMin,
-            etAlertRepeatMin
+            etAlertRepeatMin,
+            etIsf
         )
             .forEach { it.error = null }
     }
@@ -1096,7 +1131,8 @@ class PumpDashboardActivity : AppCompatActivity() {
             etReservoirThreshold,
             etSensorMaxHours,
             etStaleLinkMin,
-            etAlertRepeatMin
+            etAlertRepeatMin,
+            etIsf
         )
             .forEach { it.error = null }
 
@@ -1127,12 +1163,14 @@ class PumpDashboardActivity : AppCompatActivity() {
         val sensor = etSensorMaxHours.requireNumber(24.0, 336.0) ?: return
         val stale = etStaleLinkMin.requireNumber(30.0, 45.0) ?: return
         val repeat = etAlertRepeatMin.requireNumber(1.0, 60.0) ?: return
+        val isf = etIsf.requireNumber(10.0, 150.0) ?: return
 
         controller.setThresholds(t)
         controller.setReservoirWarnThresholdIu(reservoir)
         controller.setSensorMaxAgeHours(sensor)
         controller.setStaleLinkTimeoutMin(stale.toLong())
         controller.setAlertRepeatMin(repeat.toLong())
+        controller.setInsulinSensitivity(isf)
         prefillThresholds(t)
         Toast.makeText(this, getString(R.string.thresholds_saved), Toast.LENGTH_SHORT).show()
     }

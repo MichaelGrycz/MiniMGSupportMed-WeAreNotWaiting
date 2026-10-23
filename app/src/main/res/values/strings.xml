@@ -383,4 +383,9 @@
     name="prediction_disclaimer"
   >Visual aid, not medical advice. Uses a cautious IOB estimate, not your personal insulin sensitivity.</string>
     <string name="family_code_qr_desc">Scan this code with the family phone</string>
+    <string name="family_code_scan">Scan code</string>
+    <string name="family_code_scan_prompt">Scan the family QR code</string>
+    <string name="family_code_scan_invalid">That is not a valid family code</string>
+    <string name="isf_label">Insulin sensitivity (mg/dL per 1 U)</string>
+    <string name="isf_note">Used only to dampen the prediction. Ask your clinician for your ISF.</string>
 </resources>
