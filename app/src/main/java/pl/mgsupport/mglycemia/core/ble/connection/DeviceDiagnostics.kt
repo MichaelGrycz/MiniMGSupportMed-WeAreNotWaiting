@@ -95,7 +95,31 @@ object DeviceDiagnostics {
             fields.append(" extAdv=").append(adapter.isLeExtendedAdvertisingSupported)
             fields.append(" periodicAdv=").append(adapter.isLePeriodicAdvertisingSupported)
         }
+        fields.append(" localHash=").append(localAddressHash(adapter))
         return fields.toString()
+    }
+
+    /**
+     * Short hash of the local Bluetooth address. The address itself is identifying, but the hash
+     * tells us whether it changes between sessions. If it stays the same, a stale bond on the pump
+     * can still match this phone; if it changes, stale keys cannot be the cause.
+     */
+    private fun localAddressHash(adapter: BluetoothAdapter): String {
+        val address =
+            try {
+                adapter.address
+            } catch (e: SecurityException) {
+                null
+            }
+        if (address.isNullOrBlank() || address == "02:00:00:00:00:00") return "unavailable"
+        return try {
+            java.security.MessageDigest.getInstance("SHA-256")
+                .digest(address.toByteArray())
+                .take(4)
+                .joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            "unavailable"
+        }
     }
 
     private fun profileLine(context: Context): String {

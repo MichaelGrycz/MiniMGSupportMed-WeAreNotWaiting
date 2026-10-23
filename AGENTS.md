@@ -91,7 +91,8 @@ Repozytorium musi być **publiczne**, inaczej `UpdateChecker` nie widzi wydań.
   `14587043`, `2.9.0 f1093d1`, 8 zer System ID, 7 zer PnP ID.
 - Nazwa urządzenia: unikalne `Mobile NNNNNN` na instalację (`PumpIdentity`).
   Przy „Usuń parowanie” i ponownym parowaniu nazwa się zmienia, żeby ominąć stary wpis w pompie.
-- **Nie wywołuj `createBond()` po połączeniu**: powodowało natychmiastowe zerwanie linku.
+- `createBond()` wywołujemy tylko po odczycie CCCD (`2902`) i tylko gdy `bond=none` (eksperyment w beta42).
+  Wywołanie go od razu po połączeniu powodowało zerwanie linku.
 - Rozgłaszanie zatrzymuj po połączeniu pompy.
 - Odpowiedź ATT wysyłaj **przed** uruchomieniem SAKE.
 - Resetuj `sakeCccdValue` przy każdym połączeniu.

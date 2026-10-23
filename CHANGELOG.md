@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta42
+
+- Diagnostyka: linia `bluetooth` ma teraz `localHash`, czyli krótki hash adresu BLE telefonu bez ujawniania MAC. Pozwala sprawdzić, czy adres jest stały między próbami. Stały adres oznacza, że pompa może wciąż mieć stare klucze.
+- Parowanie BLE (eksperyment): gdy pompa odczyta CCCD na telefonie bez bondu, aplikacja sama rozpoczyna parowanie systemowe. Pompa jako central nigdy nie wysyłała żądania SMP, więc link zostawał nieszyfrowany i pompa odchodziła po 7 s.
+- Uwaga: to zmienia wcześniejszą zasadę z AGENTS.md. Jeśli wywołanie `createBond()` w tym miejscu zerwie link, wrócimy do poprzedniego zachowania.
+
 ## 1.0-beta41
 
 - Diagnostyka: log zaczyna się od wersji aplikacji, np. `app version=1.0-beta41 (42)`.

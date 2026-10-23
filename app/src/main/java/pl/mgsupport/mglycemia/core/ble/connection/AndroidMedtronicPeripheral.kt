@@ -579,6 +579,21 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                         diag("pump read CCCD but did not subscribe within 2s")
                     }
                 }, 2_000L)
+                // EXPERIMENT: the pump as central never sends an SMP security request. On phones
+                // without a bond (Galaxy S24, Redmi) it reads the CCCD, waits ~7 s and leaves.
+                // Starting pairing from our side is the only way to get an encrypted link. If the
+                // pump still holds old keys, the log will show bonding -> none with a reason.
+                if (device.bondState == BluetoothDevice.BOND_NONE) {
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        val started =
+                            try {
+                                device.createBond()
+                            } catch (e: SecurityException) {
+                                false
+                            }
+                        diag("createBond requested, started=$started, bond=${bondLabel(device.bondState)}")
+                    }, 300L)
+                }
             }
         }
 
