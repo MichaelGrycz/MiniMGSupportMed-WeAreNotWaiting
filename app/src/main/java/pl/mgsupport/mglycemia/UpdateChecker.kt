@@ -41,12 +41,28 @@ sealed interface UpdateCheck {
 class UpdateChecker(private val context: Context) {
 
     suspend fun latest(): UpdateCheck = withContext(Dispatchers.IO) {
-        // The unauthenticated GitHub API is limited to 60 requests/hour per IP, so phones behind a
-        // shared carrier NAT regularly get HTTP 403. Fall back to the public release redirect, which
-        // is served by GitHub's web frontend and is not subject to that API quota.
-        when (val api = latestFromApi()) {
-            is UpdateCheck.Found, UpdateCheck.None -> api
-            UpdateCheck.Failed -> latestFromRedirect()
+        // The unauthenticated GitHub API is limited to 60 requests/hour per IP and can also serve a
+        // stale "latest" pointer right after a release. Query the API and the public release
+        // redirect, keep the highest version, and fall back to the releases Atom feed when both are
+        // inconclusive. A None from one source must never hide a newer release seen by another.
+        val api = latestFromApi()
+        val redirect = latestFromRedirect()
+        val firstPass = listOfNotNull(api as? UpdateCheck.Found, redirect as? UpdateCheck.Found)
+            .maxWithOrNull { a, b -> compareVersions(a.update.version, b.update.version) }
+        if (firstPass != null && compareVersions(firstPass.update.version, BuildConfig.VERSION_NAME) > 0) {
+            return@withContext firstPass
+        }
+
+        val atom = latestFromAtom()
+        val candidates = listOfNotNull(firstPass, atom as? UpdateCheck.Found)
+            .maxWithOrNull { a, b -> compareVersions(a.update.version, b.update.version) }
+        if (candidates != null && compareVersions(candidates.update.version, BuildConfig.VERSION_NAME) > 0) {
+            return@withContext candidates
+        }
+        return@withContext if (api == UpdateCheck.None && redirect == UpdateCheck.None && atom == UpdateCheck.None) {
+            UpdateCheck.None
+        } else {
+            UpdateCheck.Failed
         }
     }
 
@@ -80,6 +96,25 @@ class UpdateChecker(private val context: Context) {
     /** Fallback used when the REST API is rate-limited or unavailable. */
     private fun latestFromRedirect(): UpdateCheck {
         val tag = resolveLatestTag() ?: return UpdateCheck.Failed
+        return foundForTag(tag)
+    }
+
+    /** Second fallback: the public releases Atom feed, served from GitHub's CDN without an API quota. */
+    private fun latestFromAtom(): UpdateCheck {
+        val conn = openRaw(RELEASES_ATOM) ?: return UpdateCheck.Failed
+        return try {
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) return UpdateCheck.Failed
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            val tag = parseAtomTitle(body) ?: return UpdateCheck.Failed
+            foundForTag(tag)
+        } catch (_: Exception) {
+            UpdateCheck.Failed
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    private fun foundForTag(tag: String): UpdateCheck {
         val version = tag.removePrefix("v").removePrefix("V")
         if (version.isBlank()) return UpdateCheck.Failed
         if (compareVersions(version, BuildConfig.VERSION_NAME) <= 0) return UpdateCheck.None
@@ -208,6 +243,19 @@ class UpdateChecker(private val context: Context) {
             null
         }
 
+    private fun openRaw(rawUrl: String): HttpURLConnection? =
+        try {
+            (URL(rawUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 10_000
+                readTimeout = 20_000
+                instanceFollowRedirects = true
+                setRequestProperty("Accept", "application/atom+xml, application/xml, text/xml")
+                setRequestProperty("User-Agent", "MGSupportCGM/${BuildConfig.VERSION_NAME}")
+            }
+        } catch (_: Exception) {
+            null
+        }
+
     private fun firstApkUrl(json: JSONObject): String? {
         val assets = json.optJSONArray("assets") ?: return null
         for (i in 0 until assets.length()) {
@@ -224,6 +272,7 @@ class UpdateChecker(private val context: Context) {
         const val REPO_NAME = "MiniMGSupportMed-WeAreNotWaiting"
         const val RELEASES_API = "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
         const val RELEASES_LATEST = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/latest"
+        const val RELEASES_ATOM = "https://github.com/$REPO_OWNER/$REPO_NAME/releases.atom"
         const val APK_ASSET = "app-debug.apk"
         const val MAX_REDIRECTS = 5
         const val CHANNEL_ID = "app_updates"
@@ -234,6 +283,10 @@ class UpdateChecker(private val context: Context) {
 /** Extracts `v1.0-beta19` from a GitHub release URL. */
 internal fun parseTagFromReleaseUrl(url: String): String? =
     Regex("/releases/tag/([^/?#]+)").find(url)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }
+
+/** First `<entry><title>` in the releases Atom feed. */
+internal fun parseAtomTitle(xml: String): String? =
+    Regex("<entry>[\\s\\S]*?<title>([^<]+)</title>").find(xml)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
 
 /** Numeric segment comparison so `1.0-beta10` counts as newer than `1.0-beta9`. */
 internal fun compareVersions(candidate: String, current: String): Int {

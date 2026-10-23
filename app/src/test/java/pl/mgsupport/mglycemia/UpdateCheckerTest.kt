@@ -34,6 +34,21 @@ class UpdateCheckerTest {
     }
 
     @Test
+    fun `reads the newest release from the Atom feed`() {
+        val xml = """
+            <feed>
+              <entry>
+                <title>v1.0-beta23</title>
+                <link href="https://github.com/o/r/releases/tag/v1.0-beta23"/>
+              </entry>
+              <entry><title>v1.0-beta22</title></entry>
+            </feed>
+        """.trimIndent()
+        assertEquals("v1.0-beta23", parseAtomTitle(xml))
+        assertNull(parseAtomTitle("<feed></feed>"))
+    }
+
+    @Test
     fun `newer beta numbers compare higher`() {
         assertTrue(compareVersions("1.0-beta19", "1.0-beta18") > 0)
         assertTrue(compareVersions("1.0-beta18", "1.0-beta19") < 0)

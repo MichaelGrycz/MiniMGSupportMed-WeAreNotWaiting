@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta23
+
+- Aktualizacje: aplikacja nie ufa już pojedynczej odpowiedzi „brak nowszej wersji”.
+  Porównuje GitHub API, przekierowanie wydania i feed Atom, i wybiera najwyższą wersję.
+- Dzięki temu nieświeży wskaźnik „latest” ani limit API nie ukrywają nowego wydania.
+
 ## 1.0-beta22
 
 - Aplikacja odróżnia inicjalizację nowego sensora od zwykłej aktualizacji.
