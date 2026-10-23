@@ -325,9 +325,9 @@ class PumpController(context: Context) {
     @Volatile
     private var silentAlertsEnabled: Boolean = false
 
-    /** Czy pokazywać prognozę 30 min (pomoc wizualna, nie porada medyczna). */
+    /** Czy pokazywać prognozę 30 min (pomoc wizualna, nie porada medyczna). Domyślnie WYŁĄCZONA. */
     @Volatile
-    private var showPrediction: Boolean = true
+    private var showPrediction: Boolean = false
 
     /** Indywidualna wrażliwość na insulinę (mg/dL na 1 j.) używana do tłumienia prognozy. */
     @Volatile
@@ -640,8 +640,15 @@ class PumpController(context: Context) {
             scope.launch {
                 val now = System.currentTimeMillis()
                 val w = _state.value.windowMillis
-                val pts = store.queryGlucose(now - w, now, 1500)
-                val events = store.queryInsulinEvents(now - w, now)
+                // Load more than the visible window, otherwise "Earlier" has nowhere to go: the
+                // chart can only pan inside the data it was given. Four windows (at least a week)
+                // keeps every view pannable while staying well inside the SQLite budget.
+                val loadSpan =
+                    (w * 4)
+                        .coerceAtLeast(7L * 24 * 60 * 60 * 1000)
+                        .coerceAtMost(365L * 24 * 60 * 60 * 1000)
+                val pts = store.queryGlucose(now - loadSpan, now, chartPointBudget(loadSpan))
+                val events = store.queryInsulinEvents(now - loadSpan, now)
                 val rCount = store.countReadings()
                 val eCount = store.countEvents()
                 _state.update {
@@ -655,6 +662,15 @@ class PumpController(context: Context) {
                 recomputeDerived()
             }
     }
+
+    /** Point budget for the chart: 5-minute fidelity up to a month, coarse but zoomable for a year. */
+    private fun chartPointBudget(windowMillis: Long): Int =
+        when {
+            windowMillis <= 24L * 60 * 60 * 1000 -> 4000
+            windowMillis <= 7L * 24 * 60 * 60 * 1000 -> 8000
+            windowMillis <= 30L * 24 * 60 * 60 * 1000 -> 12000
+            else -> 20000
+        }
 
     /** Export all stored data to CSV files and return them (readings.csv, events.csv). */
     fun exportCsv(): List<File> {
@@ -734,6 +750,11 @@ class PumpController(context: Context) {
         if (historyJob?.isActive != true) {
             historyJob =
                 scope.launch {
+                    // A fresh pairing answers the first history range read slowly (the pump is still
+                    // settling its session). Requesting the heaviest exchange straight after the
+                    // handshake is what made the first backfill time out and the pump drop the link.
+                    // Let the first CGM/status poll finish first.
+                    delay(HISTORY_SETTLE_MS)
                     while (isActive) {
                         syncHistory()
                         delay(HISTORY_INTERVAL_MS)
@@ -1118,7 +1139,7 @@ class PumpController(context: Context) {
         }
         alertRepeatMin = p.getLong(PREF_ALERT_REPEAT_MIN, 5L).coerceIn(1L, 60L)
         silentAlertsEnabled = p.getBoolean(PREF_SILENT_ALERTS, false)
-        showPrediction = p.getBoolean(PREF_SHOW_PREDICTION, true)
+        showPrediction = p.getBoolean(PREF_SHOW_PREDICTION, false)
         insulinSensitivityMgDlPerUnit =
             p.getFloat(
                 PREF_INSULIN_SENSITIVITY,
@@ -1134,6 +1155,9 @@ class PumpController(context: Context) {
 
     private companion object {
         const val POLL_INTERVAL_MS = 15_000L
+
+        /** Settle window after authentication before the first (heaviest) history request. */
+        const val HISTORY_SETTLE_MS = 8_000L
         const val RETRY_INTERVAL_MS = 30_000L
         const val HISTORY_INTERVAL_MS = 60_000L
         const val MAX_HISTORY_LINES = 80

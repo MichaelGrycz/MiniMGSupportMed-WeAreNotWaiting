@@ -163,16 +163,26 @@ class MedtronicReadGateway(
         }
         var highSeq = lastRecord.sequenceNumber
         val all = mutableListOf<HistoryLogRecord>()
+        // The first page after a fresh pairing is the riskiest exchange: the pump answers a wide
+        // RACP range slowly, and a page that overran the per-operation timeout orphaned the session
+        // and the pump closed the link. Start narrow and grow once the pump has proven responsive.
+        var batchSize = FIRST_HISTORY_BATCH_SIZE
         Timber.d("History sync start: sinceSequence=%d, lastSequence=%d", sinceSequence, highSeq)
         while (highSeq > sinceSequence) {
-            val lowSeq = maxOf(sinceSequence + 1, highSeq - HISTORY_BATCH_SIZE + 1)
+            val lowSeq = maxOf(sinceSequence + 1, highSeq - batchSize + 1)
             Timber.d("History page: requesting sequences %d..%d", lowSeq, highSeq)
             val batchResult = sessionRead("history-page") { link, session, onResult ->
                 HistoryReader(link, session).readRecordsInRange(lowSeq, highSeq, onResult)
             }
             val records = batchResult.getOrElse { return Result.failure(it) }
             all.addAll(records)
-            Timber.d("History page complete: %d records (range %d..%d) -- %d total this call", records.size, lowSeq, highSeq, all.size)
+            Timber.d(
+                "History page complete: %d records (range %d..%d) -- %d total this call",
+                records.size,
+                lowSeq,
+                highSeq,
+                all.size
+            )
             if (all.size > maxTotalHistoryRecords) {
                 // Defense-in-depth (see the constructor KDoc): fail loudly rather than accumulate
                 // without bound; the cursors stay put, so nothing is silently skipped.
@@ -182,6 +192,7 @@ class MedtronicReadGateway(
             }
             if (records.isEmpty()) break
             highSeq = lowSeq - 1
+            batchSize = (batchSize * 2).coerceAtMost(HISTORY_BATCH_SIZE)
         }
         return Result.success(all.sortedBy { it.sequenceNumber })
     }
@@ -304,5 +315,8 @@ class MedtronicReadGateway(
 
         /** Sequence-window width of a single history RACP exchange (one page). */
         private const val HISTORY_BATCH_SIZE = 200
+
+        /** First page of a fresh backfill; deliberately small so the pump answers inside its budget. */
+        private const val FIRST_HISTORY_BATCH_SIZE = 50
     }
 }

@@ -183,11 +183,11 @@ internal object ChartUi {
     fun updateEventControls(activity: AppCompatActivity, chart: GlucoseChartView) {
         activity.findViewById<TextView>(R.id.btnChartEvents).text =
             activity.getString(R.string.chart_events_button, chart.visibleInsulinEvents().size)
-        val viewport = chart.viewport()
-        val duration = chart.visibleTimeRange().let { it.last - it.first }
-        activity.findViewById<View>(R.id.btnChartEarlier).isEnabled =
-            viewport.panOffsetMs < viewport.windowMillis - duration
-        activity.findViewById<View>(R.id.btnChartLater).isEnabled = viewport.panOffsetMs > 0
+        // Ask the chart directly: it owns the same "is there anything further back?" rule that
+        // panBy() applies. The old windowMillis - duration arithmetic was zero at zoom 1.0 and
+        // disabled "Earlier" even when a whole year of history existed.
+        activity.findViewById<View>(R.id.btnChartEarlier).isEnabled = chart.canPanEarlier()
+        activity.findViewById<View>(R.id.btnChartLater).isEnabled = chart.canPanLater()
     }
 
     private fun kindLabel(kind: InsulinEventKind): Int = when (kind) {

@@ -3,6 +3,17 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta60
+
+- Wykres glikemii narysowany od nowa: gładka linia bez „schodków” i bez sztucznych pików między odczytami; przerwy w danych są widoczne jako przerwy, a nie dorysowana linia.
+- Oś pionowa skaluje się do wybranego zakresu (1H–1R) i nie skacze już przy przewijaniu; podziałki są okrągłe (50, 100, 150…), a pas celu 70–180 jest zawsze czytelny.
+- Oś czasu ma etykiety dopasowane do szerokości ekranu: godziny przy krótkich zakresach, daty przy tygodniach, miesiące przy roku.
+- Przyciski „Earlier”/„Later” działają i przenoszą widok o pół zakresu. Aplikacja dociąga historię poza wybrane okno, więc jest po czym wracać.
+- Prognoza 30 min jest domyślnie WYŁĄCZONA — włącza się ją w Ustawieniach. Gdy działa, zajmuje na wykresie dokładnie tyle miejsca, ile odpowiada 30 minutom wybranego zakresu (na 1H jest szeroka, na 24H wąska), a kafelek „In 30 min” pojawia się tylko wtedy, gdy prognoza jest włączona.
+- 7D/30D/1R: gęste dane pokazują się jako czytelna wstęga zakresu z linią średniej, a nie „kod kreskowy”.
+- Wykres pokazuje teraz więcej punktów przy krótkich zakresach i pozwala sensownie przybliżyć nawet widok roczny.
+- Historia połączenia: pierwsze pobranie historii po świeżym parowaniu startuje mniejszą porcją i po krótkiej chwili — mniejsze ryzyko, że pompa zerwie link przy najcięższym zapytaniu.
+
 ## 1.0-beta59
 
 - Usunięto domyślny serwer synchronizacji: aplikacja nie wysyła danych nigdzie bez jawnego podania własnego adresu serwera.

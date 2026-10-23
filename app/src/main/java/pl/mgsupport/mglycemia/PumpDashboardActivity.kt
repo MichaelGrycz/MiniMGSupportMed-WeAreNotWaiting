@@ -1440,6 +1440,9 @@ class PumpDashboardActivity : AppCompatActivity() {
             s.gmiPercent?.let { String.format(Locale.US, "%.1f%%", it) } ?: "-- %"
         predictionText.text =
             s.predicted30?.let { "${mgdlToDisplay(it, s.unit)} $unitStr" } ?: "--"
+        // Prognoza jest opcjonalna i domyślnie wyłączona: bez niej kafelek "--" tylko szumi.
+        (predictionText.parent as? View)?.visibility =
+            if (controller.isPredictionEnabled()) View.VISIBLE else View.GONE
 
         // 5. Pump Telemetry Bento Cards
         iobText.text = s.iob?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "--"
