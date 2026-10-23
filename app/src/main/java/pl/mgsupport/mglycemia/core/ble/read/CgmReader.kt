@@ -99,6 +99,7 @@ class CgmReader(
             glucoseMgDl = mgDl,
             trendArrow = trendArrowFor(measurement.trendMgDlPerMin),
             timestamp = now(),
+            sensorSessionMinutes = measurement.timeOffsetMinutes.takeIf { it > 0 },
         )
     }
 

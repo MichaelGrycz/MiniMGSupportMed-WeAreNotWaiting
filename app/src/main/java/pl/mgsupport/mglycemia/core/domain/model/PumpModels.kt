@@ -92,6 +92,12 @@ data class CgmReading(
     val glucoseMgDl: Int,
     val trendArrow: CgmTrend,
     val timestamp: Instant,
+    /**
+     * Minutes since the CGM session start, as reported in the CGM Measurement Time Offset field.
+     * `null` when the pump did not supply a usable offset. Used for the sensor-expiry warning --
+     * the session length itself differs per sensor model, so callers must not assume 7 days.
+     */
+    val sensorSessionMinutes: Int? = null,
 ) {
     init {
         require(glucoseMgDl in MIN_MG_DL..MAX_MG_DL) {

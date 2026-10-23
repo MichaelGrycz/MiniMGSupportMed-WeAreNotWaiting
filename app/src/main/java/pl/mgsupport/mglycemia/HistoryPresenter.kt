@@ -54,9 +54,14 @@ class HistoryPresenter {
             fallbackLine(record, timestampMs)
         }
 
-    /** Lines for the newest [max] [records] (sequence number descending). Negative [max] yields none. */
+    /**
+     * Lines for the newest [max] [records] (sequence number descending). Negative [max] yields none.
+     * Re-fetched ranges are deduplicated by sequence number (first seen wins), so an overlapping
+     * backfill window never prints the same event twice.
+     */
     fun describeAll(records: List<HistoryLogRecord>, max: Int = 30): List<String> =
         records
+            .distinctBy { it.sequenceNumber }
             .sortedByDescending { it.sequenceNumber }
             .take(max.coerceAtLeast(0))
             .map { describe(it) }

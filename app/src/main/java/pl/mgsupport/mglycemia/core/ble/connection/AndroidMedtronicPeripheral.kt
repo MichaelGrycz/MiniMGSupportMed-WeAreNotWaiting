@@ -13,6 +13,7 @@
 package pl.mgsupport.mglycemia.core.ble.connection
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
@@ -72,6 +73,15 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     /** Receives OS bond transitions so pairing failures are visible and actionable in the log. */
     private var bondReceiver: BroadcastReceiver? = null
 
+    /**
+     * Forwards Bluetooth adapter on/off so the connection manager can pause and resume instead of
+     * tearing the session down. Invoked on the main thread; the manager hops onto its worker.
+     */
+    @Volatile
+    var onAdapterStateChanged: ((Boolean) -> Unit)? = null
+
+    private var adapterReceiver: BroadcastReceiver? = null
+
     @Volatile
     private var currentMode: AdvertisingMode = AdvertisingMode.FIRST_PAIR
 
@@ -89,6 +99,10 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     // be thread-safe.
     private val pendingServices = ConcurrentLinkedQueue<BluetoothGattService>()
 
+    /** Static phone/OS facts are logged once per process; only the live half repeats. */
+    @Volatile
+    private var staticDiagnosticsLogged = false
+
     override fun isSupported(): Boolean {
         val ad = adapter ?: return false
         return ad.isEnabled && ad.isMultipleAdvertisementSupported && ad.bluetoothLeAdvertiser != null
@@ -99,6 +113,8 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         currentMode = mode
         currentName = localName
         registerBondReceiver()
+        registerAdapterReceiver()
+        emitDiagnostics(listener)
         listener.onDiagnostic("adapter name=${adapter?.name ?: "?"}, advertising as $localName")
         if (gattServer == null) {
             // Defer advertising until the SAKE + Device Info services are registered (service adds are
@@ -173,6 +189,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     override fun stop() {
         stopAdvertising()
         unregisterBondReceiver()
+        unregisterAdapterReceiver()
         peer = null
         sakeCharacteristic = null
         pendingAdvertise = null
@@ -185,6 +202,28 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             }
         }
         gattServer = null
+    }
+
+    // -- Diagnostics --------------------------------------------------------
+
+    /**
+     * Emit the phone/BLE environment snapshot so a failed pairing can be diagnosed from the app log
+     * alone. The static half (model, Android build, SoC, ABIs) is logged once per process; the live
+     * half (adapter flags, permissions, Doze, memory, clock) on every session start.
+     */
+    private fun emitDiagnostics(listener: PeripheralListener) {
+        val lines =
+            try {
+                if (staticDiagnosticsLogged) {
+                    DeviceDiagnostics.liveFacts(appContext)
+                } else {
+                    staticDiagnosticsLogged = true
+                    DeviceDiagnostics.report(appContext)
+                }
+            } catch (e: RuntimeException) {
+                listOf("device diagnostics unavailable: ${e::class.simpleName}")
+            }
+        lines.forEach { listener.onDiagnostic(it) }
     }
 
     // -- Advertising --------------------------------------------------------
@@ -332,6 +371,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             MedtronicProtocol.DEVICE_INFO_SERVICE_UUID,
             BluetoothGattService.SERVICE_TYPE_PRIMARY,
         )
+
         fun readChar(uuid: java.util.UUID, value: ByteArray): BluetoothGattCharacteristic =
             BluetoothGattCharacteristic(
                 uuid,
@@ -344,7 +384,12 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         // model, HW/FW/SW revisions) instead of placeholders. A bare "0" firmware was observed to
         // end the connection a few seconds after the GATT handshake.
         val ascii = Charsets.US_ASCII
-        service.addCharacteristic(readChar(MedtronicProtocol.MANUFACTURER_NAME_UUID, DIS_MANUFACTURER.toByteArray(ascii)))
+        service.addCharacteristic(
+            readChar(
+                MedtronicProtocol.MANUFACTURER_NAME_UUID,
+                DIS_MANUFACTURER.toByteArray(ascii)
+            )
+        )
         service.addCharacteristic(readChar(MedtronicProtocol.MODEL_NUMBER_UUID, DIS_MODEL.toByteArray(ascii)))
         service.addCharacteristic(readChar(MedtronicProtocol.SERIAL_NUMBER_UUID, currentName.toByteArray(ascii)))
         service.addCharacteristic(readChar(MedtronicProtocol.HARDWARE_REVISION_UUID, DIS_HARDWARE.toByteArray(ascii)))
@@ -373,13 +418,14 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                     // A fresh link starts with no subscription; never reuse a stale CCCD value from a
                     // previous pump session (it would tell the pump notifications are already enabled).
                     sakeCccdValue = byteArrayOf(0x00, 0x00)
-                    listener?.onDiagnostic("GATT link up, status=$status, bond=$bond")
+                    listener?.onDiagnostic("GATT link up, status=${gattStatusLabel(status)}, bond=$bond")
                     listener?.onPumpConnected(device.address)
                 }
+
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     peer = null
                     sakeCccdValue = byteArrayOf(0x00, 0x00)
-                    listener?.onDiagnostic("GATT link down, status=$status")
+                    listener?.onDiagnostic("GATT link down, status=${gattStatusLabel(status)}")
                     listener?.onPumpDisconnected(status)
                 }
             }
@@ -412,7 +458,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 } else {
                     characteristic.value ?: ByteArray(0)
                 }
-            listener?.onDiagnostic("read ${short(characteristic.uuid)} len=${stored.size}")
+            listener?.onDiagnostic("read ${short(characteristic.uuid)} len=${stored.size} offset=$offset")
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, stored)
         }
@@ -426,7 +472,13 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             offset: Int,
             value: ByteArray,
         ) {
-            listener?.onDiagnostic("write ${short(characteristic.uuid)} len=${value.size}")
+            listener?.onDiagnostic(
+                "write ${short(characteristic.uuid)} len=${value.size} offset=$offset value=${
+                    hex(
+                        value
+                    )
+                }"
+            )
             // Complete the ATT request first. The SAKE driver posts the next notification, and some
             // stacks drop the link if a notification overtakes the write response during bonding.
             if (responseNeeded) {
@@ -443,7 +495,6 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             offset: Int,
             descriptor: BluetoothGattDescriptor,
         ) {
-            listener?.onDiagnostic("descriptor read ${short(descriptor.uuid)}")
             // The CCCD read has to reflect the subscription state. Answering 0x0000 on initial read
             // makes the pump believe notifications were never enabled and it drops the link right after
             // this read (seen on Galaxy S24 and Redmi Note 13 Pro: read 2902, then link down).
@@ -460,6 +511,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             }
             @Suppress("DEPRECATION")
             descriptor.value = reply
+            listener?.onDiagnostic(
+                "descriptor read ${short(descriptor.uuid)} offset=$offset len=${reply.size} reply=${hex(reply)}",
+            )
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, reply)
         }
@@ -473,7 +527,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             offset: Int,
             value: ByteArray,
         ) {
-            listener?.onDiagnostic("descriptor write ${short(descriptor.uuid)} len=${value.size}")
+            listener?.onDiagnostic(
+                "descriptor write ${short(descriptor.uuid)} len=${value.size} offset=$offset value=${hex(value)}",
+            )
             @Suppress("DEPRECATION")
             descriptor.value = value
             // Respond before starting the SAKE wake-up: the pump must see the subscription accepted
@@ -490,10 +546,12 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                         Timber.d("Pump subscribed to SAKE notifications")
                         listener?.onSakeSubscribed()
                     }
+
                     value[0].toInt() == 0 && value[1].toInt() == 0 -> {
                         Timber.d("Pump unsubscribed from SAKE notifications")
                         listener?.onSakeUnsubscribed()
                     }
+
                     else -> Timber.d("Unexpected SAKE CCCD value %02x%02x; ignoring", value[1], value[0])
                 }
             }
@@ -560,6 +618,61 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         }
     }
 
+    /** Whether the radio exists but is currently off (vs. truly unsupported hardware). */
+    fun isRadioOff(): Boolean {
+        val ad = adapter ?: return false
+        return !ad.isEnabled
+    }
+
+    /** Register the adapter on/off watcher without starting advertising (for a cold start with BT off). */
+    fun watchAdapterState() {
+        registerAdapterReceiver()
+    }
+
+    private fun registerAdapterReceiver() {
+        if (adapterReceiver != null) return
+        val receiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    if (intent?.action != BluetoothAdapter.ACTION_STATE_CHANGED) return
+                    when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
+                        BluetoothAdapter.STATE_OFF -> {
+                            Timber.w("Bluetooth adapter off; pausing peripheral")
+                            listener?.onDiagnostic("adapter state off")
+                            onAdapterStateChanged?.invoke(false)
+                        }
+
+                        BluetoothAdapter.STATE_ON -> {
+                            Timber.d("Bluetooth adapter on; resuming peripheral")
+                            listener?.onDiagnostic("adapter state on")
+                            onAdapterStateChanged?.invoke(true)
+                        }
+                    }
+                }
+            }
+        try {
+            val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                appContext.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                appContext.registerReceiver(receiver, filter)
+            }
+            adapterReceiver = receiver
+        } catch (e: SecurityException) {
+            Timber.w(e, "Cannot register adapter-state receiver")
+        }
+    }
+
+    private fun unregisterAdapterReceiver() {
+        val receiver = adapterReceiver ?: return
+        adapterReceiver = null
+        try {
+            appContext.unregisterReceiver(receiver)
+        } catch (e: IllegalArgumentException) {
+            Timber.d(e, "Adapter receiver was already unregistered")
+        }
+    }
+
     private fun bondLabel(state: Int): String =
         when (state) {
             BluetoothDevice.BOND_BONDED -> "bonded"
@@ -575,8 +688,31 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             gattServer?.sendResponse(device, requestId, status, offset, value)
         } catch (e: SecurityException) {
             Timber.w(e, "sendResponse failed")
+            listener?.onDiagnostic("sendResponse failed: SecurityException")
         }
     }
+
+    /**
+     * Statusy GATT rozwinięte na słowa: w logu użytkownika `status=133` nic nie mówi, a
+     * `status=133 (gatt-error)` od razu kieruje na właściwą ścieżkę diagnostyki.
+     */
+    private fun gattStatusLabel(status: Int): String =
+        when (status) {
+            BluetoothGatt.GATT_SUCCESS -> "0 (success)"
+            8 -> "8 (timeout)"
+            19 -> "19 (remote-user-terminated)"
+            22 -> "22 (local-host-terminated)"
+            133 -> "133 (gatt-error)"
+            257 -> "257 (gatt-failure)"
+            else -> status.toString()
+        }
+
+    private fun hex(value: ByteArray): String =
+        if (value.isEmpty()) {
+            "-"
+        } else {
+            value.joinToString(" ") { "%02x".format(it) }
+        }
 
     /** Reply to a characteristic or descriptor read with [stored], honoring the central's [offset]. */
     private fun respondWithStoredBlob(device: BluetoothDevice, requestId: Int, offset: Int, stored: ByteArray) {

@@ -328,6 +328,16 @@ class GlucoseChartView @JvmOverloads constructor(
         invalidate()
     }
 
+    /**
+     * Jump straight to the last 24 h, clearing zoom/pan/selection.
+     * Pan (finger drag) and pinch-zoom of the time axis are handled in [onTouchEvent]
+     * via the scroll/scale detectors; drawing style is unchanged.
+     */
+    fun showLast24h() {
+        setWindow(PumpUiState.WINDOW_24H)
+        resetView()
+    }
+
     fun isZoomedOrPanned(): Boolean = zoomFactor > 1.02f || panOffsetMs > 30_000L || selectedSample != null
 
     private fun applyZoomAtFocus(scale: Float, focusX: Float) {

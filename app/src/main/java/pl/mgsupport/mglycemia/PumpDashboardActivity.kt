@@ -13,6 +13,7 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.provider.DocumentsContract
 import android.view.Gravity
@@ -127,21 +128,24 @@ class PumpDashboardActivity : AppCompatActivity() {
     private var backupBusy = false
     private var pendingViewport: ChartViewport? = null
 
-    private val fullscreenChart = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            ChartUi.readViewport(result.data?.getBundleExtra(ChartUi.VIEWPORT))?.let { viewport ->
-                controller.setWindow(viewport.windowMillis)
-                ChartUi.render(chart, controller.state.value)
-                chart.restoreViewport(viewport)
+    private val fullscreenChart =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                ChartUi.readViewport(result.data?.getBundleExtra(ChartUi.VIEWPORT))?.let { viewport ->
+                    controller.setWindow(viewport.windowMillis)
+                    ChartUi.render(chart, controller.state.value)
+                    chart.restoreViewport(viewport)
+                }
             }
         }
-    }
-    private val chooseBackupFolder = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) handleBackupFolder(result.data, restore = false)
-    }
-    private val restoreBackupFolder = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) handleBackupFolder(result.data, restore = true)
-    }
+    private val chooseBackupFolder =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) handleBackupFolder(result.data, restore = false)
+        }
+    private val restoreBackupFolder =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) handleBackupFolder(result.data, restore = true)
+        }
     private lateinit var windowButtons: Map<Long, TextView>
     private lateinit var barBelow: View
     private lateinit var barInRange: View
@@ -164,6 +168,11 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var batteryText: TextView
     private lateinit var batteryProgress: ProgressBar
     private lateinit var batterySubText: TextView
+
+    // Programowe kafelki statusu (bez zmian XML i logiki BLE): sensor, wiek danych, asystent Doze.
+    private var sensorTileText: TextView? = null
+    private var dataAgeTileText: TextView? = null
+    private var dozeStatusText: TextView? = null
 
     // History Tab Views
     private lateinit var filterButtons: Map<HistoryFilter, TextView>
@@ -227,9 +236,16 @@ class PumpDashboardActivity : AppCompatActivity() {
         uiScope.launch {
             while (isActive) {
                 delay(15_000L)
-                updateReadingTimeText(controller.state.value.glucoseAt)
+                val at = controller.state.value.glucoseAt
+                updateReadingTimeText(at)
+                refreshDataAgeTile(at)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDozeStatus()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -347,6 +363,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         btnToggleLogs = findViewById(R.id.btnToggleLogs)
         logsContainer = findViewById(R.id.logsContainer)
         logText = findViewById(R.id.logText)
+        ensureStatusTiles()
     }
 
     /** Older tablet resources share the same IDs; add the new panels without duplicating that layout. */
@@ -360,7 +377,10 @@ class PumpDashboardActivity : AppCompatActivity() {
         if (findViewById<View>(R.id.backupFolderPanel) == null) {
             val stats = findViewById<TextView>(R.id.dbStatsText)
             val parent = stats.parent as LinearLayout
-            parent.addView(layoutInflater.inflate(R.layout.view_backup_folder, parent, false), parent.indexOfChild(stats) + 1)
+            parent.addView(
+                layoutInflater.inflate(R.layout.view_backup_folder, parent, false),
+                parent.indexOfChild(stats) + 1
+            )
         }
         for (id in listOf(R.id.btnZoomIn, R.id.btnZoomOut, R.id.btnZoomReset)) {
             val control = findViewById<View>(id)
@@ -408,6 +428,32 @@ class PumpDashboardActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Skróty do systemowych ekranów potrzebnych przy problemach z parowaniem. Jeden dialog zamiast
+     * instrukcji słownej, która na każdej nakładce wygląda inaczej.
+     */
+    private fun showSystemShortcuts() {
+        val shortcuts = SystemShortcuts.all(this)
+        val labels = shortcuts.map { "${it.label}\n${it.detail}" }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("Ustawienia systemowe")
+            .setItems(labels) { _, index ->
+                val intent = shortcuts[index].intent
+                try {
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    // Niektóre nakładki nie wystawiają danego ekranu — otwieramy ogólne ustawienia.
+                    try {
+                        startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
+                    } catch (ignored: Exception) {
+                        // Brak jakiegokolwiek ekranu ustawień: nic więcej nie zrobimy.
+                    }
+                }
+            }
+            .setNegativeButton(R.string.btn_cancel, null)
+            .show()
+    }
+
     private fun confirmBackupFolder(restore: Boolean) {
         if (backupBusy) return
         val privacy = getString(R.string.backup_folder_disclosure)
@@ -417,11 +463,18 @@ class PumpDashboardActivity : AppCompatActivity() {
             .setNegativeButton(R.string.btn_cancel, null)
             .setPositiveButton(R.string.backup_folder_continue) { _, _ ->
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                    addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
+                    )
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        putExtra(DocumentsContract.EXTRA_INITIAL_URI,
-                            DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:Documents"))
+                        putExtra(
+                            DocumentsContract.EXTRA_INITIAL_URI,
+                            DocumentsContract.buildDocumentUri(
+                                "com.android.externalstorage.documents",
+                                "primary:Documents"
+                            )
+                        )
                     }
                 }
                 try {
@@ -443,7 +496,9 @@ class PumpDashboardActivity : AppCompatActivity() {
         runFolderBackup {
             contentResolver.takePersistableUriPermission(uri, flags)
             if (restore) controller.restoreBackupFolder(uri)
-            else { controller.selectBackupFolder(uri); null }
+            else {
+                controller.selectBackupFolder(uri); null
+            }
         }
     }
 
@@ -455,8 +510,12 @@ class PumpDashboardActivity : AppCompatActivity() {
         uiScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) { operation() }
-                if (result != null) showFolderBackupResult(getString(R.string.backup_folder_restored,
-                    result.readingsImported, result.eventsImported, result.readingsSkipped, result.errors))
+                if (result != null) showFolderBackupResult(
+                    getString(
+                        R.string.backup_folder_restored,
+                        result.readingsImported, result.eventsImported, result.readingsSkipped, result.errors
+                    )
+                )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
@@ -487,7 +546,10 @@ class PumpDashboardActivity : AppCompatActivity() {
             add(status.folderLabel?.let { getString(R.string.backup_folder_label, it) }
                 ?: getString(R.string.backup_folder_none))
             add(status.lastSuccessMs?.let {
-                getString(R.string.backup_folder_saved, java.text.DateFormat.getDateTimeInstance().format(java.util.Date(it)))
+                getString(
+                    R.string.backup_folder_saved,
+                    java.text.DateFormat.getDateTimeInstance().format(java.util.Date(it))
+                )
             } ?: getString(R.string.backup_folder_never))
             status.error?.let { add(getString(R.string.backup_folder_error, it)) }
             if (backupBusy) add(getString(R.string.backup_folder_busy))
@@ -514,7 +576,12 @@ class PumpDashboardActivity : AppCompatActivity() {
         ChartUi.attachEventControls(this, chart)
         findViewById<View>(R.id.btnChartFullscreen).setOnClickListener {
             val viewport = Bundle().also { ChartUi.writeViewport(it, chart.viewport()) }
-            fullscreenChart.launch(Intent(this, FullscreenChartActivity::class.java).putExtra(ChartUi.VIEWPORT, viewport))
+            fullscreenChart.launch(
+                Intent(this, FullscreenChartActivity::class.java).putExtra(
+                    ChartUi.VIEWPORT,
+                    viewport
+                )
+            )
         }
         chart.onViewportChanged = { zoom, active ->
             ChartUi.updateEventControls(this, chart)
@@ -553,7 +620,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnReconnect).setOnClickListener { controller.reconnect() }
         findViewById<Button>(R.id.btnDisconnect).setOnClickListener { controller.disconnect() }
         findViewById<Button>(R.id.btnUnpair).setOnClickListener { confirmUnpair() }
-        findViewById<Button>(R.id.btnBatterySettings).setOnClickListener { openBatteryOptimizationSettings() }
+        findViewById<Button>(R.id.btnBatterySettings).setOnClickListener { showSystemShortcuts() }
 
         // Settings Controls
         btnUnitMgdl.setOnClickListener { controller.setUnit(GlucoseUnit.MGDL) }
@@ -649,6 +716,7 @@ class PumpDashboardActivity : AppCompatActivity() {
                     updateChecker.notifyAvailable(result.update)
                     showUpdateDialog(result.update)
                 }
+
                 UpdateCheck.None -> if (manual) showUpdateStatus(getString(R.string.updates_none))
                 UpdateCheck.Failed -> if (manual) showUpdateStatus(getString(R.string.updates_failed))
             }
@@ -724,10 +792,10 @@ class PumpDashboardActivity : AppCompatActivity() {
             )
         } catch (e: Exception) {
             Toast.makeText(
-                    this,
-                    getString(R.string.service_start_failed, e.message),
-                    Toast.LENGTH_LONG,
-                )
+                this,
+                getString(R.string.service_start_failed, e.message),
+                Toast.LENGTH_LONG,
+            )
                 .show()
         }
     }
@@ -742,6 +810,7 @@ class PumpDashboardActivity : AppCompatActivity() {
     private fun saveThresholds() {
         fun read(v: EditText, fallback: Int): Int =
             v.text.toString().toIntOrNull() ?: fallback
+
         val current = controller.state.value.thresholds
         val t =
             Thresholds(
@@ -752,10 +821,10 @@ class PumpDashboardActivity : AppCompatActivity() {
             )
         if (!(t.urgentLow <= t.low && t.low < t.high && t.high <= t.urgentHigh)) {
             Toast.makeText(
-                    this,
-                    getString(R.string.thresholds_order_error),
-                    Toast.LENGTH_LONG,
-                )
+                this,
+                getString(R.string.thresholds_order_error),
+                Toast.LENGTH_LONG,
+            )
                 .show()
             return
         }
@@ -795,10 +864,10 @@ class PumpDashboardActivity : AppCompatActivity() {
             startActivity(Intent.createChooser(intent, getString(R.string.backup_chooser)))
         } catch (e: Exception) {
             Toast.makeText(
-                    this,
-                    getString(R.string.backup_export_failed, e.message),
-                    Toast.LENGTH_LONG,
-                )
+                this,
+                getString(R.string.backup_export_failed, e.message),
+                Toast.LENGTH_LONG,
+            )
                 .show()
         }
     }
@@ -827,13 +896,13 @@ class PumpDashboardActivity : AppCompatActivity() {
                 val input = contentResolver.openInputStream(uri)
                 if (input == null) {
                     Toast.makeText(
-                            this@PumpDashboardActivity,
-                            getString(
-                                R.string.import_failed,
-                                getString(R.string.import_missing_file),
-                            ),
-                            Toast.LENGTH_LONG,
-                        )
+                        this@PumpDashboardActivity,
+                        getString(
+                            R.string.import_failed,
+                            getString(R.string.import_missing_file),
+                        ),
+                        Toast.LENGTH_LONG,
+                    )
                         .show()
                     return@launch
                 }
@@ -842,23 +911,23 @@ class PumpDashboardActivity : AppCompatActivity() {
                         input.use { controller.importBackupCsv(it) }
                     }
                 Toast.makeText(
-                        this@PumpDashboardActivity,
-                        getString(
-                            R.string.import_success,
-                            result.readingsImported,
-                            result.eventsImported,
-                            result.readingsSkipped,
-                            result.errors,
-                        ),
-                        Toast.LENGTH_LONG,
-                    )
+                    this@PumpDashboardActivity,
+                    getString(
+                        R.string.import_success,
+                        result.readingsImported,
+                        result.eventsImported,
+                        result.readingsSkipped,
+                        result.errors,
+                    ),
+                    Toast.LENGTH_LONG,
+                )
                     .show()
             } catch (e: Exception) {
                 Toast.makeText(
-                        this@PumpDashboardActivity,
-                        getString(R.string.import_failed, e.message),
-                        Toast.LENGTH_LONG,
-                    )
+                    this@PumpDashboardActivity,
+                    getString(R.string.import_failed, e.message),
+                    Toast.LENGTH_LONG,
+                )
                     .show()
             }
         }
@@ -879,9 +948,11 @@ class PumpDashboardActivity : AppCompatActivity() {
             when {
                 !s.pumpModel.isNullOrBlank() && !s.deviceInfo.isNullOrBlank() ->
                     "MiniMed ${s.pumpModel} · ${s.deviceInfo}"
+
                 !s.deviceInfo.isNullOrBlank() -> s.deviceInfo
                 s.isPaired && !s.pairedAddress.isNullOrBlank() ->
                     getString(R.string.pump_paired_badge, s.pairedAddress)
+
                 else -> getString(R.string.app_subtitle)
             }
         headerPumpSubtitle.text = pumpHeader
@@ -1024,6 +1095,8 @@ class PumpDashboardActivity : AppCompatActivity() {
                 if (s.batteryCharging == true) R.string.sub_battery_charging
                 else R.string.sub_battery_normal
             )
+        // Programowe kafelki: sensor / wiek danych / Doze + doprecyzowanie PL (bez zmian BLE).
+        runCatching { renderStatusTiles(s) }
 
         // 6. Pump & How-To Tab
         pumpPairedBadge.text =
@@ -1095,6 +1168,7 @@ class PumpDashboardActivity : AppCompatActivity() {
                 ConnectionState.CONNECTING,
                 ConnectionState.AUTHENTICATING,
                 ConnectionState.RECONNECTING -> R.color.status_connecting
+
                 ConnectionState.AUTH_FAILED -> R.color.status_error
                 ConnectionState.DISCONNECTED -> R.color.status_disconnected
             }
@@ -1144,6 +1218,7 @@ class PumpDashboardActivity : AppCompatActivity() {
     private fun updateReadingTimeText(glucoseAt: Instant?) {
         if (glucoseAt == null) {
             glucoseTime.text = getString(R.string.no_reading)
+            glucoseTime.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
             return
         }
         val formattedClock = timeFmt.format(glucoseAt)
@@ -1154,6 +1229,156 @@ class PumpDashboardActivity : AppCompatActivity() {
                 mins >= 20L -> getString(R.string.time_stale, mins, formattedClock)
                 else -> getString(R.string.time_min_ago, mins, formattedClock)
             }
+        // Wiek danych na czerwono, gdy > 15 min.
+        glucoseTime.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (isDataStalePl(mins)) R.color.glucose_low else R.color.text_secondary,
+            )
+        )
+    }
+
+    /**
+     * Programowe kafelki statusu pod kartą glikemii (bez zmian XML i logiki BLE).
+     * Zbiornik/bateria/sensor/wiek danych z istniejącego PumpUiState; brak pola = "--".
+     */
+    private fun ensureStatusTiles() {
+        if (sensorTileText != null) return
+        val hero = findViewById<View>(R.id.heroGlucoseCard) ?: return
+        val parent = hero.parent as? LinearLayout ?: return
+        val d = resources.displayMetrics.density
+        fun dpi(v: Int) = (v * d).roundToInt()
+
+        fun label(text: String, sizeSp: Float = 12f): TextView =
+            TextView(this).apply {
+                this.text = text
+                textSize = sizeSp
+                setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_secondary))
+            }
+
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dpi(10) }
+            setBackgroundResource(R.drawable.bg_chip_inactive)
+            setPadding(dpi(14), dpi(12), dpi(14), dpi(12))
+        }
+        box.addView(label("Status pompy i sensora", 13f).apply {
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
+            setTypeface(null, Typeface.BOLD)
+        })
+        sensorTileText = label("Sensor: --", 13f).apply {
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
+        }.also(box::addView)
+        dataAgeTileText = label("Wiek danych: --", 13f).apply {
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
+        }.also(box::addView)
+
+        box.addView(
+            label(
+                "Zbiornik i bateria są w kafelkach poniżej " +
+                    "(Zbiornik w j. z progiem 30 j., Bateria w %). " +
+                    "Gdy widzisz --, pompa nie przekazała jeszcze tej wartości.", 11.5f
+            ).apply {
+                setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_muted))
+            })
+
+        // Asystent Doze: status + wyjaśnienie + przycisk. Bez nowych permissionów.
+        box.addView(label("Oszczędzanie baterii (Doze)", 13f).apply {
+            topPaddingFix(dpi(10))
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
+            setTypeface(null, Typeface.BOLD)
+        })
+        dozeStatusText = label("Stan optymalizacji: --", 12.5f).also(box::addView)
+        box.addView(
+            label(
+                "Android (Doze) oraz nakładki Samsung i Xiaomi potrafią usypiać aplikację " +
+                    "po zgaszeniu ekranu i wstrzymywać Bluetooth — wtedy odczyty i alarmy nocne " +
+                    "przestają napływać. Wyłączenie optymalizacji dla MGlikemii pozwala działać " +
+                    "w tle 24/7. Na Xiaomi sprawdź też Autostart i blokadę w menedżerze zadań, " +
+                    "na Samsungu opcję „Nigdy nie usypiaj”.", 12f
+            ).apply {
+                setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_muted))
+            })
+        val dozeBtn = Button(this).apply {
+            text = "Wyłącz optymalizację baterii"
+            minHeight = dpi(48)
+            setOnClickListener { requestIgnoreBatteryOptimizations() }
+        }
+        box.addView(dozeBtn)
+
+        parent.addView(box, parent.indexOfChild(hero) + 1)
+        updateDozeStatus()
+    }
+
+    private fun TextView.topPaddingFix(top: Int) {
+        setPadding(paddingLeft, top, paddingRight, paddingBottom)
+    }
+
+    private fun renderStatusTiles(s: PumpUiState) {
+        // Kafelek sensora: faza + pozostały czas z formatSensorRemaining.
+        sensorTileText?.text = formatSensorStatusPl(this, s.sensorPhase, s.sensorRemainingMinutes, s.sensorUpdating)
+        refreshDataAgeTile(s.glucoseAt)
+        // Doprecyzowanie istniejących kafelków (hardkodowane PL, bez R.string):
+        // zbiornik w j. + próg, bateria w %.
+        reservoirText.text = formatReservoirPl(s.reservoirUnits)
+        val progLine = "Próg niskiego: 30 j. · pojemność ok. 300 j." + reservoirLowWarningPl(s.reservoirUnits)
+        reservoirUnitsText.text =
+            if (s.reservoirUnits == null) "$progLine · brak danych (--)".trim() else progLine
+        batteryText.text = s.batteryPercent?.let { "$it%" } ?: "--"
+        batterySubText.text =
+            when {
+                s.batteryCharging == true -> "Ładowanie"
+                s.batteryPercent == null -> "Brak danych (--) · bateria AA pompy"
+                else -> "Bateria pompy · AA"
+            }
+        updateDozeStatus()
+    }
+
+    private fun refreshDataAgeTile(glucoseAt: Instant?) {
+        val mins = dataAgeMinutesPl(glucoseAt)
+        val stale = isDataStalePl(mins)
+        dataAgeTileText?.text = "Wiek danych: ${formatDataAgePl(mins)}"
+        dataAgeTileText?.setTextColor(
+            ContextCompat.getColor(this, if (stale) R.color.glucose_low else R.color.text_primary)
+        )
+    }
+
+    private fun updateDozeStatus() {
+        val tv = dozeStatusText ?: return
+        val pm = getSystemService(POWER_SERVICE) as? PowerManager
+        val ignoring = pm?.isIgnoringBatteryOptimizations(packageName) ?: false
+        tv.text =
+            if (ignoring) "Stan optymalizacji: wyłączona — praca w tle OK"
+            else "Stan optymalizacji: włączona — włącz wyłączenie, inaczej Doze może wstrzymać odczyty"
+        tv.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (ignoring) R.color.glucose_in_range else R.color.glucose_high,
+            )
+        )
+    }
+
+    /** Bezpośrednia prośba o wyjątek Doze; fallback do ekranu ustawień (bez nowych permissionów). */
+    private fun requestIgnoreBatteryOptimizations() {
+        try {
+            startActivity(
+                Intent(
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:$packageName"),
+                )
+            )
+        } catch (_: ActivityNotFoundException) {
+            openBatteryOptimizationSettings()
+        } catch (_: SecurityException) {
+            // Bez REQUEST_IGNORE_BATTERY_OPTIMIZATIONS w manifeście system może odmówić
+            // bezpośredniego intentu — wtedy otwórz ogólne ustawienia optymalizacji.
+            openBatteryOptimizationSettings()
+        } catch (_: Exception) {
+            openBatteryOptimizationSettings()
+        }
     }
 
     private fun openUrl(url: String) {
@@ -1204,16 +1429,19 @@ class PumpDashboardActivity : AppCompatActivity() {
                         line.contains("Bolus", ignoreCase = true) ||
                             line.contains("mikrobolus", ignoreCase = true) ||
                             line.contains("Posiłek", ignoreCase = true)
+
                     HistoryFilter.BASAL ->
                         line.contains("baza", ignoreCase = true) ||
                             line.contains("bazy", ignoreCase = true) ||
                             line.contains("insuliny", ignoreCase = true) ||
                             line.contains("pętli", ignoreCase = true)
+
                     HistoryFilter.CGM ->
                         line.contains("glukozy", ignoreCase = true) ||
                             line.contains("Kalibracja", ignoreCase = true) ||
                             line.contains("CGM", ignoreCase = true) ||
                             line.contains("BG", ignoreCase = true)
+
                     HistoryFilter.ALARMS ->
                         line.contains("Alarm", ignoreCase = true) ||
                             line.contains("ostrzeżenie", ignoreCase = true) ||
@@ -1255,12 +1483,16 @@ class PumpDashboardActivity : AppCompatActivity() {
                 when {
                     rawLine.contains("Alarm", true) || rawLine.contains("Wstrzymanie", true) ->
                         R.color.glucose_low
+
                     rawLine.contains("Bolus", true) || rawLine.contains("mikrobolus", true) ->
                         R.color.accent_insulin
+
                     rawLine.contains("baza", true) || rawLine.contains("bazy", true) ->
                         R.color.accent_basal
+
                     rawLine.contains("glukozy", true) || rawLine.contains("Kalibracja", true) ->
                         R.color.glucose_in_range
+
                     else -> R.color.text_muted
                 }
 

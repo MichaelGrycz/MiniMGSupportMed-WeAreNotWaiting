@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -37,11 +38,16 @@ class FullscreenChartActivity : AppCompatActivity() {
         }
         ViewCompat.requestApplyInsets(findViewById(R.id.fullscreenChartRoot))
         chart = findViewById(R.id.chart)
+        chart.isClickable = true
+        chart.isFocusable = true
+        // Pan (przeciągnięcie palcem) i pinch-zoom osi czasu obsługuje GlucoseChartView
+        // (ScaleGestureDetector + onScroll); tu tylko zapewniamy fokus dotykowy i przycisk resetu.
         findViewById<View>(R.id.btnChartFullscreen).visibility = View.GONE
         findViewById<Button>(R.id.btnCloseChart).setOnClickListener { finish() }
         findViewById<View>(R.id.btnZoomIn).setOnClickListener { chart.zoomIn() }
         findViewById<View>(R.id.btnZoomOut).setOnClickListener { chart.zoomOut() }
         findViewById<View>(R.id.btnZoomReset).setOnClickListener { chart.resetView() }
+        addLast24hButton()
         ChartUi.attachEventControls(this, chart)
         chart.onViewportChanged = { zoom, active ->
             val reset = findViewById<TextView>(R.id.btnZoomReset)
@@ -61,6 +67,32 @@ class FullscreenChartActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         collection = scope.launch { controller.state.collect(::render) }
+    }
+
+    /** Programowy przycisk „Ostatnie 24 h” — bez zmian XML; resetuje zoom/pan i okno 24 h. */
+    private fun addLast24hButton() {
+        val reset = findViewById<View>(R.id.btnZoomReset)
+        val parent = reset.parent as? ViewGroup ?: return
+        if (parent.findViewWithTag<View>(LAST_24H_TAG) != null) return
+        val btn = Button(this).apply {
+            tag = LAST_24H_TAG
+            text = "Ostatnie 24 h"
+            minHeight = (48 * resources.displayMetrics.density).toInt()
+            setOnClickListener {
+                controller.setWindow(PumpUiState.WINDOW_24H)
+                chart.showLast24h()
+            }
+        }
+        val idx = parent.indexOfChild(reset) + 1
+        val lp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            (48 * resources.displayMetrics.density).toInt(),
+        ).apply { leftMargin = (4 * resources.displayMetrics.density).toInt() }
+        parent.addView(btn, idx, lp)
+    }
+
+    private companion object {
+        const val LAST_24H_TAG = "btnLast24h"
     }
 
     override fun onStop() {

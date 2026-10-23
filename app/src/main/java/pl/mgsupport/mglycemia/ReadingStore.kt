@@ -52,6 +52,40 @@ data class ImportResult(
 )
 
 /**
+ * Pure backfill-cursor policy for pump history (unsigned 32-bit sequence space).
+ *
+ * The first fetch uses 0 ("from the oldest retained record"); every later fetch starts after the
+ * durable cursor. The cursor only moves forward — a re-fetched (overlapping) window never moves it
+ * back — and re-inserting the same batch is a no-op. Free of Android APIs so unit tests cover it on
+ * the JVM; [ReadingStore] persists the result in `history_cursors`.
+ */
+object HistoryCursorPolicy {
+    /** Wire unsigned value of a sequence number stored as signed Int. */
+    fun toUnsigned(seq: Int): Long = seq.toLong() and 0xFFFFFFFFL
+
+    /** Unsigned maximum of [seqs], or null when empty. */
+    fun maxOf(seqs: Iterable<Int>): Int? {
+        var best: Int? = null
+        for (s in seqs) if (best == null || toUnsigned(s) > toUnsigned(best)) best = s
+        return best
+    }
+
+    /** Next fetch start: the durable cursor, or 0 for the first full backfill. */
+    fun nextFetchStart(cursor: Int?): Int = cursor ?: 0
+
+    /**
+     * Monotonic advance: unsigned max of [seen] when it passes [cursor], else [cursor] unchanged.
+     * Empty [seen] never moves the cursor. Null [cursor] means "no backfill yet" — the batch max
+     * (if any) becomes the cursor.
+     */
+    fun advance(cursor: Int?, seen: Iterable<Int>): Int? {
+        val top = maxOf(seen) ?: return cursor
+        if (cursor == null) return top
+        return if (toUnsigned(top) > toUnsigned(cursor)) top else cursor
+    }
+}
+
+/**
  * Local SQLite store for long-term readings and pump events, plus CSV export.
  *
  * Readings are written once per CGM sample (~5 min) so a year is ~100k rows — comfortably small.
@@ -92,11 +126,13 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
         )
         db.execSQL("CREATE INDEX idx_events_ts ON events(ts_ms)")
         addHistorySchema(db)
+        addHistoryCursorSchema(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         // SQLiteOpenHelper wraps this additive migration in a transaction. No legacy row is dropped.
         if (oldVersion < 2) addHistorySchema(db)
+        if (oldVersion < 3) addHistoryCursorSchema(db)
     }
 
     private fun addHistorySchema(db: SQLiteDatabase) {
@@ -129,7 +165,31 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
         db.execSQL("CREATE INDEX idx_app_alerts_ts ON app_alerts(ts_ms)")
     }
 
-    /** Returns only after the entire raw batch commits; callers may advance their cursor afterwards. */
+    /**
+     * Durable backfill cursor per pump/log source. Seeded from `history_records` on first sync so
+     * installs predating this table resume incrementally instead of re-downloading from seq 0.
+     */
+    private fun addHistoryCursorSchema(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS history_cursors (
+              source_id TEXT PRIMARY KEY NOT NULL,
+              last_seq INTEGER NOT NULL,
+              updated_ms INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+
+    /**
+     * Idempotent batch insert that advances the durable backfill cursor in the same transaction.
+     *
+     * Dedup: `(source_id, seq)` is the primary key, so re-inserting an already stored range is a
+     * no-op when the raw bytes are identical. A conflicting payload under an existing seq fails the
+     * whole batch (rollback, cursor stays put) — that means the pump log was reset and the caller
+     * must switch to a new source ID, never silently overwrite. Returns only after commit; callers
+     * may then fetch incrementally from [nextHistoryFetchStart].
+     */
     fun insertHistoryRecords(sourceId: String, records: List<HistoryLogRecord>) {
         require(sourceId.isNotBlank()) { "A stable pump/log source ID is required" }
         if (records.isEmpty()) return
@@ -137,6 +197,7 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
         db.beginTransaction()
         try {
             for (record in records) insertHistoryRow(db, StoredHistoryRecord(sourceId, record))
+            syncHistoryCursorLocked(db, sourceId, records.map { it.sequenceNumber }, System.currentTimeMillis())
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
@@ -145,6 +206,65 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
 
     /** Maximum persisted sequence, compared as the wire's unsigned 32-bit value. Not a gap tracker. */
     fun latestHistorySequence(sourceId: String): Int? = readableDatabase.rawQuery(
+        "SELECT seq FROM history_records WHERE source_id = ? ORDER BY (seq & 4294967295) DESC LIMIT 1",
+        arrayOf(sourceId),
+    ).use { if (it.moveToFirst()) it.getInt(0) else null }
+
+    /**
+     * Durable backfill cursor for [sourceId], or null before the first successful persist.
+     * Survives process restarts; any in-memory cursor is only a cache of this value.
+     */
+    fun getHistoryCursor(sourceId: String): Int? = readableDatabase.rawQuery(
+        "SELECT last_seq FROM history_cursors WHERE source_id = ? LIMIT 1",
+        arrayOf(sourceId),
+    ).use { if (it.moveToFirst()) it.getInt(0) else null }
+
+    /**
+     * Next history fetch start for [sourceId]: the durable cursor when present, else the maximum
+     * persisted sequence (installs that filled `history_records` before `history_cursors` existed),
+     * else 0 for the first full backfill from the oldest retained record.
+     */
+    fun nextHistoryFetchStart(sourceId: String): Int =
+        HistoryCursorPolicy.nextFetchStart(getHistoryCursor(sourceId) ?: latestHistorySequence(sourceId))
+
+    /**
+     * Monotonic durable advance over [seen] sequence numbers. Never moves the cursor backwards
+     * (unsigned comparison); empty [seen] leaves it put. Returns the resulting cursor.
+     */
+    fun advanceHistoryCursor(sourceId: String, seen: List<Int>): Int? {
+        require(sourceId.isNotBlank()) { "A stable pump/log source ID is required" }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val next = syncHistoryCursorLocked(db, sourceId, seen, System.currentTimeMillis())
+            db.setTransactionSuccessful()
+            return next
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /**
+     * Cursor sync inside the caller's transaction: the baseline is the stored cursor, falling back
+     * to the table maximum for data predating the cursor table; the stored value only moves forward
+     * (unsigned). Returns the resulting cursor, or null when nothing is stored or seen.
+     */
+    private fun syncHistoryCursorLocked(db: SQLiteDatabase, sourceId: String, seen: List<Int>, nowMs: Long): Int? {
+        val stored: Int? = db.rawQuery(
+            "SELECT last_seq FROM history_cursors WHERE source_id = ? LIMIT 1",
+            arrayOf(sourceId),
+        ).use { if (it.moveToFirst()) it.getInt(0) else null }
+        val next = HistoryCursorPolicy.advance(stored ?: tableMaxLocked(db, sourceId), seen) ?: return null
+        if (next != stored) {
+            val cv = ContentValues().apply {
+                put("source_id", sourceId); put("last_seq", next); put("updated_ms", nowMs)
+            }
+            db.insertWithOnConflict("history_cursors", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
+        }
+        return next
+    }
+
+    private fun tableMaxLocked(db: SQLiteDatabase, sourceId: String): Int? = db.rawQuery(
         "SELECT seq FROM history_records WHERE source_id = ? ORDER BY (seq & 4294967295) DESC LIMIT 1",
         arrayOf(sourceId),
     ).use { if (it.moveToFirst()) it.getInt(0) else null }
@@ -544,6 +664,7 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
         var eventsImported = 0
         var historyImported = 0
         var alertsImported = 0
+        val historySources = HashSet<String>()
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -569,10 +690,17 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
                         check(db.insertWithOnConflict("events", null, cv, SQLiteDatabase.CONFLICT_REPLACE) != -1L)
                         eventsImported++
                     }
-                    is BackupRow.History -> if (insertHistoryRow(db, row.value)) historyImported++
+                    is BackupRow.History -> {
+                        historySources += row.value.sourceId
+                        if (insertHistoryRow(db, row.value)) historyImported++
+                    }
                     is BackupRow.Alert -> if (insertAlertRow(db, row.value)) alertsImported++
                 }
             }
+            // Keep the durable backfill cursor consistent with a restored backup (same transaction,
+            // so a corrupt file still rolls everything back). Never moves an ahead cursor backwards.
+            val cursorNowMs = System.currentTimeMillis()
+            for (src in historySources) syncHistoryCursorLocked(db, src, emptyList(), cursorNowMs)
             db.setTransactionSuccessful()
             return ImportResult(readingsImported, readingsSkipped, eventsImported, info.errors, historyImported, alertsImported)
         } finally {
@@ -616,6 +744,6 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
 
     private companion object {
         const val DB_NAME = "minimed.db"
-        const val DB_VERSION = 2
+        const val DB_VERSION = 3
     }
 }

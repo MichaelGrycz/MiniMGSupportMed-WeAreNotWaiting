@@ -56,6 +56,8 @@ data class PumpUiState(
     val sensorUpdating: Boolean = false,
     val sensorPhase: SensorPhase = SensorPhase.UNKNOWN,
     val sensorRemainingMinutes: Int? = null,
+    /** Minuty od startu sesji CGM (offset z pompy); `null` gdy pompa go nie podała. */
+    val sensorSessionMinutes: Int? = null,
     val windowMillis: Long = WINDOW_6H,
     val tirPercent: Int? = null,
     val belowPercent: Int? = null,
@@ -129,6 +131,27 @@ class PumpController(context: Context) {
         )
 
     private val alerts = AlertManager(appContext)
+
+    /**
+     * Progi alarmów urządzenia. Trzymane w pamięci procesu — do ustawień użytkownika trafią przez
+     * [setReservoirWarnThresholdIu] / [setSensorMaxAgeHours] (np. sensor noszony dłużej niż 7 dni).
+     */
+    @Volatile
+    private var reservoirWarnThresholdIu: Double = ReservoirSensorAlarms.DEFAULT_RESERVOIR_THRESHOLD_IU
+
+    @Volatile
+    private var sensorMaxAgeHours: Double = ReservoirSensorAlarms.DEFAULT_SENSOR_MAX_AGE_HOURS
+
+    /** Ustawia próg alarmu zbiornika (wcina do 5..50 j.). */
+    fun setReservoirWarnThresholdIu(thresholdIu: Double) {
+        reservoirWarnThresholdIu = ReservoirSensorAlarms.coerceReservoirThreshold(thresholdIu)
+    }
+
+    /** Ustawia limit życia sensora (wcina do 1..14 dni); nie zakładamy z góry 7 dni. */
+    fun setSensorMaxAgeHours(hours: Double) {
+        sensorMaxAgeHours = ReservoirSensorAlarms.coerceSensorMaxAgeHours(hours)
+    }
+
     private val historyPresenter = HistoryPresenter()
     private val durableBackup = DurableBackup(appContext, store)
 
@@ -139,6 +162,7 @@ class PumpController(context: Context) {
         refreshChart()
         return result
     }
+
     fun disableBackup() = durableBackup.disable()
 
     init {
@@ -165,7 +189,8 @@ class PumpController(context: Context) {
     /** Set while the pump reports "no sensor value" so the technical log isn't flooded. */
     @Volatile
     private var sensorNotReadyLogged = false
-    @Volatile private var userDisconnected = false
+    @Volatile
+    private var userDisconnected = false
     private var historyJob: Job? = null
     private var chartJob: Job? = null
     private var historyCursor: Int? = null
@@ -269,10 +294,10 @@ class PumpController(context: Context) {
         val fault = manager.fault.value
         val needsFreshIdentity =
             fault == MedtronicConnectionFault.PAIRING_FAILED ||
-                fault == MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED ||
-                // An explicit "pair new pump" on an existing installation replaces that pump entry,
-                // so a fresh identity avoids authenticating against the old keys.
-                credentials.isPaired()
+                    fault == MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED ||
+                    // An explicit "pair new pump" on an existing installation replaces that pump entry,
+                    // so a fresh identity avoids authenticating against the old keys.
+                    credentials.isPaired()
         val name =
             if (needsFreshIdentity) {
                 PumpIdentity.rotate(appContext).also {
@@ -377,7 +402,14 @@ class PumpController(context: Context) {
                 val events = store.queryInsulinEvents(now - w, now)
                 val rCount = store.countReadings()
                 val eCount = store.countEvents()
-                _state.update { it.copy(glucoseHistory = pts, insulinEvents = events, readingsCount = rCount, eventsCount = eCount) }
+                _state.update {
+                    it.copy(
+                        glucoseHistory = pts,
+                        insulinEvents = events,
+                        readingsCount = rCount,
+                        eventsCount = eCount
+                    )
+                }
                 recomputeDerived()
             }
     }
@@ -429,7 +461,7 @@ class PumpController(context: Context) {
 
                 while (isActive) {
                     gateway.getCgmReading().onSuccess { r ->
-                        onCgm(r.glucoseMgDl, r.trendArrow, r.timestamp)
+                        onCgm(r.glucoseMgDl, r.trendArrow, r.timestamp, r.sensorSessionMinutes)
                         noteSensorReady()
                     }.onFailure { e ->
                         if (e is SensorNotReadyException) noteSensorNotReady(e) else noteReadFailure("CGM", e)
@@ -444,6 +476,7 @@ class PumpController(context: Context) {
 
                     gateway.getReservoirLevel().onSuccess { r ->
                         _state.update { it.copy(reservoirUnits = r.unitsRemaining) }
+                        alerts.checkReservoir(r.unitsRemaining.toDouble(), reservoirWarnThresholdIu)
                     }.onFailure { e -> noteReadFailure("Reservoir", e) }
 
                     gateway.getBatteryStatus().onSuccess { r ->
@@ -467,9 +500,14 @@ class PumpController(context: Context) {
         }
     }
 
-    private fun onCgm(mgDl: Int, trend: CgmTrend, at: Instant) {
+    private fun onCgm(mgDl: Int, trend: CgmTrend, at: Instant, sensorSessionMinutes: Int? = null) {
         val nowMs = at.toEpochMilli()
         alerts.check(mgDl, _state.value.thresholds)
+        // Wiek sesji podaje pompa (offset CGM); limit życia zależy od modelu sensora, więc jest
+        // ustawialny — sensory extended wear pracują dłużej niż 7 dni.
+        sensorSessionMinutes?.let { minutes ->
+            alerts.checkSensorExpiry(minutes / 60.0, sensorMaxAgeHours)
+        }
 
         val s = _state.value
         store.insertReading(
@@ -492,6 +530,7 @@ class PumpController(context: Context) {
                 glucoseMgDl = mgDl,
                 trend = trend,
                 glucoseAt = at,
+                sensorSessionMinutes = sensorSessionMinutes ?: it.sensorSessionMinutes,
                 lastError = null,
             )
         }
@@ -637,6 +676,8 @@ class PumpController(context: Context) {
         retryJob =
             scope.launch {
                 delay(RETRY_INTERVAL_MS)
+                // Brak danych dłużej niż timeout to realny alarm, także gdy pompa jest poza zasięgiem.
+                alerts.checkStaleLink(_state.value.glucoseAt?.toEpochMilli())
                 if (isPaired() && !userDisconnected &&
                     manager.connectionState.value != ConnectionState.CONNECTED
                 ) {
@@ -682,7 +723,7 @@ class PumpController(context: Context) {
         sensorNotReadyLogged = true
         appendLog(
             appContext.getString(R.string.log_sensor_updating) +
-                " (${e.phase.name}, remaining=${e.remainingMinutes?.toString() ?: "?"} min)",
+                    " (${e.phase.name}, remaining=${e.remainingMinutes?.toString() ?: "?"} min)",
         )
     }
 

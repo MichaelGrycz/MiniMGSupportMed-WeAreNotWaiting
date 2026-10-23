@@ -12,8 +12,10 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.graphics.drawable.IconCompat
 import pl.mgsupport.mglycemia.core.domain.model.ConnectionState
 import pl.mgsupport.mglycemia.core.domain.model.SensorPhase
+import java.time.Instant
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +54,7 @@ class PumpForegroundService : Service() {
 
         job =
             scope.launch {
-                controller.state.collectLatest { s -> notify(buildNotification(statusText(s))) }
+                controller.state.collectLatest { s -> notify(buildNotification(statusText(s), s)) }
             }
     }
 
@@ -76,24 +78,31 @@ class PumpForegroundService : Service() {
         when {
             s.connection != ConnectionState.CONNECTED ->
                 getString(R.string.notif_status_format, connectionLabel(s.connection))
+
             s.sensorUpdating && s.sensorPhase == SensorPhase.INITIALIZING ->
                 getString(
                     R.string.notif_sensor_initializing,
                     formatSensorRemaining(this, s.sensorRemainingMinutes),
                     connectionLabel(s.connection),
                 )
+
             s.sensorUpdating ->
                 getString(R.string.notif_sensor_updating, connectionLabel(s.connection))
+
             s.glucoseMgDl != null -> {
                 val iob = s.iob?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "--"
-                getString(
-                    R.string.notif_reading_format,
-                    s.glucoseMgDl,
-                    iob,
-                    getString(R.string.unit_insulin_amount),
-                    connectionLabel(s.connection),
-                )
+                val base =
+                    getString(
+                        R.string.notif_reading_format,
+                        s.glucoseMgDl,
+                        iob,
+                        getString(R.string.unit_insulin_amount),
+                        connectionLabel(s.connection),
+                    )
+                val age = freshnessSuffix(s.glucoseAt)
+                if (age.isEmpty()) base else "$base \u00b7 $age"
             }
+
             else -> getString(R.string.notif_waiting)
         }
 
@@ -115,18 +124,40 @@ class PumpForegroundService : Service() {
         nm.notify(NOTIF_ID, n)
     }
 
-    private fun buildNotification(text: String): Notification =
-        NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(getString(R.string.app_name))
-            .setContentText(text)
-            .setContentIntent(openAppIntent())
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setShowWhen(false)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .build()
+    /** Wiek ostatniego odczytu liczony z PumpUiState.glucoseAt; pusty string = brak danych o wieku. */
+    private fun freshnessSuffix(at: Instant?): String {
+        if (at == null) return ""
+        val ageMin = (System.currentTimeMillis() - at.toEpochMilli()) / 60_000L
+        if (ageMin < 0) return ""
+        if (ageMin < 1) return "przed chwil\u0105"
+        if (ageMin < 15) return "$ageMin min temu"
+        return "$ageMin min temu \u2014 dane nie\u015bwie\u017ce"
+    }
+
+    private fun buildNotification(text: String, state: PumpUiState? = null): Notification {
+        val builder =
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(text)
+                .setContentIntent(openAppIntent())
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setShowWhen(false)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+        val mgDl = state?.glucoseMgDl
+        if (mgDl != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // API 23+: mała ikona z aktualną wartością; cache w fabryce po (wartość, trend).
+            // Mała ikona jest maskowana monochromatycznie, więc rysuje same cyfry na przezroczystym tle.
+            builder.setSmallIcon(IconCompat.createWithBitmap(GlucoseIconFactory.get(mgDl, state.trend)))
+            // Duża ikona renderuje się w kolorze (rozwinięta belka, ekran blokady).
+            builder.setLargeIcon(GlucoseIconFactory.large(mgDl, state.trend))
+        } else {
+            // Brak odczytu albo API < 23: statyczna ikona apki.
+            builder.setSmallIcon(R.drawable.ic_launcher_foreground)
+        }
+        return builder.build()
+    }
 
     /** Tapping the ongoing notification reopens the dashboard instead of doing nothing. */
     private fun openAppIntent(): PendingIntent {

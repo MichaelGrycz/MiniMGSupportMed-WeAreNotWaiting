@@ -15,6 +15,11 @@ import sys
 
 PATH, VERSION, NOTES = sys.argv[1], sys.argv[2], sys.argv[3]
 
+# Notes may be passed as "@path" so multi-line text does not depend on shell quoting.
+if NOTES.startswith("@"):
+    with io.open(NOTES[1:], encoding="utf-8") as handle:
+        NOTES = handle.read()
+
 PL_MONTHS = {
     1: "stycznia",
     2: "lutego",

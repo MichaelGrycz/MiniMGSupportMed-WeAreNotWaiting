@@ -101,6 +101,7 @@ class MedtronicBleConnectionManager(
     localName: String = DEFAULT_LOCAL_NAME,
     private val handshakeTimeoutMs: Long = DEFAULT_HANDSHAKE_TIMEOUT_MS,
     private val pairingWaitMs: Long = DEFAULT_PAIRING_WAIT_MS,
+    private val sakeWatchdogTimeoutMs: Long = DEFAULT_SAKE_WATCHDOG_TIMEOUT_MS,
 ) {
 
     /** On-device constructor: real Android peripheral + dedicated SAKE worker thread. */
@@ -109,7 +110,13 @@ class MedtronicBleConnectionManager(
         credentialStore = credentialStore,
         worker = HandlerThreadSerialWorker(SAKE_WORKER_THREAD_NAME),
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-    )
+    ) {
+        // The test seam (primary constructor) has no adapter callbacks; on-device the peripheral
+        // forwards adapter on/off so a killed radio pauses instead of tearing the session down.
+        (peripheral as? AndroidMedtronicPeripheral)?.onAdapterStateChanged = { enabled ->
+            worker.post { onAdapterStateChanged(enabled) }
+        }
+    }
 
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
 
@@ -173,6 +180,26 @@ class MedtronicBleConnectionManager(
     @Volatile
     private var pairingWaitJob: Job? = null
 
+    /** Pending re-advertise: a backoff retry or the economy-mode refresh loop. */
+    @Volatile
+    private var reconnectJob: Job? = null
+
+    /** Link-up -> SAKE-subscribe stall guard; the auth timeout owns the window once subscribed. */
+    @Volatile
+    private var sakeWatchdogJob: Job? = null
+
+    /** The watchdog closed the server underneath the link; swallow the trailing disconnect once. */
+    @Volatile
+    private var ignoreNextDisconnect = false
+
+    /** Last advertised mode, so watchdog/adapter recovery re-advertises the same service. */
+    @Volatile
+    private var lastMode: AdvertisingMode = AdvertisingMode.FIRST_PAIR
+
+    /** Bluetooth radio state; while off no advertising is attempted. */
+    @Volatile
+    private var adapterOff = false
+
     private val handshakeListener = object : SakeHandshakeDriver.HandshakeListener {
         // Invoked on the worker thread already (the driver runs on [worker]).
         override fun onAuthenticated(session: MedtronicSakeSession) = onHandshakeComplete(session)
@@ -193,6 +220,8 @@ class MedtronicBleConnectionManager(
         override fun onAdvertiseFailed(errorCode: Int) = worker.post { onAdvertisingFailed(errorCode) }
         override fun onPumpConnected(address: String) = worker.post { onCentralConnected(address) }
         override fun onBondStateChanged(state: Int, previousState: Int, reason: Int) = worker.post {
+            // Bonding is ATT progress: a pump that bonds will subscribe next, so restart the stall clock.
+            pokeSakeWatchdog()
             if (state == BluetoothDevice.BOND_NONE && previousState == BluetoothDevice.BOND_BONDING) {
                 Timber.w("BLE pairing failed (reason=%d)", reason)
                 _fault.value = MedtronicConnectionFault.PAIRING_FAILED
@@ -201,10 +230,18 @@ class MedtronicBleConnectionManager(
         }
         override fun onSakeSubscribed() = worker.post { startAuthentication() }
         override fun onSakeUnsubscribed() = driver.onUnsubscribed()
-        override fun onSakeWrite(value: ByteArray) = driver.onPumpWrite(value)
+        override fun onSakeWrite(value: ByteArray) {
+            // A frame before the subscribe is still progress (some stacks write early).
+            worker.post { pokeSakeWatchdog() }
+            driver.onPumpWrite(value)
+        }
         override fun onPumpDisconnected(status: Int) = worker.post { onCentralDisconnected(status) }
         override fun onDiagnostic(line: String) {
             diagnosticSink?.invoke(line)
+            // ATT reads/writes (incl. the 2A50/CCCD probes) are signs of life: anything moving
+            // through the GATT server restarts the link-up stall clock. Runs on the binder thread,
+            // so hop onto the worker like every other lifecycle mutation.
+            if (isAttTraffic(line)) worker.post { pokeSakeWatchdog() }
         }
     }
 
@@ -217,8 +254,17 @@ class MedtronicBleConnectionManager(
      * a peripheral.
      */
     fun startSession(forceFirstPair: Boolean = false) = worker.post {
-        if (!ensureSupported()) return@post
         val mode = advertisingModeFor(credentialStore.isPaired(), forceFirstPair)
+        if (!ensureSupported()) {
+            // Radio off (hardware present but disabled) is not a fault: hold a resumable state
+            // and let the adapter-on callback restart advertising. Truly unsupported hardware
+            // keeps PERIPHERAL_UNSUPPORTED from ensureSupported.
+            if (holdForAdapterOff(mode, ConnectionState.CONNECTING)) {
+                autoReconnect = true
+                pairRetries = 0
+            }
+            return@post
+        }
         autoReconnect = true
         pairRetries = 0
         beginAdvertising(mode, ConnectionState.CONNECTING)
@@ -230,7 +276,13 @@ class MedtronicBleConnectionManager(
             Timber.d("reconnectIfPaired: no paired pump")
             return@post
         }
-        if (!ensureSupported()) return@post
+        if (!ensureSupported()) {
+            if (holdForAdapterOff(AdvertisingMode.RECONNECT, ConnectionState.RECONNECTING)) {
+                autoReconnect = true
+                pairRetries = 0
+            }
+            return@post
+        }
         autoReconnect = true
         beginAdvertising(AdvertisingMode.RECONNECT, ConnectionState.CONNECTING)
     }
@@ -275,6 +327,9 @@ class MedtronicBleConnectionManager(
         onDiscovered = { trySend(it) }
         worker.post {
             autoReconnect = false
+            // Discovery with the radio off holds SCANNING (watcher armed) instead of failing;
+            // the adapter-on callback resumes it.
+            if (holdForAdapterOff(AdvertisingMode.FIRST_PAIR, ConnectionState.SCANNING)) return@post
             beginAdvertising(AdvertisingMode.FIRST_PAIR, ConnectionState.SCANNING)
         }
         awaitClose {
@@ -308,6 +363,9 @@ class MedtronicBleConnectionManager(
     private fun beginAdvertising(mode: AdvertisingMode, state: ConnectionState) {
         cancelTimers()
         resetSessionState()
+        // A fresh advertise cycle means the radio is usable; clear any stale off-hold.
+        adapterOff = false
+        lastMode = mode
         _fault.value = null
         _connectionState.value = state
         Timber.d("Advertising as '%s' in %s mode", localName, mode)
@@ -331,6 +389,12 @@ class MedtronicBleConnectionManager(
 
     private fun onAdvertisingFailed(errorCode: Int) {
         Timber.e("Advertising failed (errorCode=%d)", errorCode)
+        // The radio may have died between the support check and the start; pause and wait
+        // for it instead of failing (scan holds SCANNING, sessions hold RECONNECTING).
+        val holdState =
+            if (_connectionState.value == ConnectionState.SCANNING) ConnectionState.SCANNING
+            else ConnectionState.RECONNECTING
+        if (holdForAdapterOff(lastMode, holdState)) return
         autoReconnect = false
         teardown(ConnectionState.DISCONNECTED, fault = MedtronicConnectionFault.ADVERTISE_FAILED)
     }
@@ -338,8 +402,13 @@ class MedtronicBleConnectionManager(
     private fun onCentralConnected(address: String) {
         // Debug level only: the MAC is a device identifier and WARN+/INFO can be Sentry-eligible.
         Timber.d("Pump connected: %s", address)
+        // A fresh link supersedes any watchdog reset still draining through the stack.
+        ignoreNextDisconnect = false
         pairingWaitJob?.cancel()
         pairingWaitJob = null
+        reconnectJob?.cancel()
+        reconnectJob = null
+        armSakeWatchdog()
         _fault.value = null
         connectedAddress = address
         // Match the proven OpenMinimed implementations: stop advertising as soon as the pump connects.
@@ -365,12 +434,22 @@ class MedtronicBleConnectionManager(
     private fun startAuthentication() {
         Timber.d("Pump subscribed to SAKE; starting handshake")
         _connectionState.value = ConnectionState.AUTHENTICATING
+        // Progress arrived: the auth timeout below owns the rest of the window.
+        sakeWatchdogJob?.cancel()
+        sakeWatchdogJob = null
         armAuthTimeout()
         driver.onSubscribed()
     }
 
     private fun onCentralDisconnected(status: Int) {
         Timber.w("Pump disconnected (status=%d)", status)
+        // A watchdog reset closes the server first; the stack's trailing disconnect is expected
+        // and must not schedule a second recovery on top of the one already running.
+        if (ignoreNextDisconnect) {
+            ignoreNextDisconnect = false
+            Timber.d("Ignoring disconnect after watchdog reset")
+            return
+        }
         val hadPeer = connectedAddress != null
         diagnosticSink?.invoke("GATT disconnect, status=$status")
         cancelTimers()
@@ -383,10 +462,21 @@ class MedtronicBleConnectionManager(
             return
         }
 
-        if (autoReconnect && credentialStore.isPaired()) {
+        if (!autoReconnect) {
+            teardown(ConnectionState.DISCONNECTED, fault = null)
+            return
+        }
+
+        // Radio off pauses everything: hold a readable RECONNECTING and let the adapter-on
+        // callback resume. Never advertise into a dead radio.
+        if (adapterOff) {
+            Timber.d("Adapter off; holding RECONNECTING until it is back")
             _connectionState.value = ConnectionState.RECONNECTING
-            Timber.d("Re-advertising for reconnect (%s)", AdvertisingMode.RECONNECT)
-            peripheral.advertise(AdvertisingMode.RECONNECT, localName)
+            return
+        }
+
+        if (credentialStore.isPaired()) {
+            scheduleReadvertise(AdvertisingMode.RECONNECT, ConnectionState.RECONNECTING)
             return
         }
 
@@ -394,22 +484,71 @@ class MedtronicBleConnectionManager(
         // or clearing the previous mobile entry). Re-advertising keeps the GATT server alive so the
         // pump can come straight back; tearing everything down cost the user a manual retry for
         // every drop, and the retry then raced the pump's own reconnect.
-        if (autoReconnect && hadPeer && pairRetries < MAX_PAIR_RETRIES) {
-            pairRetries++
-            diagnosticSink?.invoke("Re-advertising after drop ($pairRetries/$MAX_PAIR_RETRIES)")
-            _connectionState.value = ConnectionState.CONNECTING
-            scope.launch {
-                delay(PAIR_RETRY_DELAY_MS)
-                worker.post {
-                    if (autoReconnect && _connectionState.value == ConnectionState.CONNECTING) {
-                        peripheral.advertise(AdvertisingMode.FIRST_PAIR, localName)
-                    }
-                }
-            }
+        if (hadPeer) {
+            scheduleReadvertise(AdvertisingMode.FIRST_PAIR, ConnectionState.CONNECTING)
             return
         }
 
         teardown(ConnectionState.DISCONNECTED, fault = null)
+    }
+
+    /**
+     * Bluetooth adapter on/off, forwarded by the peripheral (on-device only). Off pauses the
+     * session visibly instead of tearing it down; on resumes with a fresh advertise cycle.
+     */
+    private fun onAdapterStateChanged(enabled: Boolean) {
+        if (!enabled) {
+            if (adapterOff) return
+            adapterOff = true
+            Timber.w("Bluetooth adapter off; pausing session")
+            diagnosticSink?.invoke("Bluetooth adapter off; pausing")
+            // Freeze every pending timer: the auth timeout must not latch AUTH_FAILED while the
+            // radio is dead, or resume would find autoReconnect already cleared.
+            cancelTimers()
+            peripheral.stopAdvertising()
+            // The GATT server stays open so resume is a single advertise; surface the pause.
+            if (autoReconnect) {
+                _connectionState.value = ConnectionState.RECONNECTING
+            } else {
+                teardown(ConnectionState.DISCONNECTED, fault = null)
+            }
+            return
+        }
+        val wasOff = adapterOff
+        adapterOff = false
+        if (!autoReconnect && _connectionState.value != ConnectionState.SCANNING) return
+        // Resume a session paused mid-flight, a start that found the radio off (DISCONNECTED),
+        // or a discovery held in SCANNING.
+        if (!wasOff && _connectionState.value != ConnectionState.DISCONNECTED) return
+        Timber.d("Bluetooth adapter on; resuming")
+        diagnosticSink?.invoke("Bluetooth adapter on; resuming")
+        pairRetries = 0
+        if (_connectionState.value == ConnectionState.SCANNING) {
+            beginAdvertising(AdvertisingMode.FIRST_PAIR, ConnectionState.SCANNING)
+        } else {
+            val resumeState =
+                if (lastMode == AdvertisingMode.RECONNECT) ConnectionState.RECONNECTING
+                else ConnectionState.CONNECTING
+            beginAdvertising(lastMode, resumeState)
+        }
+    }
+
+    /**
+     * Cold path with the radio off (hardware present but disabled): not a fault. Arms the
+     * adapter watcher and holds [state]; the adapter-on callback resumes with [mode].
+     * Returns false when the hardware is truly unsupported (PERIPHERAL_UNSUPPORTED stands).
+     */
+    private fun holdForAdapterOff(mode: AdvertisingMode, state: ConnectionState): Boolean {
+        val android = peripheral as? AndroidMedtronicPeripheral ?: return false
+        if (!android.isRadioOff()) return false
+        _fault.value = null
+        _connectionState.value = state
+        adapterOff = true
+        lastMode = mode
+        android.watchAdapterState()
+        diagnosticSink?.invoke("Bluetooth off; waiting for adapter")
+        Timber.w("Bluetooth adapter off; waiting for it to be enabled")
+        return true
     }
 
     // -- Handshake callbacks (worker thread) --------------------------------
@@ -481,6 +620,114 @@ class MedtronicBleConnectionManager(
         authTimeoutJob = null
         pairingWaitJob?.cancel()
         pairingWaitJob = null
+        reconnectJob?.cancel()
+        reconnectJob = null
+        sakeWatchdogJob?.cancel()
+        sakeWatchdogJob = null
+    }
+
+    /** Re-advertise with backoff after a drop; once fast retries are spent, fall into economy mode. */
+    private fun scheduleReadvertise(mode: AdvertisingMode, state: ConnectionState) {
+        lastMode = mode
+        if (pairRetries < MAX_PAIR_RETRIES) {
+            val delayMs = RECONNECT_BACKOFF_MS[pairRetries.coerceIn(0, RECONNECT_BACKOFF_MS.lastIndex)]
+            pairRetries++
+            diagnosticSink?.invoke("Re-advertising after drop ($pairRetries/$MAX_PAIR_RETRIES)")
+            _connectionState.value = state
+            reconnectJob?.cancel()
+            reconnectJob = scope.launch {
+                delay(delayMs)
+                worker.post {
+                    // A newer link supersedes this retry; never advertise into a dead radio.
+                    if (!autoReconnect || adapterOff) return@post
+                    if (_connectionState.value == state && connectedAddress == null) {
+                        Timber.d("Re-advertising (%s) after %d ms backoff", mode, delayMs)
+                        peripheral.advertise(mode, localName)
+                    }
+                }
+            }
+            return
+        }
+        enterEconomyMode(mode)
+    }
+
+    /**
+     * Power-saving fallback once the fast retries are spent: hold a readable RECONNECTING and
+     * refresh the advertisement every [ECONOMY_RETRY_DELAY_MS] instead of hot-looping, so a pump
+     * that comes back later still finds us without draining the battery in the meantime.
+     */
+    private fun enterEconomyMode(mode: AdvertisingMode) {
+        lastMode = mode
+        _connectionState.value = ConnectionState.RECONNECTING
+        Timber.w(
+            "Retries spent; entering economy mode, re-advertising every %d s",
+            ECONOMY_RETRY_DELAY_MS / 1_000,
+        )
+        diagnosticSink?.invoke("Economy mode: re-advertising every 60 s (RECONNECTING)")
+        reconnectJob?.cancel()
+        reconnectJob = scope.launch {
+            while (autoReconnect) {
+                delay(ECONOMY_RETRY_DELAY_MS)
+                worker.post {
+                    if (!autoReconnect || adapterOff) return@post
+                    if (connectedAddress != null) return@post
+                    if (_connectionState.value != ConnectionState.RECONNECTING) return@post
+                    Timber.d("Economy re-advertise (%s)", mode)
+                    peripheral.advertise(mode, localName)
+                }
+            }
+        }
+    }
+
+    /**
+     * Guards the link-up -> SAKE-subscribe window: with no ATT/SAKE progress for
+     * [sakeWatchdogTimeoutMs] the pump is stuck (e.g. it read 2A50 and never wrote the CCCD),
+     * so the GATT server is reset and advertising restarts instead of hanging in CONNECTING.
+     */
+    private fun armSakeWatchdog() {
+        sakeWatchdogJob?.cancel()
+        sakeWatchdogJob = scope.launch {
+            delay(sakeWatchdogTimeoutMs)
+            worker.post { onSakeWatchdogTimeout() }
+        }
+    }
+
+    private fun pokeSakeWatchdog() {
+        if (_connectionState.value == ConnectionState.CONNECTING && sakeWatchdogJob != null) {
+            Timber.d("SAKE watchdog poked by ATT progress")
+            armSakeWatchdog()
+        }
+    }
+
+    /** ATT reads/writes (incl. the 2A50/CCCD probes) are signs of life for the watchdog. */
+    private fun isAttTraffic(line: String): Boolean =
+        line.startsWith("read ") || line.startsWith("write ") ||
+            line.startsWith("descriptor read") || line.startsWith("descriptor write") ||
+            line.startsWith("mtu=")
+
+    private fun onSakeWatchdogTimeout() {
+        if (_connectionState.value != ConnectionState.CONNECTING) return
+        Timber.w("SAKE watchdog timeout, resetting")
+        diagnosticSink?.invoke("SAKE watchdog timeout, resetting")
+        if (!autoReconnect || adapterOff) {
+            peripheral.stopAdvertising()
+            return
+        }
+        pairRetries++
+        peripheral.stop()
+        if (pairRetries <= MAX_PAIR_RETRIES) {
+            diagnosticSink?.invoke("GATT server reset ($pairRetries/$MAX_PAIR_RETRIES)")
+            beginAdvertising(lastMode, ConnectionState.CONNECTING)
+            // The reset closed the server underneath the link; the stack's trailing disconnect
+            // arrives later and must not schedule a second recovery on top of this one.
+            ignoreNextDisconnect = true
+        } else {
+            cancelTimers()
+            resetSessionState()
+            enterEconomyMode(lastMode)
+            // The economy loop only refreshes the advertisement, so reopen the server once here.
+            peripheral.start(lastMode, localName, peripheralListener)
+        }
     }
 
     // -- Helpers ------------------------------------------------------------
@@ -497,6 +744,9 @@ class MedtronicBleConnectionManager(
 
     private fun teardown(state: ConnectionState, fault: MedtronicConnectionFault?) {
         cancelTimers()
+        ignoreNextDisconnect = false
+        // Terminal intent (disconnect/unpair/scan-cancelled); a later adapter-on must not resume.
+        adapterOff = false
         resetSessionState()
         peripheral.stop()
         _fault.value = fault
@@ -523,10 +773,16 @@ class MedtronicBleConnectionManager(
         /** First-pair window before suspecting the pump is bound to another phone (Sec. 7). */
         private const val DEFAULT_PAIRING_WAIT_MS = 60_000L
 
-        /** How many dropped first-pair links are re-advertised before giving up. */
+        /** No ATT/SAKE progress this long after link-up means the pump is stuck: reset the server. */
+        private const val DEFAULT_SAKE_WATCHDOG_TIMEOUT_MS = 15_000L
+
+        /** Backoff between re-advertises after a drop: 1s, 2s, 5s, 10s, 30s, then economy mode. */
+        private val RECONNECT_BACKOFF_MS = longArrayOf(1_000L, 2_000L, 5_000L, 10_000L, 30_000L)
+
+        /** How many dropped links are fast-retried before falling into economy mode. */
         private const val MAX_PAIR_RETRIES = 5
 
-        /** Pause before re-advertising, so we don't collide with the pump's own retry. */
-        private const val PAIR_RETRY_DELAY_MS = 1_500L
+        /** Economy cadence: refresh the advertisement this often once fast retries are spent. */
+        private const val ECONOMY_RETRY_DELAY_MS = 60_000L
     }
 }

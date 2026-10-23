@@ -3,6 +3,29 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta26
+
+- Diagnostyka: log techniczny zawiera teraz pełny opis telefonu i Bluetooth — model,
+  producent, wersję Androida, cechy adaptera, uprawnienia, stan oszczędzania baterii
+  i zużycie pamięci. Łatwiej ustalić, dlaczego konkretny telefon nie łączy się z pompą.
+- Ustawienia systemowe: nowy skrót w aplikacji otwiera ekrany Bluetooth, listę aplikacji
+  systemowych, uprawnienia, powiadomienia i oszczędzanie baterii — bez szukania ich w menu.
+- Nowe powiadomienia: niski poziom insuliny w zbiorniku (próg do ustawienia), zbliżający się
+  koniec ważności sensora oraz brak danych z pompy przez dłuższy czas.
+- Czas życia sensora nie jest już z góry zakładany jako 7 dni. Limity dla znanych modeli
+  (Guardian, Enlite, dłuższe noszenie) można dopasować, a komunikat pompy o wymianie sensora
+  ma pierwszeństwo przed wyliczeniami.
+- Powiadomienie o pracy aplikacji pokazuje aktualny cukier w miejscu małej ikony, a po
+  rozwinięciu dodatkowo dużą, kolorową wartość ze strzałką trendu i wiekiem danych.
+- Wykres: przewijanie i powiększanie osi czasu oraz przycisk „Ostatnie 24 h”.
+- Pulpit: kafelki zbiornika, baterii pompy, stanu sensora i wieku danych, wraz z podpowiedzią,
+  jak wyłączyć optymalizację baterii, która usypia odczyty w tle.
+- Historia: synchronizacja wznawia się od ostatniego pobranego zdarzenia zamiast od początku,
+  co skraca czas łączenia z pompą.
+- Diagnostyka: możliwość wyeksportowania logów do pliku, z ukrytymi danymi wrażliwymi.
+
+Pliki APK i logi nie są szyfrowane.
+
 ## 1.0-beta25
 
 - Parowanie BLE: naprawiono synchronizację bufora deskryptora CCCD (`2902`) w serwerze GATT

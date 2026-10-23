@@ -46,6 +46,19 @@ class AlertManager(private val context: Context) {
     private var lastSeverity = Severity.IN_RANGE
     private var lastAlertAt = 0L
 
+    // Osobny stan debounce dla alarmów urządzenia (niezależny od glikemii).
+    private val reservoirLock = Any()
+    private var lastReservoirAlertAt = 0L
+    private var reservoirActive = false
+
+    private val sensorExpiryLock = Any()
+    private var lastSensorExpiryAlertAt = 0L
+    private var sensorExpiryActive = false
+
+    private val staleLinkLock = Any()
+    private var lastStaleLinkAlertAt = 0L
+    private var staleLinkActive = false
+
     init {
         createChannels()
     }
@@ -98,6 +111,141 @@ class AlertManager(private val context: Context) {
         // Cancel first so an identical payload still re-alerts after the debounce window.
         manager.cancel(ALERT_NOTIFICATION_ID)
         manager.notify(ALERT_NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * Alarm niskiego zbiornika: pozostało <= próg (domyślnie 20 j., zakres 5-50 j.).
+     *
+     * Niezależny debounce od glikemii: ponawia co 5 min, powrót powyżej progu kasuje stan.
+     * `null` = brak danych = kasuje alarm. Kanał `glucose_alerts`, teksty PL na sztywno.
+     */
+    fun checkReservoir(
+        remainingIu: Double?,
+        thresholdIu: Double = ReservoirSensorAlarms.DEFAULT_RESERVOIR_THRESHOLD_IU,
+    ) {
+        val threshold = ReservoirSensorAlarms.coerceReservoirThreshold(thresholdIu)
+        if (!ReservoirSensorAlarms.shouldAlarmReservoir(remainingIu, threshold)) {
+            synchronized(reservoirLock) {
+                reservoirActive = false
+                lastReservoirAlertAt = 0L
+            }
+            notificationManager()?.cancel(RESERVOIR_NOTIFICATION_ID)
+            return
+        }
+        if (!canPostNotifications()) return
+        val now = SystemClock.elapsedRealtime()
+        synchronized(reservoirLock) {
+            if (reservoirActive && now - lastReservoirAlertAt < REPEAT_INTERVAL_MS) return
+            reservoirActive = true
+            lastReservoirAlertAt = now
+        }
+        val body = "Pozostało %.1f j. insuliny (próg %.0f j.). Wymień zbiornik.".format(remainingIu, threshold)
+        postDeviceAlert(RESERVOIR_NOTIFICATION_ID, "Mało insuliny w zbiorniku", body)
+    }
+
+    /**
+     * Ostrzeżenie o końcu sensora: wiek >= ([maxAgeHours] - [warnBeforeHours]).
+     *
+     * Wiek sensora wylicza wywołujący (`CgmReading.sensorSessionMinutes / 60.0`); `null` = brak
+     * danych = kasuje alarm. [maxAgeHours] dobiera się do modelu sensora — nie zakładamy 7 dni,
+     * bo część sensorów pracuje dłużej. Debounce niezależny, jak w [checkReservoir].
+     */
+    fun checkSensorExpiry(
+        ageHours: Double?,
+        maxAgeHours: Double = ReservoirSensorAlarms.DEFAULT_SENSOR_MAX_AGE_HOURS,
+        warnBeforeHours: Double = ReservoirSensorAlarms.DEFAULT_SENSOR_WARN_BEFORE_HOURS,
+    ) {
+        val maxAge = ReservoirSensorAlarms.coerceSensorMaxAgeHours(maxAgeHours)
+        if (!ReservoirSensorAlarms.shouldWarnSensorExpiry(ageHours, maxAge, warnBeforeHours)) {
+            synchronized(sensorExpiryLock) {
+                sensorExpiryActive = false
+                lastSensorExpiryAlertAt = 0L
+            }
+            notificationManager()?.cancel(SENSOR_EXPIRY_NOTIFICATION_ID)
+            return
+        }
+        if (!canPostNotifications()) return
+        val now = SystemClock.elapsedRealtime()
+        synchronized(sensorExpiryLock) {
+            if (sensorExpiryActive && now - lastSensorExpiryAlertAt < REPEAT_INTERVAL_MS) return
+            sensorExpiryActive = true
+            lastSensorExpiryAlertAt = now
+        }
+        val remaining = (maxAge - (ageHours ?: 0.0)).coerceAtLeast(0.0)
+        val body =
+            "Sensor pracuje %.0f godz. (typowy czas życia %.0f godz., zostało ok. %.0f godz.). "
+                .format(ageHours, maxAge, remaining) + "Przygotuj nowy sensor."
+        postDeviceAlert(SENSOR_EXPIRY_NOTIFICATION_ID, "Sensor straci ważność", body)
+    }
+
+    /**
+     * Najbardziej wiarygodny sygnał: pompa sama woła o wymianę sensora (`CHANGE_SENSOR`).
+     * Gdy [requested] jest `true`, żaden wiek ani model sensora nie są potrzebne.
+     */
+    fun checkSensorChangeRequested(requested: Boolean) {
+        if (!requested) return
+        if (!canPostNotifications()) return
+        val now = SystemClock.elapsedRealtime()
+        synchronized(sensorExpiryLock) {
+            if (sensorExpiryActive && now - lastSensorExpiryAlertAt < REPEAT_INTERVAL_MS) return
+            sensorExpiryActive = true
+            lastSensorExpiryAlertAt = now
+        }
+        postDeviceAlert(
+            SENSOR_EXPIRY_NOTIFICATION_ID,
+            "Sensor do wymiany",
+            "Pompa zgłasza zmianę sensora (CHANGE_SENSOR). Załóż nowy sensor.",
+        )
+    }
+
+    /**
+     * Alarm zerwanego łącza: od ostatniego pakietu minęło >= [timeoutMin] (zakres 30-45 min).
+     *
+     * `null` = brak danych = kasuje alarm. Debounce niezależny, jak w [checkReservoir].
+     */
+    fun checkStaleLink(
+        lastPacketMs: Long?,
+        nowMs: Long = System.currentTimeMillis(),
+        timeoutMin: Long = ReservoirSensorAlarms.DEFAULT_STALE_LINK_TIMEOUT_MIN,
+    ) {
+        val timeout = ReservoirSensorAlarms.coerceStaleLinkTimeout(timeoutMin)
+        if (!ReservoirSensorAlarms.shouldAlarmStaleLink(lastPacketMs, nowMs, timeout)) {
+            synchronized(staleLinkLock) {
+                staleLinkActive = false
+                lastStaleLinkAlertAt = 0L
+            }
+            notificationManager()?.cancel(STALE_LINK_NOTIFICATION_ID)
+            return
+        }
+        if (!canPostNotifications()) return
+        val now = SystemClock.elapsedRealtime()
+        synchronized(staleLinkLock) {
+            if (staleLinkActive && now - lastStaleLinkAlertAt < REPEAT_INTERVAL_MS) return
+            staleLinkActive = true
+            lastStaleLinkAlertAt = now
+        }
+        val body = "Brak nowych danych od ponad $timeout min. Sprawdź Bluetooth i pompę."
+        postDeviceAlert(STALE_LINK_NOTIFICATION_ID, "Brak połączenia z pompą", body)
+    }
+
+    private fun postDeviceAlert(notificationId: Int, title: String, body: String) {
+        val manager = notificationManager() ?: return
+        val notification =
+            NotificationCompat.Builder(context, GLUCOSE_ALERT_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .setContentIntent(openAppIntent())
+                .setWhen(System.currentTimeMillis())
+                .setShowWhen(true)
+                .build()
+        manager.cancel(notificationId)
+        manager.notify(notificationId, notification)
     }
 
     /**
@@ -233,6 +381,9 @@ class AlertManager(private val context: Context) {
 
         const val ALERT_NOTIFICATION_ID = 1000
         const val STATUS_NOTIFICATION_ID = 1001
+        const val RESERVOIR_NOTIFICATION_ID = 1002
+        const val SENSOR_EXPIRY_NOTIFICATION_ID = 1003
+        const val STALE_LINK_NOTIFICATION_ID = 1004
 
         private const val STATUS_TITLE = "MinimedOpen"
         private const val REPEAT_INTERVAL_MS = 5 * 60 * 1000L
