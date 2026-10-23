@@ -20,6 +20,14 @@ Nazwa: **MGlikemia** po polsku, **MGlycemia** w pozostałych językach.
 - automatyczne aktualizacje z wydań na GitHubie
 - interfejs po polsku, angielsku, niemiecku i chińsku
 
+## Zrzuty ekranu
+
+Grafiki pokazują układ aplikacji na danych demonstracyjnych. Nie zawierają danych żadnego użytkownika.
+
+![Pulpit](docs/img/demo-pulpit.svg)
+
+![Wykres glikemii](docs/img/demo-wykres.svg)
+
 ## Wymagania
 
 - Android 7.0 lub nowszy

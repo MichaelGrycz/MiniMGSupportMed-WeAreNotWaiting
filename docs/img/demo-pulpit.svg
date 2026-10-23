@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1040" viewBox="0 0 720 1040" role="img" aria-label="Wizualizacja pulpitu MGlikemia na danych demonstracyjnych">
+  <rect width="720" height="1040" fill="#0E1420"/>
+  <text x="32" y="58" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700">MGlikemia</text>
+  <rect x="520" y="30" width="168" height="44" rx="22" fill="#122A22" stroke="#10B981"/>
+  <circle cx="548" cy="52" r="7" fill="#10B981"/>
+  <text x="568" y="58" fill="#10B981" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600">Połączono</text>
+
+  <rect x="24" y="96" width="672" height="300" rx="24" fill="#16202F" stroke="#243144"/>
+  <text x="52" y="140" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1.5">GLUKOZA Z SENSORA (CGM)</text>
+  <rect x="446" y="116" width="224" height="34" rx="17" fill="#10291F" stroke="#10B981"/>
+  <text x="468" y="139" fill="#10B981" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700">W ZAKRESIE DOCELOWYM</text>
+
+  <text x="52" y="268" fill="#10B981" font-family="Segoe UI, Arial, sans-serif" font-size="112" font-weight="700">142</text>
+  <text x="300" y="228" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">+6</text>
+  <text x="300" y="256" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="18">mg/dL</text>
+
+  <rect x="470" y="192" width="200" height="96" rx="18" fill="#101A28" stroke="#243144"/>
+  <path d="M520 262 L552 226 L584 244" fill="none" stroke="#22C3E6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="570" y="318" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="15" text-anchor="middle">Powolny wzrost</text>
+
+  <line x1="52" y1="342" x2="668" y2="342" stroke="#243144"/>
+  <text x="52" y="376" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="16">2 min temu (14:32)</text>
+  <text x="668" y="376" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="16" text-anchor="end">ROC: +1,20 mg/dL/min</text>
+
+  <rect x="24" y="416" width="672" height="74" rx="18" fill="#16202F" stroke="#243144"/>
+  <text x="52" y="462" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="17">Sensor: OK · Odczyt: teraz</text>
+
+  <rect x="24" y="510" width="212" height="120" rx="18" fill="#16202F" stroke="#243144"/>
+  <text x="48" y="548" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="14">Zbiornik</text>
+  <text x="48" y="592" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">96 j.</text>
+  <text x="48" y="618" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">Próg 30 j.</text>
+
+  <rect x="254" y="510" width="212" height="120" rx="18" fill="#16202F" stroke="#243144"/>
+  <text x="278" y="548" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="14">Bateria</text>
+  <text x="278" y="592" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">78%</text>
+  <text x="278" y="618" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">Bateria pompy · AA</text>
+
+  <rect x="484" y="510" width="212" height="120" rx="18" fill="#16202F" stroke="#243144"/>
+  <text x="508" y="548" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="14">Aktywna insulina</text>
+  <text x="508" y="592" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">1,20 j.</text>
+  <text x="508" y="618" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">IOB</text>
+
+  <rect x="24" y="650" width="672" height="330" rx="24" fill="#16202F" stroke="#243144"/>
+  <text x="52" y="694" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Wykres glikemii</text>
+  <rect x="24" y="718" width="672" height="206" fill="#0E1420"/>
+  <rect x="70" y="760" width="600" height="112" fill="#10B981" opacity="0.10"/>
+  <line x1="70" y1="760" x2="670" y2="760" stroke="#10B981" stroke-dasharray="6 6" opacity="0.5"/>
+  <line x1="70" y1="872" x2="670" y2="872" stroke="#10B981" stroke-dasharray="6 6" opacity="0.5"/>
+  <path d="M70 830 C110 806, 140 792, 170 800 S230 852, 270 842 S330 786, 370 794 S430 848, 470 826 S530 760, 570 780 S630 830, 670 806"
+        fill="none" stroke="#22C3E6" stroke-width="6" stroke-linecap="round"/>
+  <text x="62" y="768" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">180</text>
+  <text x="62" y="840" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">120</text>
+  <text x="62" y="880" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">70</text>
+  <text x="70" y="948" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">12:00</text>
+  <text x="370" y="948" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="middle">15:00</text>
+  <text x="670" y="948" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">18:00</text>
+
+  <text x="360" y="1020" fill="#64748B" font-family="Segoe UI, Arial, sans-serif" font-size="14" text-anchor="middle">Dane demonstracyjne. Nie pochodzą z prawdziwej pompy.</text>
+</svg>

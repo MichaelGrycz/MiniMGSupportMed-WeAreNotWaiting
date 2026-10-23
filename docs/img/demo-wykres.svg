@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="900" viewBox="0 0 720 900" role="img" aria-label="Wizualizacja wykresu glikemii MGlikemia na danych demonstracyjnych">
+  <rect width="720" height="900" fill="#0E1420"/>
+  <text x="32" y="58" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700">MGlikemia</text>
+  <text x="32" y="90" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="16">Wykres glikemii · 7 dni</text>
+
+  <rect x="24" y="118" width="672" height="470" rx="24" fill="#16202F" stroke="#243144"/>
+  <text x="52" y="160" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="15">min 72 · max 196 mg/dL</text>
+
+  <rect x="80" y="228" width="580" height="250" fill="#10B981" opacity="0.10"/>
+  <line x1="80" y1="228" x2="660" y2="228" stroke="#10B981" stroke-dasharray="6 6" opacity="0.5"/>
+  <line x1="80" y1="500" x2="660" y2="500" stroke="#70E1F5" stroke-dasharray="6 6" opacity="0.6"/>
+  <text x="72" y="290" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">250</text>
+  <text x="72" y="364" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">180</text>
+  <text x="72" y="438" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">120</text>
+  <text x="72" y="512" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">55</text>
+
+  <path d="M80 450 C110 430, 130 398, 160 410 S210 470, 240 452 S290 390, 320 384 S370 420, 400 400
+           S450 330, 480 352 S530 470, 560 452 S610 400, 640 418 L660 410"
+        fill="none" stroke="#22C3E6" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="660" cy="410" r="8" fill="#10B981"/>
+
+  <text x="110" y="540" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">pn</text>
+  <text x="210" y="540" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">wt</text>
+  <text x="310" y="540" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">śr</text>
+  <text x="410" y="540" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">czw</text>
+  <text x="510" y="540" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">pt</text>
+  <text x="610" y="540" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="13">sob</text>
+
+  <rect x="80" y="610" width="112" height="46" rx="23" fill="#0F2233" stroke="#22C3E6"/>
+  <text x="136" y="640" fill="#22C3E6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600" text-anchor="middle">7D</text>
+  <text x="240" y="640" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="15" text-anchor="middle">30D</text>
+  <text x="344" y="640" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="15" text-anchor="middle">1R</text>
+
+  <rect x="24" y="686" width="672" height="14" rx="7" fill="#16302A"/>
+  <rect x="24" y="686" width="28" height="14" rx="7" fill="#EF4444"/>
+  <rect x="640" y="686" width="56" height="14" rx="7" fill="#F59E0B"/>
+  <text x="360" y="736" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="15" text-anchor="middle">Poniżej 2% · W celu 94% · Powyżej 4%</text>
+
+  <rect x="24" y="770" width="212" height="96" rx="18" fill="#16202F" stroke="#243144"/>
+  <text x="48" y="806" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="14">W celu (TIR)</text>
+  <text x="48" y="844" fill="#10B981" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">94%</text>
+
+  <rect x="254" y="770" width="212" height="96" rx="18" fill="#16202F" stroke="#243144"/>
+  <text x="278" y="806" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="14">Średnia</text>
+  <text x="278" y="844" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">128 mg/dL</text>
+
+  <rect x="484" y="770" width="212" height="96" rx="18" fill="#16202F" stroke="#243144"/>
+  <text x="508" y="806" fill="#8B9BB4" font-family="Segoe UI, Arial, sans-serif" font-size="14">GMI (eA1C)</text>
+  <text x="508" y="844" fill="#F1F5F9" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">6,4%</text>
+</svg>
