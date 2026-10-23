@@ -3,6 +3,20 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta28
+
+- Pulpit jest teraz zwięzły: stan sensora i wiek odczytu mieszczą się w jednej linii,
+  a kafelki zbiornika i baterii pokazują samą wartość i krótki dopisek.
+- Pełne wyjaśnienie pracy w tle i oszczędzania baterii przeniesione z pulpitu do Ustawień.
+- Ostrzeżenie o oszczędzaniu baterii na pulpicie pojawia się tylko wtedy, gdy system
+  faktycznie ogranicza pracę aplikacji w tle.
+- Nowy skrót w Ustawieniach podpowiada, jak włączyć własną ikonę powiadomienia zamiast
+  logo aplikacji w pasku statusu Samsunga.
+- Diagnostyka połączenia: każdy wpis ma teraz czas od nawiązania połączenia (`t=+… ms`),
+  informację, do której charakterystyki należy deskryptor, pełną tablicę usług GATT
+  oraz bajty rozgłaszania. Bez tego nie da się ustalić, dlaczego pompa rozłącza się
+  natychmiast po odczycie deskryptora.
+
 ## 1.0-beta27
 
 - Powiadomienie o pracy aplikacji pokazuje aktualny cukier w tytule, więc wartość jest czytelna

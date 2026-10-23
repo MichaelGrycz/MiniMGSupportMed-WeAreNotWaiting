@@ -72,6 +72,13 @@ object SystemShortcuts {
                     Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                         .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
                 )
+
+            shortcuts +=
+                Shortcut(
+                    "Ikona powiadomienia zamiast ikony aplikacji",
+                    "Samsung: Powiadomienia → Ustawienia zaawansowane → wyłącz „Pokaż ikonę aplikacji w powiadomieniach”. Wtedy w pasku statusu pojawi się ikona z aktualnym cukrem zamiast logo apki.",
+                    Intent("android.settings.NOTIFICATION_SETTINGS"),
+                )
         }
 
         shortcuts +=

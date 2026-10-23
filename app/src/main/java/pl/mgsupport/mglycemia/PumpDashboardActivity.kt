@@ -169,10 +169,11 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var batteryProgress: ProgressBar
     private lateinit var batterySubText: TextView
 
-    // Programowe kafelki statusu (bez zmian XML i logiki BLE): sensor, wiek danych, asystent Doze.
+    // Programowe kafelki statusu (bez zmian XML i logiki BLE): sensor, wiek danych, ostrzeżenie Doze.
     private var sensorTileText: TextView? = null
-    private var dataAgeTileText: TextView? = null
+    private var dozeWarnText: TextView? = null
     private var dozeStatusText: TextView? = null
+    private var dozeHelpAdded = false
 
     // History Tab Views
     private lateinit var filterButtons: Map<HistoryFilter, TextView>
@@ -238,7 +239,14 @@ class PumpDashboardActivity : AppCompatActivity() {
                 delay(15_000L)
                 val at = controller.state.value.glucoseAt
                 updateReadingTimeText(at)
-                refreshDataAgeTile(at)
+                sensorTileText?.text = statusLine(controller.state.value)
+                sensorTileText?.setTextColor(
+                    ContextCompat.getColor(
+                        this@PumpDashboardActivity,
+                        if (statusLineIsAlert(controller.state.value)) R.color.glucose_low
+                        else R.color.text_primary,
+                    )
+                )
             }
         }
     }
@@ -364,6 +372,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         logsContainer = findViewById(R.id.logsContainer)
         logText = findViewById(R.id.logText)
         ensureStatusTiles()
+        ensureDozeHelpInSettings()
     }
 
     /** Older tablet resources share the same IDs; add the new panels without duplicating that layout. */
@@ -1239,8 +1248,8 @@ class PumpDashboardActivity : AppCompatActivity() {
     }
 
     /**
-     * Programowe kafelki statusu pod kartą glikemii (bez zmian XML i logiki BLE).
-     * Zbiornik/bateria/sensor/wiek danych z istniejącego PumpUiState; brak pola = "--".
+     * Jedna zwięzła linia statusu pod kartą glikemii. Pulpit ma dawać liczby, nie instrukcje —
+     * pełny opis pracy w tle i oszczędzania baterii mieszka w Ustawieniach ([ensureDozeHelpInSettings]).
      */
     private fun ensureStatusTiles() {
         if (sensorTileText != null) return
@@ -1249,111 +1258,130 @@ class PumpDashboardActivity : AppCompatActivity() {
         val d = resources.displayMetrics.density
         fun dpi(v: Int) = (v * d).roundToInt()
 
-        fun label(text: String, sizeSp: Float = 12f): TextView =
-            TextView(this).apply {
-                this.text = text
-                textSize = sizeSp
-                setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_secondary))
-            }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dpi(8) }
+            setBackgroundResource(R.drawable.bg_chip_inactive)
+            setPadding(dpi(14), dpi(8), dpi(14), dpi(8))
+        }
+
+        sensorTileText = TextView(this).apply {
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
+            text = "Sensor: --"
+        }.also(box::addView)
+
+        // Ostrzeżenie pokazuje się WYŁĄCZNIE wtedy, gdy system faktycznie ogranicza pracę w tle.
+        dozeWarnText = TextView(this).apply {
+            textSize = 12.5f
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.glucose_high))
+            text = "Oszczędzanie baterii może wstrzymywać odczyty — dotknij, aby to zmienić"
+            visibility = View.GONE
+            setOnClickListener { requestIgnoreBatteryOptimizations() }
+            setPadding(0, dpi(4), 0, 0)
+        }.also(box::addView)
+
+        parent.addView(box, parent.indexOfChild(hero) + 1)
+        updateDozeStatus()
+    }
+
+    /**
+     * Pełne wyjaśnienie pracy w tle przeniesione z pulpitu do Ustawień: użytkownik trafia tu
+     * świadomie, a na pulpicie nie ma ściany tekstu.
+     */
+    private fun ensureDozeHelpInSettings() {
+        if (dozeHelpAdded) return
+        val content = findViewById<View>(R.id.tabSettings)?.let { (it as? android.view.ViewGroup)?.getChildAt(0) }
+            as? LinearLayout ?: return
+        dozeHelpAdded = true
+        val d = resources.displayMetrics.density
+        fun dpi(v: Int) = (v * d).roundToInt()
 
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dpi(10) }
+            ).apply { topMargin = dpi(14) }
             setBackgroundResource(R.drawable.bg_chip_inactive)
-            setPadding(dpi(14), dpi(12), dpi(14), dpi(12))
+            setPadding(dpi(16), dpi(14), dpi(16), dpi(14))
         }
-        box.addView(label("Status pompy i sensora", 13f).apply {
+        box.addView(TextView(this).apply {
+            text = "Praca w tle i bateria"
+            textSize = 15f
             setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
             setTypeface(null, Typeface.BOLD)
         })
-        sensorTileText = label("Sensor: --", 13f).apply {
-            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
-        }.also(box::addView)
-        dataAgeTileText = label("Wiek danych: --", 13f).apply {
-            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
-        }.also(box::addView)
-
-        box.addView(
-            label(
-                "Zbiornik i bateria są w kafelkach poniżej " +
-                    "(Zbiornik w j. z progiem 30 j., Bateria w %). " +
-                    "Gdy widzisz --, pompa nie przekazała jeszcze tej wartości.", 11.5f
-            ).apply {
-                setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_muted))
-            })
-
-        // Asystent Doze: status + wyjaśnienie + przycisk. Bez nowych permissionów.
-        box.addView(label("Oszczędzanie baterii (Doze)", 13f).apply {
-            topPaddingFix(dpi(10))
-            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
-            setTypeface(null, Typeface.BOLD)
+        box.addView(TextView(this).apply {
+            text = "Android (Doze) oraz nakładki Samsung i Xiaomi potrafią usypiać aplikację po " +
+                "zgaszeniu ekranu i wstrzymywać Bluetooth — wtedy odczyty i alarmy nocne przestają " +
+                "napływać. Wyłączenie optymalizacji dla MGlikemii pozwala działać w tle. Na Xiaomi " +
+                "sprawdź też Autostart i blokadę w menedżerze zadań, na Samsungu opcję „Nigdy nie usypiaj”."
+            textSize = 12.5f
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_muted))
+            setPadding(0, dpi(6), 0, dpi(8))
         })
-        dozeStatusText = label("Stan optymalizacji: --", 12.5f).also(box::addView)
-        box.addView(
-            label(
-                "Android (Doze) oraz nakładki Samsung i Xiaomi potrafią usypiać aplikację " +
-                    "po zgaszeniu ekranu i wstrzymywać Bluetooth — wtedy odczyty i alarmy nocne " +
-                    "przestają napływać. Wyłączenie optymalizacji dla MGlikemii pozwala działać " +
-                    "w tle 24/7. Na Xiaomi sprawdź też Autostart i blokadę w menedżerze zadań, " +
-                    "na Samsungu opcję „Nigdy nie usypiaj”.", 12f
-            ).apply {
-                setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_muted))
-            })
-        val dozeBtn = Button(this).apply {
+        box.addView(TextView(this).apply {
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(this@PumpDashboardActivity, R.color.text_primary))
+            text = "Stan optymalizacji: --"
+        }.also { dozeStatusText = it })
+        box.addView(Button(this).apply {
             text = "Wyłącz optymalizację baterii"
             minHeight = dpi(48)
             setOnClickListener { requestIgnoreBatteryOptimizations() }
-        }
-        box.addView(dozeBtn)
+        })
 
-        parent.addView(box, parent.indexOfChild(hero) + 1)
+        content.addView(box)
         updateDozeStatus()
     }
 
-    private fun TextView.topPaddingFix(top: Int) {
-        setPadding(paddingLeft, top, paddingRight, paddingBottom)
-    }
-
     private fun renderStatusTiles(s: PumpUiState) {
-        // Kafelek sensora: faza + pozostały czas z formatSensorRemaining.
-        sensorTileText?.text = formatSensorStatusPl(this, s.sensorPhase, s.sensorRemainingMinutes, s.sensorUpdating)
-        refreshDataAgeTile(s.glucoseAt)
-        // Doprecyzowanie istniejących kafelków (hardkodowane PL, bez R.string):
-        // zbiornik w j. + próg, bateria w %.
+        sensorTileText?.text = statusLine(s)
+        sensorTileText?.setTextColor(
+            ContextCompat.getColor(this, if (statusLineIsAlert(s)) R.color.glucose_low else R.color.text_primary)
+        )
+        // Kafelki zbiornika i baterii: tylko wartość i krótki dopisek, bez akapitów.
         reservoirText.text = formatReservoirPl(s.reservoirUnits)
-        val progLine = "Próg niskiego: 30 j. · pojemność ok. 300 j." + reservoirLowWarningPl(s.reservoirUnits)
-        reservoirUnitsText.text =
-            if (s.reservoirUnits == null) "$progLine · brak danych (--)".trim() else progLine
+        reservoirUnitsText.text = "Próg 30 j." + reservoirLowWarningPl(s.reservoirUnits)
         batteryText.text = s.batteryPercent?.let { "$it%" } ?: "--"
         batterySubText.text =
             when {
                 s.batteryCharging == true -> "Ładowanie"
-                s.batteryPercent == null -> "Brak danych (--) · bateria AA pompy"
+                s.batteryPercent == null -> "Brak danych"
                 else -> "Bateria pompy · AA"
             }
         updateDozeStatus()
     }
 
-    private fun refreshDataAgeTile(glucoseAt: Instant?) {
-        val mins = dataAgeMinutesPl(glucoseAt)
-        val stale = isDataStalePl(mins)
-        dataAgeTileText?.text = "Wiek danych: ${formatDataAgePl(mins)}"
-        dataAgeTileText?.setTextColor(
-            ContextCompat.getColor(this, if (stale) R.color.glucose_low else R.color.text_primary)
-        )
+    /** Jedna linia: stan sensora i wiek ostatniego odczytu. */
+    private fun statusLine(s: PumpUiState): String {
+        val sensor =
+            when {
+                s.sensorUpdating && s.sensorPhase == SensorPhase.INITIALIZING ->
+                    "Inicjalizacja · ${formatSensorRemaining(this, s.sensorRemainingMinutes)}"
+
+                s.sensorUpdating -> "Aktualizacja"
+                else -> "OK"
+            }
+        val age = formatDataAgePl(dataAgeMinutesPl(s.glucoseAt))
+        return "Sensor: $sensor · Odczyt: $age"
     }
 
+    private fun statusLineIsAlert(s: PumpUiState): Boolean =
+        s.sensorUpdating || isDataStalePl(dataAgeMinutesPl(s.glucoseAt))
+
     private fun updateDozeStatus() {
-        val tv = dozeStatusText ?: return
         val pm = getSystemService(POWER_SERVICE) as? PowerManager
         val ignoring = pm?.isIgnoringBatteryOptimizations(packageName) ?: false
-        tv.text =
+        dozeWarnText?.visibility = if (ignoring) View.GONE else View.VISIBLE
+        dozeStatusText?.text =
             if (ignoring) "Stan optymalizacji: wyłączona — praca w tle OK"
-            else "Stan optymalizacji: włączona — włącz wyłączenie, inaczej Doze może wstrzymać odczyty"
-        tv.setTextColor(
+            else "Stan optymalizacji: włączona — Doze może wstrzymywać odczyty"
+        dozeStatusText?.setTextColor(
             ContextCompat.getColor(
                 this,
                 if (ignoring) R.color.glucose_in_range else R.color.glucose_high,

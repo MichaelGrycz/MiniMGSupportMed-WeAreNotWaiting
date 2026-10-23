@@ -34,6 +34,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.ParcelUuid
+import android.os.SystemClock
 import pl.mgsupport.mglycemia.core.ble.protocol.MedtronicProtocol
 import pl.mgsupport.mglycemia.core.ble.protocol.PduFramer
 import timber.log.Timber
@@ -102,6 +103,10 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     /** Static phone/OS facts are logged once per process; only the live half repeats. */
     @Volatile
     private var staticDiagnosticsLogged = false
+
+    /** Monotonic timestamp of the current GATT link-up; 0 when no link is up. */
+    @Volatile
+    private var linkUpElapsedRealtime = 0L
 
     override fun isSupported(): Boolean {
         val ad = adapter ?: return false
@@ -262,6 +267,12 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             .setIncludeTxPowerLevel(true)
             .build()
 
+        diag(
+            "advertise mode=$mode service=$serviceUuid " +
+                "company=0x${Integer.toHexString(MedtronicProtocol.COMPANY_ID)} " +
+                "mfr=${hex(MedtronicProtocol.manufacturerData(localName))}",
+        )
+
         val callback = object : AdvertiseCallback() {
             override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
                 Timber.d("Advertising started: %s", settingsInEffect)
@@ -319,6 +330,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         val next = pendingServices.poll()
         if (next == null) {
             // All services registered -- now it is safe to advertise (see start()).
+            logGattMap()
             pendingAdvertise?.let { (mode, name) ->
                 pendingAdvertise = null
                 startAdvertising(mode, name)
@@ -336,6 +348,31 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         } catch (e: SecurityException) {
             Timber.e(e, "addService failed for %s", next.uuid)
             failPendingAdvertise()
+        }
+    }
+
+    /**
+     * Dumps the exact GATT table we expose. A pump that connects and drops before subscribing is
+     * usually rejecting one of these properties/permissions, and without the dump the log cannot
+     * be compared against the reference implementation (JavaPumpConnector).
+     */
+    private fun logGattMap() {
+        val server = gattServer ?: return
+        for (service in server.services) {
+            diag("gatt service ${service.uuid} type=${service.type}")
+            for (characteristic in service.characteristics) {
+                diag(
+                    "gatt char ${characteristic.uuid} " +
+                        "props=0x${Integer.toHexString(characteristic.properties)} " +
+                        "perms=0x${Integer.toHexString(characteristic.permissions)}",
+                )
+                for (descriptor in characteristic.descriptors) {
+                    diag(
+                        "gatt desc ${descriptor.uuid} " +
+                            "perms=0x${Integer.toHexString(descriptor.permissions)}",
+                    )
+                }
+            }
         }
     }
 
@@ -409,6 +446,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     peer = device
+                    linkUpElapsedRealtime = SystemClock.elapsedRealtime()
                     val bond =
                         when (device.bondState) {
                             BluetoothDevice.BOND_BONDED -> "bonded"
@@ -425,7 +463,8 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     peer = null
                     sakeCccdValue = byteArrayOf(0x00, 0x00)
-                    listener?.onDiagnostic("GATT link down, status=${gattStatusLabel(status)}")
+                    diag("GATT link down, status=${gattStatusLabel(status)}")
+                    linkUpElapsedRealtime = 0L
                     listener?.onPumpDisconnected(status)
                 }
             }
@@ -458,7 +497,7 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 } else {
                     characteristic.value ?: ByteArray(0)
                 }
-            listener?.onDiagnostic("read ${short(characteristic.uuid)} len=${stored.size} offset=$offset")
+            diag("read ${short(characteristic.uuid)} len=${stored.size} offset=$offset")
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, stored)
         }
@@ -472,12 +511,8 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             offset: Int,
             value: ByteArray,
         ) {
-            listener?.onDiagnostic(
-                "write ${short(characteristic.uuid)} len=${value.size} offset=$offset value=${
-                    hex(
-                        value
-                    )
-                }"
+            diag(
+                "write ${short(characteristic.uuid)} len=${value.size} offset=$offset value=${hex(value)}",
             )
             // Complete the ATT request first. The SAKE driver posts the next notification, and some
             // stacks drop the link if a notification overtakes the write response during bonding.
@@ -511,8 +546,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             }
             @Suppress("DEPRECATION")
             descriptor.value = reply
-            listener?.onDiagnostic(
-                "descriptor read ${short(descriptor.uuid)} offset=$offset len=${reply.size} reply=${hex(reply)}",
+            diag(
+                "descriptor read ${short(descriptor.uuid)} on ${descriptor.characteristic?.uuid?.let(::short) ?: "?"} " +
+                    "offset=$offset len=${reply.size} reply=${hex(reply)}",
             )
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, reply)
@@ -527,8 +563,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             offset: Int,
             value: ByteArray,
         ) {
-            listener?.onDiagnostic(
-                "descriptor write ${short(descriptor.uuid)} len=${value.size} offset=$offset value=${hex(value)}",
+            diag(
+                "descriptor write ${short(descriptor.uuid)} on ${descriptor.characteristic?.uuid?.let(::short) ?: "?"} " +
+                    "len=${value.size} offset=$offset value=${hex(value)}",
             )
             @Suppress("DEPRECATION")
             descriptor.value = value
@@ -696,6 +733,18 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
      * Statusy GATT rozwinięte na słowa: w logu użytkownika `status=133` nic nie mówi, a
      * `status=133 (gatt-error)` od razu kieruje na właściwą ścieżkę diagnostyki.
      */
+    /**
+     * Diagnostic line with the time since link-up. Without it a log cannot tell an immediate
+     * protocol rejection (few ms) from the pump waiting for something and timing out (seconds).
+     */
+    private fun diag(line: String) {
+        val since = linkUpElapsedRealtime
+        val prefix =
+            if (since == 0L) ""
+            else "t=+${SystemClock.elapsedRealtime() - since}ms "
+        listener?.onDiagnostic(prefix + line)
+    }
+
     private fun gattStatusLabel(status: Int): String =
         when (status) {
             BluetoothGatt.GATT_SUCCESS -> "0 (success)"
