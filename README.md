@@ -36,7 +36,7 @@ Grafiki pokazują układ aplikacji na danych demonstracyjnych. Nie zawierają da
 
 ## Pobieranie
 
-https://mgsupport.pl/pobierz/minimgsupportmed
+https://mgsupport.pl/aplikacja/MGlikemia
 
 ## Budowanie
 

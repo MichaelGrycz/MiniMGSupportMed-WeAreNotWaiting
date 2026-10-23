@@ -1,177 +1,343 @@
 ---
-// MGlikemia / MGlycemia — oficjalna strona pobierania i opisu aplikacji
-const title = "MGlikemia — Niezależny podgląd glikemii MiniMed 780G / 770G / 680G";
-const description = "Bezpieczna aplikacja tylko do odczytu dla pomp Medtronic MiniMed. Rozwiązuje problem braku kompatybilności z nowymi telefonami, oferuje tryb rodziny, widżet i zaawansowane statystyki.";
+// MGlikemia / MGlycemia — oficjalna strona pobierania i opisu aplikacji.
+// Wersja jest podmieniana automatycznie przez tools/release.sh przy każdym wydaniu.
+const version = "1.0-beta48";
+const title = "MGlikemia — podgląd glikemii MiniMed 780G / 770G / 680G na każdym telefonie";
+const description =
+    "Niezależna, bezpieczna aplikacja tylko do odczytu dla pomp Medtronic MiniMed. Działa na nowych i starych telefonach z Androidem, oferuje tryb rodziny, widżet ekranu głównego i statystyki kliniczne (TIR, GMI, CV).";
 ---
+
+<!doctype html>
 <html lang="pl">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    <meta name="description" content="{description}" />
-    <meta name="robots" content="index, follow" />
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+        <link rel="canonical" href="https://mgsupport.pl/aplikacja/MGlikemia" />
 
-    <!-- OpenGraph / Social SEO -->
-    <meta property="og:title" content="{title}" />
-    <meta property="og:description" content="{description}" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://mgsupport.pl/aplikacja/MGlikemia" />
+        <!-- OpenGraph -->
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://mgsupport.pl/aplikacja/MGlikemia" />
+        <meta property="og:site_name" content="MGSupport" />
+        <meta property="og:locale" content="pl_PL" />
 
-    <!-- Google Schema.org Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "MobileApplication",
-      "name": "MGlikemia",
-      "operatingSystem": "ANDROID",
-      "applicationCategory": "MedicalApplication",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "PLN"
-      },
-      "description": "Niezależna aplikacja do podglądu glikemii z pomp Medtronic MiniMed 780G, 770G i 680G."
-    }
-    </script>
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
 
-    <style>
-        :root {
-            --bg-base: #0b0f17;
-            --bg-surface: #121926;
-            --border: #233044;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent: #06b6d4;
-            --accent-bright: #22d3ee;
-            --accent-bg: rgba(6, 182, 212, 0.1);
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg-base);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: var(--text-primary);
-        }
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 18px;
-        }
-        .card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 24px;
-        }
-        .btn {
-            display: inline-block;
-            background: var(--accent);
-            color: #0b0f17;
-            font-weight: bold;
-            text-decoration: none;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: background 0.2s;
-            margin-top: 10px;
-        }
-        .btn:hover {
-            background: var(--accent-bright);
-        }
-        .badge {
-            background: var(--accent-bg);
-            color: var(--accent-bright);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        ul {
-            padding-left: 20px;
-            color: var(--text-secondary);
-        }
-        li {
-            margin-bottom: 8px;
-        }
-        strong {
-            color: var(--text-primary);
-        }
-        .footer {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-top: 50px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <span class="badge">Open Source · Tylko do odczytu · GPL-3.0</span>
-            <h1>MGlikemia / MGlycemia</h1>
-            <p class="subtitle">Pełna niezależność i podgląd cukru z pomp MiniMed 780G, 770G i 680G na każdym telefonie.</p>
-        </header>
+        <!-- Schema.org -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "MobileApplication",
+                "name": "MGlikemia",
+                "alternateName": "MGlycemia",
+                "operatingSystem": "ANDROID",
+                "applicationCategory": "HealthApplication",
+                "applicationSubCategory": "Diabetes",
+                "isAccessibleForFree": true,
+                "downloadUrl": "https://mgsupport.pl/pobierz/minimgsupportmed.apk",
+                "softwareVersion": "1.0-beta48",
+                "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PLN" },
+                "description": "Niezależna aplikacja do odczytu glikemii z pomp Medtronic MiniMed 780G, 770G i 680G."
+            }
+        </script>
 
-        <div class="card" style="text-align: center;">
-            <h2>Pobierz najnowszą wersję</h2>
-            <p style="color: var(--text-secondary);">Wersja stabilna / beta gotowa do instalacji na Androidzie.</p>
-            <a href="app-debug.apk" class="btn" id="downloadBtn">Pobierz APK (Najnowsza wersja)</a>
-            <p style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);">Wymagania: Android 7.0+ · Bluetooth LE · Pompa MiniMed 700-serii</p>
-        </div>
+        <style>
+            :root {
+                --bg-base: #0b0f17;
+                --bg-surface: #121926;
+                --bg-elevated: #1a2333;
+                --border: #233044;
+                --text-primary: #f8fafc;
+                --text-secondary: #94a3b8;
+                --text-muted: #64748b;
+                --accent: #06b6d4;
+                --accent-bright: #22d3ee;
+                --accent-bg: rgba(6, 182, 212, 0.12);
+                --green: #10b981;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                background: var(--bg-base);
+                color: var(--text-primary);
+                line-height: 1.65;
+                -webkit-font-smoothing: antialiased;
+            }
+            .wrap {
+                max-width: 860px;
+                margin: 0 auto;
+                padding: 48px 20px 64px;
+            }
+            header {
+                text-align: center;
+                margin-bottom: 40px;
+            }
+            .badge {
+                display: inline-block;
+                background: var(--accent-bg);
+                color: var(--accent-bright);
+                padding: 5px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
+            h1 {
+                font-size: clamp(28px, 5vw, 40px);
+                line-height: 1.15;
+                margin: 16px 0 8px;
+            }
+            .lead {
+                color: var(--text-secondary);
+                font-size: 18px;
+                margin: 0 auto;
+                max-width: 640px;
+            }
+            .card {
+                background: var(--bg-surface);
+                border: 1px solid var(--border);
+                border-radius: 18px;
+                padding: 26px 28px;
+                margin-top: 20px;
+            }
+            .download {
+                text-align: center;
+                background: linear-gradient(180deg, #12212e, var(--bg-surface));
+            }
+            .download h2 {
+                margin-top: 0;
+            }
+            .btn {
+                display: inline-block;
+                background: var(--accent);
+                color: #04121a;
+                font-weight: 800;
+                text-decoration: none;
+                padding: 15px 32px;
+                border-radius: 12px;
+                font-size: 17px;
+                transition: background 0.15s ease;
+            }
+            .btn:hover {
+                background: var(--accent-bright);
+            }
+            .meta {
+                color: var(--text-muted);
+                font-size: 13px;
+                margin-top: 14px;
+            }
+            h2 {
+                font-size: 21px;
+                margin: 0 0 10px;
+            }
+            h3 {
+                font-size: 16px;
+                margin: 18px 0 4px;
+                color: var(--accent-bright);
+            }
+            p {
+                color: var(--text-secondary);
+                margin: 8px 0;
+            }
+            ul {
+                color: var(--text-secondary);
+                padding-left: 22px;
+                margin: 8px 0;
+            }
+            li {
+                margin: 6px 0;
+            }
+            strong {
+                color: var(--text-primary);
+            }
+            a {
+                color: var(--accent-bright);
+            }
+            .grid {
+                display: grid;
+                gap: 14px;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                margin-top: 14px;
+            }
+            .tile {
+                background: var(--bg-elevated);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 16px;
+            }
+            .tile h3 {
+                margin-top: 0;
+            }
+            .tile p {
+                margin: 4px 0 0;
+                font-size: 14px;
+            }
+            .safety {
+                border-left: 3px solid var(--green);
+            }
+            .footer {
+                text-align: center;
+                color: var(--text-muted);
+                font-size: 13px;
+                margin-top: 44px;
+            }
+            .footer a {
+                color: var(--text-secondary);
+            }
+            code {
+                background: #0f1722;
+                padding: 2px 6px;
+                border-radius: 6px;
+                color: var(--accent-bright);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <header>
+                <span class="badge">Open Source · Tylko do odczytu · GPL-3.0</span>
+                <h1>MGlikemia / MGlycemia</h1>
+                <p class="lead">
+                    Niezależny podgląd glikemii z pomp Medtronic MiniMed 780G, 770G i 680G — na telefonie, który masz w
+                    kieszeni. Bez walki z oficjalną „białą listą” urządzeń.
+                </p>
+            </header>
 
-        <div class="card">
-            <h2>Dlaczego powstała ta aplikacja?</h2>
-            <p>Wielu użytkowników pomp Medtronic MiniMed 780G staje przed absurdalnym problemem: oficjalna aplikacja wymaga telefonu z oficjalnej, bardzo wąskiej „białej listy”. Wystarczy, że kupisz nowszy model telefonu lub producent zrobi aktualizację systemu, a podgląd glikemii znika na wiele miesięcy. Ludzie noszą ze sobą drugie, stare aparaty tylko dla odczytu cukru.</p>
-            <p><strong>MGlikemia rozwiązuje ten problem całkowicie.</strong> Działa na każdym nowoczesnym i starszym telefonie z systemem Android i Bluetooth LE.</p>
-        </div>
+            <section class="card download">
+                <h2>Pobierz najnowszą wersję</h2>
+                <p>Instalacja na Androidzie 7.0 lub nowszym. Plik APK instalujesz bezpośrednio na telefonie.</p>
+                <p style="margin-top:18px">
+                    <a class="btn" href="/pobierz/minimgsupportmed.apk" rel="nofollow">
+                        Pobierz APK · wersja {version}
+                    </a>
+                </p>
+                <p class="meta">Wymagania: Android 7.0+ · Bluetooth LE · pompa MiniMed 700-serii · 100% odczyt</p>
+            </section>
 
-        <div class="card">
-            <h2>Kluczowe funkcje</h2>
-            <ul>
-                <li><strong>100% Bezpieczeństwa (Tylko do odczytu):</strong> Aplikacja nie wysyła do pompy żadnych poleceń, nie zmienia bazy i nie podaje insuliny. Jest całkowicie bezpiecznym peryferyjnym odbiornikiem danych.</li>
-                <li><strong>Natywny Tryb Rodziny / Opiekuna:</strong> Pozwala udostępniać odczyty na żywo na telefon partnera, żony lub rodzica w pobliżu bez rozłączania pompy.</li>
-                <li><strong>Widget na ekran główny:</strong> Szybki podgląd aktualnej glikemii, trendu i IOB bezpośrednio na pulpicie telefonu.</li>
-                <li><strong>Zaawansowane statystyki kliniczne:</strong> TIR (Time in Range), wskaźnik GMI (szacowana HbA1c), współczynnik zmienności (CV) oraz wykresy z obsługą zoomu i historycznymi zdarzeniami (bolusy, baza).</li>
-                <li><strong>Bezpieczna kopia zapasowa CSV:</strong> Pełny eksport i import danych na telefonie.</li>
-            </ul>
-        </div>
+            <section class="card">
+                <h2>Po co powstała ta aplikacja?</h2>
+                <p>
+                    Oficjalna aplikacja Medtronic działa tylko na wąskiej liście telefonów. Wystarczy nowszy model albo
+                    aktualizacja Androida, a podgląd cukru potrafi zniknąć na wiele miesięcy — ludzie noszą drugi, stary
+                    telefon wyłącznie po to, by widzieć glikemię.
+                </p>
+                <p>
+                    <strong>MGlikemia rozwiązuje ten problem.</strong> Korzysta z Bluetooth LE w standardzie i działa na
+                    nowoczesnych oraz starszych urządzeniach z Androidem. Telefon jest peryferium, pompa jest centralem
+                    — aplikacja tylko odbiera dane.
+                </p>
+            </section>
 
-        <div class="card">
-            <h2>Historia zmian i wersje</h2>
-            <div id="changelogContainer">
-                <p>Sprawdź <a href="https://github.com/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting/blob/public/main/CHANGELOG.md" style="color: var(--accent);">pełny dziennik zmian w GitHubie</a>.</p>
+            <section class="card">
+                <h2>Najważniejsze funkcje</h2>
+                <div class="grid">
+                    <div class="tile safety">
+                        <h3>100% tylko do odczytu</h3>
+                        <p>
+                            Żadnych bolusów, zmian bazy ani poleceń terapeutycznych. Aplikacja czyta dane i zapisuje je
+                            lokalnie.
+                        </p>
+                    </div>
+                    <div class="tile">
+                        <h3>Tryb rodziny i opiekuna</h3>
+                        <p>
+                            Udostępniaj odczyty bliskim na ich telefonach bez rozłączania pompy — dla mamy, taty, żony,
+                            męża, partnera.
+                        </p>
+                    </div>
+                    <div class="tile">
+                        <h3>Widget ekranu głównego</h3>
+                        <p>Aktualny cukier, trend i IOB na pulpicie, bez otwierania aplikacji.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>Statystyki kliniczne</h3>
+                        <p>TIR, GMI (szacowane HbA1c), współczynnik zmienności (CV) oraz wykresy od godziny do roku.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>Alerty pod Twoje potrzeby</h3>
+                        <p>
+                            Konfigurowalne progi hipo/hiperglikemii, niski zbiornik, koniec sensora i brak połączenia.
+                        </p>
+                    </div>
+                    <div class="tile">
+                        <h3>Kopia zapasowa CSV</h3>
+                        <p>
+                            Eksport i import danych na telefonie — bez chmury, bez konta, bez wysyłania danych
+                            medycznych.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Jak to działa?</h2>
+                <ul>
+                    <li>
+                        <strong>Parowanie:</strong> w pompie wybierz dodanie nowego urządzenia mobilnego, a w aplikacji
+                        uruchom parowanie. Telefon rozgłasza się jako urządzenie peryferyjne BLE.
+                    </li>
+                    <li>
+                        <strong>Odczyt:</strong> po uwierzytelnieniu pompa przesyła glikemię, trend, IOB, bazę, baterię
+                        i poziom zbiornika.
+                    </li>
+                    <li>
+                        <strong>Tryb opiekuna:</strong> drugi telefon z tą samą aplikacją może odbierać odczyty
+                        lokalnie, bez podłączania się do pompy.
+                    </li>
+                    <li>
+                        <strong>Prywatność:</strong> dane zostają na telefonie. Synchronizacja w chmurze jest opcjonalna
+                        i wyłączona domyślnie.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="card">
+                <h2>Bezpieczeństwo i odpowiedzialność</h2>
+                <p>
+                    Aplikacja jest narzędziem pomocniczym i <strong>nie jest wyrobem medycznym</strong>. Nie zastępuje
+                    oficjalnych zaleceń lekarza ani terapii. Decyzje o leczeniu podejmuj zawsze na podstawie oficjalnych
+                    źródeł i konsultacji ze specjalistą.
+                </p>
+            </section>
+
+            <section class="card">
+                <h2>Historia zmian i źródła</h2>
+                <p>
+                    Pełny dziennik zmian:
+                    <a href="https://github.com/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting/blob/public/main/CHANGELOG.md">
+                        CHANGELOG na GitHubie
+                    </a>
+                    .
+                </p>
+                <p>
+                    Kod źródłowy i wydania:
+                    <a href="https://github.com/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting/releases">
+                        GitHub Releases
+                    </a>
+                    .
+                </p>
+                <p>
+                    Starszy, poprzedni adres strony <code>/pobierz/minimgsupportmed</code> przekierowuje automatycznie
+                    tutaj.
+                </p>
+            </section>
+
+            <div class="footer">
+                <p>Projekt nie jest powiązany z firmą Medtronic. MiniMed jest znakiem towarowym Medtronic.</p>
+                <p>&copy; MGSupport Michał Grycz · licencja GNU GPL-3.0</p>
             </div>
         </div>
-
-        <div class="footer">
-            <p>Projekt nie jest powiązany z firmą Medtronic. MiniMed jest zastrzeżonym znakiem towarowym.</p>
-            <p>&copy; MGSupport Michał Grycz</p>
-        </div>
-    </div>
-
-    <script>
-        // Licznik pobrań (niewidoczny dla użytkowników, zapisywany do statystyk VPS)
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            try {
-                fetch('/api/track-download', { method: 'POST' }).catch(() => {});
-            } catch(e) {}
-        });
-    </script>
-</body>
+    </body>
 </html>

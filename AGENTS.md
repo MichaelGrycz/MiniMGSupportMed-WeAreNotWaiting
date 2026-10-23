@@ -11,7 +11,7 @@ zmieniać bazy ani wysyłać do pompy poleceń terapeutycznych.
 - `applicationId`: `pl.mgsupport.mglycemia`
 - gałąź robocza: `public/main`
 - repozytorium: https://github.com/MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting
-- strona: https://mgsupport.pl/pobierz/minimgsupportmed
+- strona: https://mgsupport.pl/aplikacja/MGlikemia (stary adres /pobierz/minimgsupportmed przekierowuje 301)
 
 ## Zasady nadrzędne
 

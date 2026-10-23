@@ -11,9 +11,9 @@ tools/release.sh 1.0-beta14 "Poprawka parowania na Samsungach." "Szybszy start a
 1. podbija `versionCode` o 1 i ustawia `versionName`
 2. buduje APK przez JBR z Android Studio
 3. kopiuje plik jako `MGLycemia-<wersja>.apk` i wysyła go na serwer
-4. aktualizuje stronę pobierania: numer wersji, nazwę pliku i nowy wpis w historii zmian
-5. przebudowuje Astro, sprawdza konfigurację nginx i przeładowuje usługę
-6. usuwa z serwera poprzedni APK
+4. aktualizuje stronę `mgsupport.pl/aplikacja/MGlikemia`: numer wersji i alias pliku APK
+5. przebudowuje Astro, restartuje usługę `mgsupport-astro` w pm2, sprawdza konfigurację nginx i przeładowuje go
+6. zostawia poprzednie APK na serwerze (historia pobrań)
 7. robi commit, tag `v<wersja>`, push gałęzi i taga
 8. tworzy wydanie na GitHubie i wgrywa do niego APK
 
@@ -45,14 +45,24 @@ export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
 
 # publikacja APK i strony
 scp MGLycemia-<wersja>.apk VPS-MGSUPPORT:/var/www/mg-support-downloads/pobierz/
-scp .page.astro VPS-MGSUPPORT:/var/www/mgsupport-astro/src/pages/pobierz/minimgsupportmed.astro
-ssh VPS-MGSUPPORT "cd /var/www/mgsupport-astro && npm run build && sudo nginx -t && sudo systemctl reload nginx"
+scp tools/site/MGlikemia.astro VPS-MGSUPPORT:/var/www/mgsupport-astro/src/pages/aplikacja/MGlikemia.astro
+ssh VPS-MGSUPPORT "cd /var/www/mgsupport-astro && npm run build && pm2 restart mgsupport-astro && sudo nginx -t && sudo systemctl reload nginx"
 
 # git
 git tag v<wersja> && git push origin public/main:main --tags
 
 # wydanie
 python tools/github_release.py <owner/repo> v<wersja> <wersja> "<notatki>" MGLycemia-<wersja>.apk
+```
+
+## Licznik pobrań
+
+Pobrania APK trafiają do dedykowanego logu `/var/log/nginx/mglycemia-downloads.log`.
+Prywatne statystyki (widoczne tylko dla administratora, nie na stronie) odświeża cron co 15 min:
+
+```bash
+ssh VPS-MGSUPPORT "sudo /usr/local/bin/mglycemia-download-stats --print"
+ssh VPS-MGSUPPORT "sudo cat /var/lib/mglycemia/download-stats.json"
 ```
 
 ## Wersjonowanie

@@ -58,10 +58,12 @@ echo "==> upload apk"
 scp -q -o BatchMode=yes -o ConnectTimeout=15 "$ASSET" "$SSH_HOST:$REMOTE_APK_DIR/"
 
 echo "==> update download page"
+ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_HOST" "mkdir -p \$(dirname $REMOTE_PAGE)"
 scp -q -o BatchMode=yes -o ConnectTimeout=15 tools/site/MGlikemia.astro "$SSH_HOST:$REMOTE_PAGE"
+# Podmien wersje w tresci strony (przycisk + dane strukturalne).
 ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_HOST" "
-  mkdir -p /var/www/mgsupport-astro/src/pages/pobierz
-  echo 'import { useEffect } from \"react\"; export default function() { typeof window !== \"undefined\" && window.location.replace(\"/aplikacja/MGlikemia\"); return null; }' > /var/www/mgsupport-astro/src/pages/pobierz/minimgsupportmed.astro
+  sed -i \"s/const version = '[^']*'/const version = '$VERSION'/\" $REMOTE_PAGE
+  sed -i \"s/\"softwareVersion\": \"[^\"]*\"/\"softwareVersion\": \"$VERSION\"/\" $REMOTE_PAGE
 "
 
 echo "==> rebuild site"
@@ -71,9 +73,9 @@ ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_HOST" "
   cd $REMOTE_SITE
   export PATH=/home/debian/.nvm/versions/node/v22.23.2/bin:\$PATH
   npm run build >/dev/null 2>&1
+  pm2 restart mgsupport-astro >/dev/null 2>&1 || true
   sudo /usr/sbin/nginx -t >/dev/null
   sudo systemctl reload nginx
-  ls $REMOTE_APK_DIR/MGLycemia-*.apk | grep -v '$ASSET' | xargs -r rm -f
 "
 
 echo "==> git"
