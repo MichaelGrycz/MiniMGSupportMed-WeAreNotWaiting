@@ -36,41 +36,17 @@ object HistoryTimeline {
     private data class Timed(val parsed: MedtronicHistoryRecord, val timeMs: Long?, val segment: Int)
     private data class Program(val timeMs: Long, val segment: Int, val detail: MedtronicHistoryEvent.BolusProgrammedDetail?)
 
+    /**
+     * Absolute pump time for every record that can be anchored to a reference-time record.
+     * Records without a usable anchor are absent, so callers never substitute the download time.
+     */
+    fun resolveTimes(records: List<StoredHistoryRecord>): Map<Int, Long?> =
+        records.groupBy { it.sourceId }
+            .flatMap { (_, source) -> buildTimed(source.map { it.record }) }
+            .associate { it.parsed.sequenceNumber to it.timeMs }
+
     private fun projectSource(sourceId: String, records: List<HistoryLogRecord>): List<ChartInsulinEvent> {
-        var reference: Instant? = null
-        var segment = 0
-        var previousSequence: Long? = null
-        val timed = ArrayList<Timed>()
-        for (raw in records.distinctBy { it.sequenceNumber }.sortedBy { unsignedSequence(it.sequenceNumber) }) {
-            val sequence = unsignedSequence(raw.sequenceNumber)
-            if (previousSequence != null && sequence != previousSequence + 1) {
-                // A missing record might be a time reference. Backfill will reproject once it arrives.
-                reference = null
-                segment++
-            }
-            previousSequence = sequence
-            val bytes = try { Base64.getDecoder().decode(raw.rawBytesB64) } catch (_: IllegalArgumentException) { null }
-            val parsed = bytes?.let { MedtronicHistoryParser.parseRecordBody(it) }
-            if (parsed == null || parsed.sequenceNumber != raw.sequenceNumber ||
-                parsed.relativeOffsetSeconds.toLong() != raw.pumpTimeSeconds ||
-                (bytes[0].toInt() and 0xff or ((bytes[1].toInt() and 0xff) shl 8)) != raw.eventTypeId
-            ) {
-                // A corrupt/mismatched record could itself have been a clock reset.
-                reference = null
-                segment++
-                continue
-            }
-            if (parsed.eventType == MedtronicHistoryEventType.NGP_REFERENCE_TIME ||
-                parsed.eventType == MedtronicHistoryEventType.REFERENCE_TIME
-            ) {
-                // Unlike the legacy extractor, a bad reference MUST invalidate the previous anchor.
-                reference = (parsed.event as? MedtronicHistoryEvent.ReferenceTime)?.time
-                    ?.takeIf { unambiguousReference(bytes, it) }
-                if (reference == null) segment++
-                continue
-            }
-            timed += Timed(parsed, reference?.plusSeconds(parsed.relativeOffsetSeconds.toLong())?.toEpochMilli(), segment)
-        }
+        val timed = buildTimed(records)
         val bySequence = timed.associateBy { unsignedSequence(it.parsed.sequenceNumber) }
         val programs = HashMap<Int, Program>()
         val out = ArrayList<ChartInsulinEvent>()
@@ -109,6 +85,45 @@ object HistoryTimeline {
             }
         }
         return out
+    }
+
+    /** Resolve a batch of records to absolute times, invalidating anchors across gaps/corruption. */
+    private fun buildTimed(records: List<HistoryLogRecord>): List<Timed> {
+        var reference: Instant? = null
+        var segment = 0
+        var previousSequence: Long? = null
+        val timed = ArrayList<Timed>()
+        for (raw in records.distinctBy { it.sequenceNumber }.sortedBy { unsignedSequence(it.sequenceNumber) }) {
+            val sequence = unsignedSequence(raw.sequenceNumber)
+            if (previousSequence != null && sequence != previousSequence + 1) {
+                // A missing record might be a time reference. Backfill will reproject once it arrives.
+                reference = null
+                segment++
+            }
+            previousSequence = sequence
+            val bytes = try { Base64.getDecoder().decode(raw.rawBytesB64) } catch (_: IllegalArgumentException) { null }
+            val parsed = bytes?.let { MedtronicHistoryParser.parseRecordBody(it) }
+            if (parsed == null || parsed.sequenceNumber != raw.sequenceNumber ||
+                parsed.relativeOffsetSeconds.toLong() != raw.pumpTimeSeconds ||
+                (bytes[0].toInt() and 0xff or ((bytes[1].toInt() and 0xff) shl 8)) != raw.eventTypeId
+            ) {
+                // A corrupt/mismatched record could itself have been a clock reset.
+                reference = null
+                segment++
+                continue
+            }
+            if (parsed.eventType == MedtronicHistoryEventType.NGP_REFERENCE_TIME ||
+                parsed.eventType == MedtronicHistoryEventType.REFERENCE_TIME
+            ) {
+                // Unlike the legacy extractor, a bad reference MUST invalidate the previous anchor.
+                reference = (parsed.event as? MedtronicHistoryEvent.ReferenceTime)?.time
+                    ?.takeIf { unambiguousReference(bytes, it) }
+                if (reference == null) segment++
+                continue
+            }
+            timed += Timed(parsed, reference?.plusSeconds(parsed.relativeOffsetSeconds.toLong())?.toEpochMilli(), segment)
+        }
+        return timed
     }
 
     private fun classify(

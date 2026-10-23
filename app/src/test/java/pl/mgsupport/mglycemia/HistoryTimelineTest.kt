@@ -102,6 +102,15 @@ class HistoryTimelineTest {
         }
     }
 
+    @Test fun resolveTimesReturnsAbsolutePumpTimeForHistoryRows() {
+        val records = listOf(ref(1), amounts(2, true), raw(3, 0x1234))
+        val times = HistoryTimeline.resolveTimes(records.map { stored(it) })
+        assertEquals(epoch + 10_000, times[2])
+        assertEquals(epoch + 10_000, times[3])
+        assertNull(times[1])
+        assertNull(HistoryTimeline.resolveTimes(listOf(stored(amounts(2, true))))[2])
+    }
+
     private fun project(records: List<HistoryLogRecord>) = HistoryTimeline.project(records.map { stored(it) }, 0, Long.MAX_VALUE)
     private fun stored(record: HistoryLogRecord, source: String = "pump") = StoredHistoryRecord(source, record)
     private fun ref(seq: Int, month: Int = 1, day: Int = 10, hour: Int = 12, minute: Int = 0) = raw(seq, 0xf00e,

@@ -3,6 +3,15 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta21
+
+- Historia zdarzeń pokazuje dokładną datę i godzinę z czasu pompy (`RRRR-MM-DD GG:MM:SS`)
+  zamiast względnego `t+… s`.
+- Przy pierwszym połączeniu aplikacja uzupełnia całą dostępną historię z pamięci pompy,
+  więc poprawne daty dotyczą także wcześniejszych zdarzeń, a wykres otrzymuje rzeczywiste bolusy.
+- Surowe rekordy historii są zapisywane lokalnie, co pozwala przeliczyć czasy po dostarczeniu
+  rekordu referencyjnego.
+
 ## 1.0-beta20
 
 - Aktualizacje: gdy GitHub API jest zablokowane limitem zapytań (HTTP 403), aplikacja

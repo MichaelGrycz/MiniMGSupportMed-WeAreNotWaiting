@@ -149,8 +149,13 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
         arrayOf(sourceId),
     ).use { if (it.moveToFirst()) it.getInt(0) else null }
 
-    fun queryInsulinEvents(fromMs: Long, toMs: Long): List<ChartInsulinEvent> {
-        // Include anchors and P1/P2 outside the requested window and across earlier download batches.
+    fun queryInsulinEvents(fromMs: Long, toMs: Long): List<ChartInsulinEvent> =
+        HistoryTimeline.project(allHistoryRecords(), fromMs, toMs)
+
+    /** Absolute pump time per sequence number; unresolved records are absent from the map. */
+    fun historyTimestamps(): Map<Int, Long?> = HistoryTimeline.resolveTimes(allHistoryRecords())
+
+    private fun allHistoryRecords(): List<StoredHistoryRecord> {
         val records = ArrayList<StoredHistoryRecord>()
         readableDatabase.rawQuery(
             "SELECT source_id, seq, type_id, pump_time_seconds, raw_bytes_b64 FROM history_records", null,
@@ -159,7 +164,7 @@ class ReadingStore(context: Context, databaseName: String = DB_NAME) :
                 c.getString(0), HistoryLogRecord(c.getInt(1), c.getString(4), c.getInt(2), c.getLong(3)),
             )
         }
-        return HistoryTimeline.project(records, fromMs, toMs)
+        return records
     }
 
     fun insertAppAlert(timestampMs: Long, glucoseMgDl: Int, text: String) {

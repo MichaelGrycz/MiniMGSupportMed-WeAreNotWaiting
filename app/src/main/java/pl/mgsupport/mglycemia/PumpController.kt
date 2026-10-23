@@ -210,6 +210,9 @@ class PumpController(context: Context) {
             }
         }
         _state.update { it.copy(deviceCompat = CompatChecker.checkDevice(appContext)) }
+        // Seed from persisted raw history so a restart does not re-download the whole pump log.
+        // An empty table (first run after this update) deliberately triggers a full backfill.
+        historyCursor = store.latestHistorySequence(HISTORY_SOURCE_ID)
         loadPersistedEventsAndCounts()
         // Show persisted history immediately, before the first live reading arrives.
         refreshChart()
@@ -572,32 +575,44 @@ class PumpController(context: Context) {
 
     private suspend fun syncHistory() {
         if (manager.connectionState.value != ConnectionState.CONNECTED) return
-        val cursor = historyCursor
-        if (cursor == null) {
-            gateway.getHistoryCursor().onSuccess { c ->
-                historyCursor = c
-                appendLog(appContext.getString(R.string.log_history_cursor, c))
-            }
-            return
-        }
+        // 0 means "from the oldest retained record". This backfills raw history once, which both
+        // repairs timestamps and gives the chart real bolus data; afterwards the cursor is incremental.
+        val cursor = historyCursor ?: 0
         gateway.getHistoryLogs(cursor).onSuccess { records ->
-            if (records.isEmpty()) return@onSuccess
-            historyCursor = records.maxOf { it.sequenceNumber }
-            val nowMs = System.currentTimeMillis()
-            store.insertEvents(
-                records.map {
-                    EventRow(it.sequenceNumber, nowMs, it.eventTypeId, historyPresenter.describe(it))
-                }
-            )
-            val savedLines = store.recentEvents(MAX_HISTORY_LINES).map { it.text }.filter { it.isNotBlank() }
-            val eCount = store.countEvents()
-            _state.update {
-                it.copy(
-                    historyLines = savedLines.ifEmpty { historyPresenter.describeAll(records, MAX_HISTORY_LINES) },
-                    eventsCount = eCount,
-                )
+            if (records.isEmpty()) {
+                if (historyCursor == null) historyCursor = 0
+                return@onSuccess
             }
-            appendLog(appContext.getString(R.string.log_history_sync, records.size, historyCursor))
+            try {
+                // Persist raw records first: the chart and timestamp resolver read from this table.
+                store.insertHistoryRecords(HISTORY_SOURCE_ID, records)
+                val times = store.historyTimestamps()
+                val nowMs = System.currentTimeMillis()
+                store.insertEvents(
+                    records.map { record ->
+                        val timestamp = times[record.sequenceNumber]
+                        EventRow(
+                            record.sequenceNumber,
+                            timestamp ?: nowMs,
+                            record.eventTypeId,
+                            // Never print the download time: unresolved records keep their t+offset.
+                            historyPresenter.describe(record, timestamp),
+                        )
+                    }
+                )
+                historyCursor = records.maxOf { it.sequenceNumber.toLong() and 0xffffffffL }.toInt()
+                val savedLines = store.recentEvents(MAX_HISTORY_LINES).map { it.text }.filter { it.isNotBlank() }
+                val eCount = store.countEvents()
+                _state.update {
+                    it.copy(
+                        historyLines = savedLines,
+                        eventsCount = eCount,
+                    )
+                }
+                appendLog(appContext.getString(R.string.log_history_sync, records.size, historyCursor))
+            } catch (e: Exception) {
+                noteReadFailure("Historia", e)
+            }
         }.onFailure { e -> noteReadFailure("Historia", e) }
     }
 
@@ -711,6 +726,9 @@ class PumpController(context: Context) {
         const val RETRY_INTERVAL_MS = 30_000L
         const val HISTORY_INTERVAL_MS = 60_000L
         const val MAX_HISTORY_LINES = 80
+
+        /** Stable app-side identity for the pump's raw history log. */
+        const val HISTORY_SOURCE_ID = "medtronic"
         const val PREFS = "ui_settings"
     }
 }

@@ -40,11 +40,18 @@ private val LOCAL_TIME_FORMATTER: DateTimeFormatter =
 class HistoryPresenter {
 
     /** One line for [record]: time, sequence number, event type id, Polish label, optional detail. */
-    fun describe(record: HistoryLogRecord): String =
+    fun describe(record: HistoryLogRecord): String = describe(record, timestampMs = null)
+
+    /**
+     * One line for [record] using the absolute pump time resolved from the log's reference record.
+     * When [timestampMs] is null the relative offset is shown instead; the download time is never
+     * substituted.
+     */
+    fun describe(record: HistoryLogRecord, timestampMs: Long?): String =
         try {
-            buildLine(record)
+            buildLine(record, timestampMs)
         } catch (e: Exception) {
-            fallbackLine(record)
+            fallbackLine(record, timestampMs)
         }
 
     /** Lines for the newest [max] [records] (sequence number descending). Negative [max] yields none. */
@@ -54,13 +61,13 @@ class HistoryPresenter {
             .take(max.coerceAtLeast(0))
             .map { describe(it) }
 
-    private fun buildLine(record: HistoryLogRecord): String {
+    private fun buildLine(record: HistoryLogRecord, timestampMs: Long?): String {
         val typeId = record.eventTypeId and 0xFFFF
         val parsed = parseOrNull(record)
         val type = parsed?.eventType ?: MedtronicHistoryEventType.from(typeId)
         val detail = parsed?.let { eventDetail(it.event) }.orEmpty()
         return buildString {
-            append(timeLabel(record.pumpTimeSeconds))
+            append(timeLabel(record, timestampMs))
             append(" | #")
             append(record.sequenceNumber)
             append(" | ")
@@ -75,8 +82,8 @@ class HistoryPresenter {
     }
 
     /** Last-resort line; uses only formatting helpers that cannot throw on any input. */
-    private fun fallbackLine(record: HistoryLogRecord): String =
-        timeLabel(record.pumpTimeSeconds) +
+    private fun fallbackLine(record: HistoryLogRecord, timestampMs: Long?): String =
+        timeLabel(record, timestampMs) +
             " | #" + record.sequenceNumber +
             " | " + hexId(record.eventTypeId) + " " + UNKNOWN_TYPE_LABEL
 
@@ -89,6 +96,18 @@ class HistoryPresenter {
         }
 
     // -- Time ---------------------------------------------------------------
+
+    private fun timeLabel(record: HistoryLogRecord, timestampMs: Long?): String {
+        if (timestampMs != null && timestampMs > 0L) {
+            try {
+                val zoned = Instant.ofEpochMilli(timestampMs).atZone(ZoneId.systemDefault())
+                return LOCAL_TIME_FORMATTER.format(zoned)
+            } catch (e: Exception) {
+                // Fall through to the raw offset if the resolved instant is out of range.
+            }
+        }
+        return timeLabel(record.pumpTimeSeconds)
+    }
 
     private fun timeLabel(pumpTimeSeconds: Long): String {
         if (pumpTimeSeconds in MIN_SANE_EPOCH_SECONDS..MAX_SANE_EPOCH_SECONDS) {
