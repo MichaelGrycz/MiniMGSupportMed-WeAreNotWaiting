@@ -38,20 +38,36 @@ PL_MONTHS = {
 with io.open(PATH, encoding="utf-8") as handle:
     src = handle.read()
 
-# 1. Version in the page copy only. The negative lookbehind keeps the numbers
-#    inside the changelog entries untouched.
-src = re.sub(r"(?<!version: ')1\.0-beta\d+", VERSION, src)
-
-# 2. APK file name follows the version.
-src = re.sub(r"MGLycemia-[0-9][^'\"]*\.apk", "MGLycemia-%s.apk" % VERSION, src)
-src = re.sub(r"MGSupportCGM-[0-9][^'\"]*\.apk", "MGLycemia-%s.apk" % VERSION, src)
-
-# 3. Changelog entry on top.
 marker = "const releaseNotes = [\n"
 if marker not in src:
     sys.exit("releaseNotes array not found in %s" % PATH)
 
-first_entry = re.search(r"releaseNotes = \[\s*\{\s*version: '([^']+)'", src)
+# Only the page copy gets the new number: the header, the prose outside the changelog
+# and the template body. Rewriting the whole file also changed version numbers
+# quoted in older entries, which silently falsified the history.
+head, _, rest = src.partition(marker)
+
+# The releaseNotes array ends at the first line that closes it at column 0.
+try:
+    notes_end = rest.index("\n];\n") + len("\n];\n")
+except ValueError:
+    sys.exit("releaseNotes array is not closed in %s" % PATH)
+notes, tail = rest[:notes_end], rest[notes_end:]
+
+
+def rewrite_copy(text):
+    text = re.sub(r"1\.0-beta\d+", VERSION, text)
+    text = re.sub(r"MGLycemia-[0-9][^'\"]*\.apk", "MGLycemia-%s.apk" % VERSION, text)
+    return re.sub(r"MGSupportCGM-[0-9][^'\"]*\.apk", "MGLycemia-%s.apk" % VERSION, text)
+
+
+head = rewrite_copy(head)
+tail = rewrite_copy(tail)
+
+src = head + marker + notes + tail
+
+# 3. Changelog entry on top.
+first_entry = re.search(r"^\s*\{\s*version: '([^']+)'", notes, re.MULTILINE)
 if first_entry and first_entry.group(1) == VERSION:
     with io.open(PATH, "w", encoding="utf-8") as handle:
         handle.write(src)

@@ -127,6 +127,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         registerAdapterReceiver()
         emitDiagnostics(listener)
         listener.onDiagnostic("adapter name=${adapter?.name ?: "?"}, advertising as $localName")
+        // A pump left over in the phone's bond table makes the pump start SMP with keys it no longer
+        // has, and the link dies right after the CCCD read. Log the table so a report proves it.
+        logBondedDevices("start")
         if (gattServer == null) {
             // Defer advertising until the SAKE + Device Info services are registered (service adds are
             // async via onServiceAdded): otherwise a fast pump could connect and discover an empty
@@ -461,23 +464,24 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 BluetoothProfile.STATE_CONNECTED -> {
                     peer = device
                     linkUpElapsedRealtime = SystemClock.elapsedRealtime()
-                    val bond =
-                        when (device.bondState) {
-                            BluetoothDevice.BOND_BONDED -> "bonded"
-                            BluetoothDevice.BOND_BONDING -> "bonding"
-                            else -> "none"
-                        }
                     // A fresh link starts with no subscription; never reuse a stale CCCD value from a
                     // previous pump session (it would tell the pump notifications are already enabled).
                     sakeCccdValue = byteArrayOf(0x00, 0x00)
-                    listener?.onDiagnostic("GATT link up, status=${gattStatusLabel(status)}, bond=$bond")
+                    listener?.onDiagnostic(
+                        "GATT link up, status=${gattStatusLabel(status)}, bond=${bondLabel(device.bondState)}, " +
+                            "addrHash=${addressHash(device.address)}, type=${deviceTypeLabel(device.type)}",
+                    )
+                    logBondedDevices("link-up")
                     listener?.onPumpConnected(device.address)
                 }
 
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     peer = null
                     sakeCccdValue = byteArrayOf(0x00, 0x00)
-                    diag("GATT link down, status=${gattStatusLabel(status)}")
+                    diag(
+                        "GATT link down, status=${gattStatusLabel(status)}, " +
+                            "bond=${bondLabel(device.bondState)}, addrHash=${addressHash(device.address)}",
+                    )
                     linkUpElapsedRealtime = 0L
                     listener?.onPumpDisconnected(status)
                 }
@@ -511,7 +515,10 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 } else {
                     characteristic.value ?: ByteArray(0)
                 }
-            diag("read ${short(characteristic.uuid)} len=${stored.size} offset=$offset")
+            diag(
+                "read ${short(characteristic.uuid)} len=${stored.size} offset=$offset " +
+                    "bond=${bondLabel(device.bondState)} addrHash=${addressHash(device.address)}",
+            )
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, stored)
         }
@@ -526,7 +533,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             value: ByteArray,
         ) {
             diag(
-                "write ${short(characteristic.uuid)} len=${value.size} offset=$offset value=${hex(value)}",
+                "write ${short(characteristic.uuid)} len=${value.size} offset=$offset " +
+                    "respNeeded=$responseNeeded bond=${bondLabel(device.bondState)} " +
+                    "addrHash=${addressHash(device.address)} value=${hex(value)}",
             )
             // Complete the ATT request first. The SAKE driver posts the next notification, and some
             // stacks drop the link if a notification overtakes the write response during bonding.
@@ -562,7 +571,8 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             descriptor.value = reply
             diag(
                 "descriptor read ${short(descriptor.uuid)} on ${descriptor.characteristic?.uuid?.let(::short) ?: "?"} " +
-                    "offset=$offset len=${reply.size} reply=${hex(reply)}",
+                    "offset=$offset len=${reply.size} reply=${hex(reply)} " +
+                    "bond=${bondLabel(device.bondState)} addrHash=${addressHash(device.address)}",
             )
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, reply)
@@ -571,39 +581,19 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 // Reachable only after the pump really wrote the CCCD; the driver ignores duplicates.
                 listener?.onSakeSubscribed()
             } else if (isSakeCccd) {
-                // If the pump reads 0x0000 it must write 0x0100 to subscribe. Log it when it doesn't,
-                // so the next report distinguishes "pump never subscribed" from "stack dropped our
-                // notification".
+                // This callback only runs on an already encrypted link: the CCCD requires
+                // PERMISSION_READ_ENCRYPTED, so the stack answers the pump's first read with
+                // Insufficient Encryption and the pump starts SMP by itself. A createBond() call here
+                // was therefore always too late (started=false) and is deliberately gone.
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     if (peer != null && sakeCccdValue.contentEquals(byteArrayOf(0x00, 0x00))) {
-                        diag("pump read CCCD but did not subscribe within 2s")
+                        diag(
+                            "pump read CCCD but did not subscribe within 2s " +
+                                "(bond=${bondLabel(device.bondState)}, " +
+                                "addrHash=${addressHash(device.address)})",
+                        )
                     }
                 }, 2_000L)
-                // EXPERIMENT: the pump as central never sends an SMP security request. On phones
-                // without a bond (Galaxy S24, Redmi) it reads the CCCD, waits ~7 s and leaves.
-                // Always attempt bonding here and always log the outcome, so a failure cannot stay
-                // silent like it did in beta42.
-                val bondBefore =
-                    try {
-                        bondLabel(device.bondState)
-                    } catch (e: Exception) {
-                        "error(${e::class.simpleName})"
-                    }
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    val started =
-                        try {
-                            device.createBond()
-                        } catch (e: Throwable) {
-                            false
-                        }
-                    val bondAfter =
-                        try {
-                            bondLabel(device.bondState)
-                        } catch (e: Exception) {
-                            "error(${e::class.simpleName})"
-                        }
-                    diag("createBond before=$bondBefore started=$started after=$bondAfter")
-                }, 300L)
             }
         }
 
@@ -618,7 +608,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         ) {
             diag(
                 "descriptor write ${short(descriptor.uuid)} on ${descriptor.characteristic?.uuid?.let(::short) ?: "?"} " +
-                    "len=${value.size} offset=$offset value=${hex(value)}",
+                    "len=${value.size} offset=$offset respNeeded=$responseNeeded " +
+                    "bond=${bondLabel(device.bondState)} addrHash=${addressHash(device.address)} " +
+                    "value=${hex(value)}",
             )
             @Suppress("DEPRECATION")
             descriptor.value = value
@@ -650,8 +642,17 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
             // We never request a larger MTU and keep every PDU <= 20 bytes regardless of what the
             // central negotiates (Sec. 6). This is observational only.
-            listener?.onDiagnostic("mtu=$mtu")
+            listener?.onDiagnostic("mtu=$mtu bond=${bondLabel(device.bondState)}")
             Timber.d("Central negotiated MTU=%d (ignored; PDUs stay <= %d bytes)", mtu, PduFramer.MAX_PDU_SIZE)
+        }
+
+        override fun onPhyUpdate(device: BluetoothDevice, txPhy: Int, rxPhy: Int, status: Int) {
+            // A PHY switch right after bonding looks like a dropped link in the pump's log, so keep it
+            // visible: it separates "pump gave up" from "stack changed the connection underneath us".
+            diag(
+                "phy update tx=$txPhy rx=$rxPhy status=${gattStatusLabel(status)} " +
+                    "bond=${bondLabel(device.bondState)}",
+            )
         }
     }
 
@@ -662,7 +663,12 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         val receiver =
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
-                    if (intent?.action != BluetoothDevice.ACTION_BOND_STATE_CHANGED) return
+                    val action = intent?.action ?: return
+                    if (action != BluetoothDevice.ACTION_BOND_STATE_CHANGED &&
+                        action != BluetoothDevice.ACTION_PAIRING_REQUEST
+                    ) {
+                        return
+                    }
                     val device =
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
@@ -671,30 +677,61 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                             intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                         }
                     if (device == null) return
-                    // Only the pump this session is talking to matters; ignore unrelated devices.
+                    // SMP re-resolves the pump's random private address to its identity address midway,
+                    // so the address here is not always the one seen at link-up. Log the mismatch
+                    // instead of returning silently: a silent drop is how every bond transition went
+                    // missing on Galaxy S24.
                     val current = peer
-                    if (current != null && current.address != device.address) return
-                    val state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR)
-                    val previous = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR)
-                    val reason = intent.getIntExtra(EXTRA_BOND_REASON, 0)
-                    val failed = state == BluetoothDevice.BOND_NONE && previous == BluetoothDevice.BOND_BONDING
-                    listener?.onDiagnostic(
-                        "bond state ${bondLabel(previous)} -> ${bondLabel(state)} reason=$reason" +
-                            if (failed) " (pairing failed)" else "",
-                    )
-                    listener?.onBondStateChanged(state, previous, reason)
+                    val addrMatch = current == null || current.address == device.address
+                    val addrNote = "addrMatch=$addrMatch addrHash=${addressHash(device.address)}"
+                    when (action) {
+                        BluetoothDevice.ACTION_PAIRING_REQUEST -> {
+                            // Observation only: this receiver never confirms, never sets a PIN and never
+                            // aborts the broadcast, so the system pairing prompt keeps working as before.
+                            val variant =
+                                intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.ERROR)
+                            val passkey = intent.getIntExtra(EXTRA_PAIRING_PASSKEY, BluetoothDevice.ERROR)
+                            listener?.onDiagnostic(
+                                "pairing request variant=${pairingVariantLabel(variant)} " +
+                                    "passkey=${if (passkey == BluetoothDevice.ERROR) "none" else passkey} " +
+                                    "bond=${bondLabel(device.bondState)} $addrNote",
+                            )
+                        }
+
+                        else -> {
+                            val state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR)
+                            val previous =
+                                intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR)
+                            val reason = intent.getIntExtra(EXTRA_BOND_REASON, 0)
+                            val failed =
+                                state == BluetoothDevice.BOND_NONE && previous == BluetoothDevice.BOND_BONDING
+                            listener?.onDiagnostic(
+                                "bond state ${bondLabel(previous)} -> ${bondLabel(state)} reason=$reason $addrNote" +
+                                    if (failed) " (pairing failed)" else "",
+                            )
+                            if (addrMatch) listener?.onBondStateChanged(state, previous, reason)
+                        }
+                    }
                 }
             }
         try {
-            val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            val filter =
+                IntentFilter().apply {
+                    addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                    addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+                }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                appContext.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+                // Bluetooth broadcasts come from com.android.bluetooth (UID 1002), not the system UID.
+                // RECEIVER_NOT_EXPORTED made Android 14+ drop them, which is why no bond state line
+                // ever reached the log on Galaxy S24 or Redmi.
+                appContext.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
             } else {
                 appContext.registerReceiver(receiver, filter)
             }
             bondReceiver = receiver
         } catch (e: SecurityException) {
             Timber.w(e, "Cannot register bond-state receiver")
+            listener?.onDiagnostic("bond receiver unavailable (SecurityException)")
         }
     }
 
@@ -771,14 +808,81 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             else -> "unknown($state)"
         }
 
+    private fun deviceTypeLabel(type: Int): String =
+        when (type) {
+            BluetoothDevice.DEVICE_TYPE_CLASSIC -> "classic"
+            BluetoothDevice.DEVICE_TYPE_LE -> "le"
+            BluetoothDevice.DEVICE_TYPE_DUAL -> "dual"
+            else -> "unknown($type)"
+        }
+
+    private fun pairingVariantLabel(variant: Int): String =
+        when (variant) {
+            // Only PIN (0) and PASSKEY_CONFIRMATION (2) are public API; the rest are hidden constants,
+            // so their AOSP wire values are spelled out here.
+            BluetoothDevice.PAIRING_VARIANT_PIN -> "PIN"
+            BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION -> "PASSKEY_CONFIRMATION"
+            1 -> "PASSKEY"
+            3 -> "CONSENT"
+            4 -> "DISPLAY_PASSKEY"
+            5 -> "DISPLAY_PIN"
+            6 -> "OOB_CONSENT"
+            7 -> "PIN_16_DIGITS"
+            else -> "unknown($variant)"
+        }
+
+    /** Short, non-reversible tag for an address: reports must never carry a real MAC. */
+    private fun addressHash(address: String?): String {
+        if (address.isNullOrBlank()) return "?"
+        return try {
+            java.security.MessageDigest.getInstance("SHA-256")
+                .digest(address.toByteArray(Charsets.UTF_8))
+                .take(3)
+                .joinToString("") { "%02x".format(it) }
+        } catch (e: java.security.NoSuchAlgorithmException) {
+            "?"
+        }
+    }
+
+    private fun deviceLabel(device: BluetoothDevice): String {
+        val name =
+            try {
+                device.name
+            } catch (e: SecurityException) {
+                null
+            } ?: "?"
+        return "$name[${addressHash(device.address)}/${deviceTypeLabel(device.type)}/${bondLabel(device.bondState)}]"
+    }
+
+    /**
+     * Dumps the OS bond table. A pump entry left behind on this phone makes the pump start SMP with
+     * keys it no longer holds, and the link dies seconds after the CCCD read. Seeing the entry here
+     * turns "the pump rejects us" into "the phone still remembers an old pairing".
+     */
+    private fun logBondedDevices(stage: String) {
+        val bonded =
+            try {
+                adapter?.bondedDevices.orEmpty()
+            } catch (e: SecurityException) {
+                listener?.onDiagnostic("bondedDevices($stage) unavailable (SecurityException)")
+                return
+            }
+        val summary = if (bonded.isEmpty()) "none" else bonded.joinToString("; ", transform = ::deviceLabel)
+        listener?.onDiagnostic("bondedDevices($stage) count=${bonded.size} list=$summary")
+    }
+
     private fun short(uuid: java.util.UUID): String = uuid.toString().substring(4, 8)
 
     private fun sendResponse(device: BluetoothDevice, requestId: Int, status: Int, offset: Int, value: ByteArray) {
         try {
-            gattServer?.sendResponse(device, requestId, status, offset, value)
+            val accepted = gattServer?.sendResponse(device, requestId, status, offset, value) ?: false
+            if (!accepted || status != BluetoothGatt.GATT_SUCCESS) {
+                // A rejected response means the pump never saw our reply and will time out on its own.
+                diag("sendResponse rejected reqId=$requestId status=${gattStatusLabel(status)} accepted=$accepted")
+            }
         } catch (e: SecurityException) {
             Timber.w(e, "sendResponse failed")
-            listener?.onDiagnostic("sendResponse failed: SecurityException")
+            diag("sendResponse failed: SecurityException")
         }
     }
 
@@ -836,6 +940,9 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
     private companion object {
         /** `BluetoothDevice.EXTRA_REASON` is hidden; the broadcast extra name is stable. */
         const val EXTRA_BOND_REASON = "android.bluetooth.device.extra.REASON"
+
+        /** `BluetoothDevice.EXTRA_PASSKEY` is hidden on current SDKs; the extra name is stable. */
+        const val EXTRA_PAIRING_PASSKEY = "android.bluetooth.device.extra.PASSKEY"
 
         /** Synthetic AdvertiseCallback error code for "no advertiser available" (not a platform code). */
         const val ADVERTISER_UNAVAILABLE = -1

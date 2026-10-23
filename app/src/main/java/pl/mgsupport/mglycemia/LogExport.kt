@@ -32,8 +32,10 @@ object LogExport {
     fun isKeyLine(line: String): Boolean {
         val l = line.lowercase(Locale.ROOT)
         if ("bond=" in l || "bond state" in l || "pairing failed" in l) return true
+        if ("pairing request" in l || "bondeddevices" in l) return true
         if (("descriptor read" in l || "descriptor write" in l) && "2902" in l) return true
         if ("read 2a50" in l) return true
+        if ("sendresponse rejected" in l || "phy update" in l) return true
         if ("gatt link down" in l || "gatt link up" in l || "gatt disconnect" in l) return true
         return false
     }

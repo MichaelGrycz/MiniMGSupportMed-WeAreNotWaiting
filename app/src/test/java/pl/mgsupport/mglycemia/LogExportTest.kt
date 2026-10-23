@@ -7,18 +7,24 @@ import java.util.zip.ZipFile
 
 class LogExportTest {
 
-    @Test fun detectsKeyBleLines() {
+    @Test
+    fun detectsKeyBleLines() {
         assertTrue(LogExport.isKeyLine("GATT link up, status=0, bond=bonded"))
         assertTrue(LogExport.isKeyLine("GATT link down, status=8"))
         assertTrue(LogExport.isKeyLine("descriptor write 2902 len=2"))
         assertTrue(LogExport.isKeyLine("descriptor read 2902"))
         assertTrue(LogExport.isKeyLine("read 2a50 len=7"))
         assertTrue(LogExport.isKeyLine("bond state bonding -> bonded reason=0"))
+        assertTrue(LogExport.isKeyLine("pairing request variant=CONSENT passkey=none bond=none"))
+        assertTrue(LogExport.isKeyLine("bondedDevices(link-up) count=1 list=none"))
+        assertTrue(LogExport.isKeyLine("sendResponse rejected reqId=7 status=0 (success) accepted=false"))
+        assertTrue(LogExport.isKeyLine("phy update tx=2 rx=2 status=0 (success) bond=bonded"))
         assertFalse(LogExport.isKeyLine("History: +12 events (up to seq 1234)"))
         assertFalse(LogExport.isKeyLine("Sensor: 120 mg/dL"))
     }
 
-    @Test fun redactsSensitiveData() {
+    @Test
+    fun redactsSensitiveData() {
         val line = "device AA:BB:CC:DD:EE:FF ip 192.168.1.10 mail jan@example.com token=sekret123"
         val redacted = LogExport.redact(line)
         assertFalse(redacted.contains("AA:BB:CC:DD:EE:FF"))
@@ -31,7 +37,8 @@ class LogExportTest {
         assertTrue(redacted.contains("[REDACTED]"))
     }
 
-    @Test fun keyLinesFilterAndRedact() {
+    @Test
+    fun keyLinesFilterAndRedact() {
         val lines = listOf(
             "GATT link down, status=8 device AA:BB:CC:DD:EE:FF",
             "zwykły log bez znaczenia",
@@ -43,7 +50,8 @@ class LogExportTest {
         assertTrue(keys.any { it.contains("GATT link down") })
     }
 
-    @Test fun reportWarnsAboutNoEncryption() {
+    @Test
+    fun reportWarnsAboutNoEncryption() {
         val report = LogExport.buildReport("bond=bonded\nok", listOf("read 2a50 len=7"))
         assertTrue(report.contains(LogExport.UNENCRYPTED_NOTICE))
         assertTrue(report.contains("Kluczowe linie"))
@@ -51,7 +59,8 @@ class LogExportTest {
         assertTrue(report.contains("logcat"))
     }
 
-    @Test fun txtAndZipAreWrittenWithoutTouchingOtherFiles() {
+    @Test
+    fun txtAndZipAreWrittenWithoutTouchingOtherFiles() {
         val dir = File(System.getProperty("java.io.tmpdir"), "logexport-test-${System.nanoTime()}").apply { mkdirs() }
         try {
             val appLog = "GATT link down, status=8\nok"

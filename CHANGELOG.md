@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta44
+
+- Parowanie: aplikacja nie próbuje już sama rozpoczynać parowania systemowego podczas łączenia z pompą. Ta próba i tak zawsze kończyła się niepowodzeniem, a mogła przeszkadzać. Parowanie prowadzi pompa.
+- Parowanie: naprawiony odbiór informacji o stanie parowania od Androida. Wcześniej telefon ich nie przekazywał, dlatego w logu nie było ani jednej linii o stanie parowania. Teraz widać moment parowania i ewentualną przyczynę błędu.
+- Diagnostyka: nowa linia `bondedDevices` pokazuje, jakie urządzenia telefon pamięta jako sparowane. Stary wpis pompy w telefonie to najczęstsza przyczyna sytuacji, w której pompa łączy się i zaraz się rozłącza.
+- Diagnostyka: każdy odczyt i zapis pokazuje teraz stan parowania i krótki hash adresu. Nieudane odpowiedzi Bluetooth trafiają do logu zamiast być połykane.
+- Diagnostyka: nowa linia `pairing request` pokazuje, czy Android wyświetla okno potwierdzenia parowania. Jeśli tak, trzeba je potwierdzić na telefonie.
+
 ## 1.0-beta43
 
 - Parowanie BLE: próba `createBond()` jest teraz podejmowana zawsze po odczycie CCCD i zawsze zostawia wpis `createBond before=... started=... after=...`. W beta42 ten wpis nie powstał, więc nie było wiadomo, czy próba w ogóle się odbyła.
