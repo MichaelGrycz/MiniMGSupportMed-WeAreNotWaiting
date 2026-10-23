@@ -397,7 +397,11 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         sake.addDescriptor(
             BluetoothGattDescriptor(
                 MedtronicProtocol.CCCD_UUID,
-                BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE,
+                // Wymagamy szyfrowania, żeby pompa zainicjowała parowanie SMP przed subskrypcją.
+                // Bez tego telefon bez bondu (Galaxy S24) nigdy nie dostaje zapisu CCCD, a pompa
+                // odchodzi około 7 s po odczycie deskryptora.
+                BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED or
+                    BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED,
             ),
         )
         service.addCharacteristic(sake)

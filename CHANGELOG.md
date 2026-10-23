@@ -3,6 +3,11 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta40
+
+- Parowanie BLE: Deskryptor CCCD wymaga teraz szyfrowanego połączenia. Na telefonie bez bondu (Galaxy S24) pompa czytała deskryptor, czekała 7 sekund i odchodziła bez zapisu. Wymóg szyfrowania zmusza ją do rozpoczęcia parowania SMP.
+- Parowanie BLE: Na Realme 14 Pro+ link był już zaszyfrowany, więc ta zmiana nic tam nie zmienia.
+
 ## 1.0-beta39
 
 - Powiadomienia: zamiast „IOB 1,00 jednostki insuliny” jest teraz „aktywna insulina 1,00 j.”, a na początku strzałka trendu.
