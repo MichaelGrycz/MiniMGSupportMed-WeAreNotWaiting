@@ -779,9 +779,10 @@ class MedtronicBleConnectionManager(
         /**
          * No ATT/SAKE progress this long after link-up means the pump is stuck: reset the server.
          * Real hardware can be slow: on a Realme 14 Pro+ the pump read the CCCD after ~12 s and
-         * only subscribed ~19 s after link-up, so 15 s was too tight for a valid session.
+         * only subscribed ~19 s after link-up, so 15 s was too tight for a valid session. A fresh
+         * pairing after unpair took ~44 s because the pump pauses ~22 s before reading the DIS table.
          */
-        private const val DEFAULT_SAKE_WATCHDOG_TIMEOUT_MS = 30_000L
+        private const val DEFAULT_SAKE_WATCHDOG_TIMEOUT_MS = 60_000L
 
         /** Backoff between re-advertises after a drop: 1s, 2s, 5s, 10s, 30s, then economy mode. */
         private val RECONNECT_BACKOFF_MS = longArrayOf(1_000L, 2_000L, 5_000L, 10_000L, 30_000L)

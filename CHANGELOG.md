@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta43
+
+- Parowanie BLE: próba `createBond()` jest teraz podejmowana zawsze po odczycie CCCD i zawsze zostawia wpis `createBond before=... started=... after=...`. W beta42 ten wpis nie powstał, więc nie było wiadomo, czy próba w ogóle się odbyła.
+- Parowanie BLE: watchdog SAKE wydłużony z 30 do 60 s. Świeże parowanie na Realme trwało 44 s, bo pompa robi 22-sekundową pauzę przed odczytem tabeli DIS.
+- Diagnostyka: potwierdzone na Realme, że po odparowaniu pompa czyta najpierw CCCD, czeka, potem czyta całą tabelę DIS (2A23, 2A29, 2A24, 2A25, 2A27, 2A26, 2A28, 2A50, 2A2A) i dopiero wtedy zapisuje CCCD.
+
 ## 1.0-beta42
 
 - Diagnostyka: linia `bluetooth` ma teraz `localHash`, czyli krótki hash adresu BLE telefonu bez ujawniania MAC. Pozwala sprawdzić, czy adres jest stały między próbami. Stały adres oznacza, że pompa może wciąż mieć stare klucze.

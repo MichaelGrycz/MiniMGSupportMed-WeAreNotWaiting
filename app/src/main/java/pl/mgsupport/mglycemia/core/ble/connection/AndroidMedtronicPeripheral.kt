@@ -581,19 +581,29 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
                 }, 2_000L)
                 // EXPERIMENT: the pump as central never sends an SMP security request. On phones
                 // without a bond (Galaxy S24, Redmi) it reads the CCCD, waits ~7 s and leaves.
-                // Starting pairing from our side is the only way to get an encrypted link. If the
-                // pump still holds old keys, the log will show bonding -> none with a reason.
-                if (device.bondState == BluetoothDevice.BOND_NONE) {
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        val started =
-                            try {
-                                device.createBond()
-                            } catch (e: SecurityException) {
-                                false
-                            }
-                        diag("createBond requested, started=$started, bond=${bondLabel(device.bondState)}")
-                    }, 300L)
-                }
+                // Always attempt bonding here and always log the outcome, so a failure cannot stay
+                // silent like it did in beta42.
+                val bondBefore =
+                    try {
+                        bondLabel(device.bondState)
+                    } catch (e: Exception) {
+                        "error(${e::class.simpleName})"
+                    }
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    val started =
+                        try {
+                            device.createBond()
+                        } catch (e: Throwable) {
+                            false
+                        }
+                    val bondAfter =
+                        try {
+                            bondLabel(device.bondState)
+                        } catch (e: Exception) {
+                            "error(${e::class.simpleName})"
+                        }
+                    diag("createBond before=$bondBefore started=$started after=$bondAfter")
+                }, 300L)
             }
         }
 
