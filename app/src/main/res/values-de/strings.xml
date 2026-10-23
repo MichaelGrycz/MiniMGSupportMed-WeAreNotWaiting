@@ -298,4 +298,9 @@
   >Installationsprogramm konnte nicht geöffnet werden. Erlaube die Installation aus dieser Quelle und versuche es erneut.</string>
     <string name="updates_channel">App-Updates</string>
     <string name="updates_no_notes">Keine Änderungshinweise.</string>
+
+    <!-- Home Screen Widget -->
+    <string
+    name="widget_description"
+  >Live-Blutglukosewerte der MiniMed-Pumpe: aktueller Glukosewert, Trend und Zeit des letzten Messwerts.</string>
 </resources>

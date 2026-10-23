@@ -206,7 +206,7 @@
     <string name="license_link">Full GPL-3.0 license text</string>
     <string name="source_link">Source code on request</string>
     <string name="license_url">https://www.gnu.org/licenses/gpl-3.0.html</string>
-    <string name="source_url">mailto:kontakt@mgsupport.pl?subject=MGlycemia%20source%20code</string>
+    <string formatted="false" name="source_url">mailto:kontakt@mgsupport.pl?subject=MGlycemia%20source%20code</string>
     <string name="credits_open_failed">Could not open the MGSupport page on this device.</string>
 
     <!-- Legacy / Controller Strings -->
@@ -309,4 +309,9 @@
   >Could not open the installer. Allow installing apps from this source and try again.</string>
     <string name="updates_channel">App updates</string>
     <string name="updates_no_notes">No release notes.</string>
+
+    <!-- Home Screen Widget -->
+    <string
+    name="widget_description"
+  >Live CGM reading from your MiniMed pump: current glucose, trend and last update time.</string>
 </resources>

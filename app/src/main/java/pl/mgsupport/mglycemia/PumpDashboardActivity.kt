@@ -199,6 +199,8 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var etLow: EditText
     private lateinit var etHigh: EditText
     private lateinit var etUrgentHigh: EditText
+    private lateinit var etReservoirThreshold: EditText
+    private lateinit var etSensorMaxHours: EditText
     private lateinit var dbStatsText: TextView
     private lateinit var btnToggleLogs: Button
     private lateinit var logsContainer: View
@@ -367,6 +369,8 @@ class PumpDashboardActivity : AppCompatActivity() {
         etLow = findViewById(R.id.etLow)
         etHigh = findViewById(R.id.etHigh)
         etUrgentHigh = findViewById(R.id.etUrgentHigh)
+        etReservoirThreshold = findViewById(R.id.etReservoirThreshold)
+        etSensorMaxHours = findViewById(R.id.etSensorMaxHours)
         dbStatsText = findViewById(R.id.dbStatsText)
         btnToggleLogs = findViewById(R.id.btnToggleLogs)
         logsContainer = findViewById(R.id.logsContainer)
@@ -814,6 +818,8 @@ class PumpDashboardActivity : AppCompatActivity() {
         etLow.setText(t.low.toString())
         etHigh.setText(t.high.toString())
         etUrgentHigh.setText(t.urgentHigh.toString())
+        etReservoirThreshold.setText(controller.reservoirThresholdIu().toInt().toString())
+        etSensorMaxHours.setText(controller.sensorMaxAgeHoursHours().toInt().toString())
     }
 
     private fun saveThresholds() {
@@ -838,6 +844,13 @@ class PumpDashboardActivity : AppCompatActivity() {
             return
         }
         controller.setThresholds(t)
+
+        val resVal = etReservoirThreshold.text.toString().toDoubleOrNull()
+        if (resVal != null) controller.setReservoirWarnThresholdIu(resVal)
+
+        val sensorVal = etSensorMaxHours.text.toString().toDoubleOrNull()
+        if (sensorVal != null) controller.setSensorMaxAgeHours(sensorVal)
+
         Toast.makeText(this, getString(R.string.thresholds_saved), Toast.LENGTH_SHORT).show()
     }
 

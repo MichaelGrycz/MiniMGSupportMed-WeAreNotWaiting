@@ -315,4 +315,9 @@
   >Nie udało się otworzyć instalatora. Zezwól na instalowanie aplikacji z tego źródła i spróbuj ponownie.</string>
     <string name="updates_channel">Aktualizacje aplikacji</string>
     <string name="updates_no_notes">Brak opisu zmian.</string>
+
+    <!-- Home Screen Widget -->
+    <string
+    name="widget_description"
+  >Żywy odczyt glikemii z pompy MiniMed: aktualny cukier, trend i data ostatniego odczytu.</string>
 </resources>

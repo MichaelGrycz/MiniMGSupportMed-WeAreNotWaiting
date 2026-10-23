@@ -30,14 +30,14 @@ esac
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-SSH_HOST="VPS-MGSUPPORT"
-REMOTE_APK_DIR="/var/www/mg-support-downloads/pobierz"
-REMOTE_PAGE="/var/www/mgsupport-astro/src/pages/pobierz/minimgsupportmed.astro"
-REMOTE_SITE="/var/www/mgsupport-astro"
-NGINX_CONF="/etc/nginx/sites-available/mgsupport.pl"
-REPO="MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting"
-ASSET="MGLycemia-$VERSION.apk"
-JAVA_HOME="${JAVA_HOME:-/c/Program Files/Android/Android Studio/jbr}"
+	SSH_HOST="VPS-MGSUPPORT"
+	REMOTE_APK_DIR="/var/www/mg-support-downloads/pobierz"
+	REMOTE_PAGE="/var/www/mgsupport-astro/src/pages/aplikacja/MGlikemia.astro"
+	REMOTE_SITE="/var/www/mgsupport-astro"
+	NGINX_CONF="/etc/nginx/sites-available/mgsupport.pl"
+	REPO="MichaelGrycz/MiniMGSupportMed-WeAreNotWaiting"
+	ASSET="MGLycemia-$VERSION.apk"
+	JAVA_HOME="${JAVA_HOME:-/c/Program Files/Android/Android Studio/jbr}"
 
 echo "==> version $VERSION, asset $ASSET"
 
@@ -58,10 +58,11 @@ echo "==> upload apk"
 scp -q -o BatchMode=yes -o ConnectTimeout=15 "$ASSET" "$SSH_HOST:$REMOTE_APK_DIR/"
 
 echo "==> update download page"
-scp -q -o BatchMode=yes -o ConnectTimeout=15 "$SSH_HOST:$REMOTE_PAGE" .page.astro
-python tools/update_page.py .page.astro "$VERSION" "$NOTES"
-scp -q -o BatchMode=yes -o ConnectTimeout=15 .page.astro "$SSH_HOST:$REMOTE_PAGE"
-rm -f .page.astro
+scp -q -o BatchMode=yes -o ConnectTimeout=15 tools/site/MGlikemia.astro "$SSH_HOST:$REMOTE_PAGE"
+ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_HOST" "
+  mkdir -p /var/www/mgsupport-astro/src/pages/pobierz
+  echo 'import { useEffect } from \"react\"; export default function() { typeof window !== \"undefined\" && window.location.replace(\"/aplikacja/MGlikemia\"); return null; }' > /var/www/mgsupport-astro/src/pages/pobierz/minimgsupportmed.astro
+"
 
 echo "==> rebuild site"
 ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_HOST" "
@@ -90,5 +91,5 @@ echo "==> github release"
 python tools/github_release.py "$REPO" "v$VERSION" "$VERSION" "$NOTES" "$ASSET"
 
 echo "==> done"
-echo "    page:    https://mgsupport.pl/pobierz/minimgsupportmed"
-echo "    release: https://github.com/$REPO/releases/tag/v$VERSION"
+	echo "    page:    https://mgsupport.pl/aplikacja/MGlikemia"
+	echo "    release: https://github.com/$REPO/releases/tag/v$VERSION"

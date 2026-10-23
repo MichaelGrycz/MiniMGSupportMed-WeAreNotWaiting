@@ -1,7 +1,14 @@
 # Historia zmian
 
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
-https://mgsupport.pl/pobierz/minimgsupportmed
+https://mgsupport.pl/aplikacja/MGlikemia
+
+## 1.0-beta48
+
+- Natywny Tryb Rodziny / Opiekuna: udostępnianie odczytów na żywo między telefonami w pobliżu bez rozłączania pompy.
+- Widżet na ekran główny: podgląd glikemii, trendu i IOB bezpośrednio na pulpicie.
+- Pełna konfiguracja alarmów w ustawieniach: łatwa zmiana progów zbiornika, życia sensora i timeoutu braku łącza.
+- Nowy adres strony pobierania: `mgsupport.pl/aplikacja/MGlikemia`.
 
 ## 1.0-beta47
 

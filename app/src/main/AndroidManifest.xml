@@ -35,6 +35,29 @@
             </intent-filter>
         </receiver>
 
+        <!-- Odbiornik w trybie Rodzina / Opiekun: odbiera odczyty lokalnie od głównego telefonu. -->
+        <receiver android:name=".FamilyCompanionReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="pl.mgsupport.mglycemia.action.READING_SHARED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Widżet ekranu głównego: odbiera odswieżenie od systemu oraz od aplikacji. -->
+        <receiver android:name=".GlympWidgetProvider" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="pl.mgsupport.mglycemia.action.WIDGET_REFRESH" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Tylko-do-odczytu odsłanianie najnowszych odczytów glikemii (widget, xDrip+). -->
+        <provider
+      android:name=".GlympDataProvider"
+      android:authorities="pl.mgsupport.mglycemia.core.readings"
+      android:exported="true"
+      android:grantUriPermissions="true"
+    />
+
         <provider
       android:name="androidx.core.content.FileProvider"
       android:authorities="${applicationId}.fileprovider"

@@ -142,14 +142,82 @@ class PumpController(context: Context) {
     @Volatile
     private var sensorMaxAgeHours: Double = ReservoirSensorAlarms.DEFAULT_SENSOR_MAX_AGE_HOURS
 
-    /** Ustawia próg alarmu zbiornika (wcina do 5..50 j.). */
+    /** Ustawia próg alarmu zbiornika (wcina do 5..50 j.) i zapisuje preferencję. */
     fun setReservoirWarnThresholdIu(thresholdIu: Double) {
         reservoirWarnThresholdIu = ReservoirSensorAlarms.coerceReservoirThreshold(thresholdIu)
+        // SharedPreferences trzyma double tylko z kluczem long (API 1); z kluczem String mamy
+        // float (API 1), więc przechowujemy próg zbiornika w jednostkach insuliny jako float.
+        prefs().edit().putFloat(PREF_RESERVOIR_THRESHOLD_IU, thresholdIu.toFloat()).apply()
     }
 
     /** Ustawia limit życia sensora (wcina do 1..14 dni); nie zakładamy z góry 7 dni. */
     fun setSensorMaxAgeHours(hours: Double) {
         sensorMaxAgeHours = ReservoirSensorAlarms.coerceSensorMaxAgeHours(hours)
+        prefs().edit().putFloat(PREF_SENSOR_MAX_AGE_HOURS, hours.toFloat()).apply()
+    }
+
+    /** Domyślny limit życia sensora (godziny) odczytany z persistencji na start. */
+    val currentSensorMaxAgeHours: Double get() = sensorMaxAgeHours
+
+    /** Aktualny próg alarmu zbiornika (j.). */
+    fun reservoirThresholdIu(): Double = reservoirWarnThresholdIu
+
+    /** Aktualny limit życia sensora (godziny). */
+    fun sensorMaxAgeHoursHours(): Double = sensorMaxAgeHours
+
+    /** Aktualny timeout braku łącza (min). */
+    fun staleLinkTimeoutMin(): Long = staleLinkTimeoutMinRaw
+
+    @Volatile
+    private var staleLinkTimeoutMinRaw: Long = ReservoirSensorAlarms.DEFAULT_STALE_LINK_TIMEOUT_MIN
+
+    /** Ustawia timeout braku łącza dla alarmu (wcina do 30..45 min) i zapisuje. */
+    fun setStaleLinkTimeoutMin(minutes: Long) {
+        staleLinkTimeoutMinRaw = ReservoirSensorAlarms.coerceStaleLinkTimeout(minutes)
+        prefs().edit().putLong(PREF_STALE_LINK_TIMEOUT_MIN, staleLinkTimeoutMinRaw).apply()
+    }
+
+    /** Rola aplikacji w sieci domowej. */
+    enum class AppRole {
+        PRIMARY_PUMP,     // Główny telefon (połączony z pompą przez BLE)
+        FAMILY_COMPANION  // Telefon rodziny / opiekuna (odbiera odczyty lokalnie z głównego)
+    }
+
+    @Volatile
+    private var appRole: AppRole = AppRole.PRIMARY_PUMP
+
+    fun getAppRole(): AppRole = appRole
+
+    fun setAppRole(role: AppRole) {
+        appRole = role
+        prefs().edit().putString(PREF_APP_ROLE, role.name).apply()
+        // W roli opiekuna nie uruchamiamy skanowania ani polowania BLE na pompę.
+        if (role == AppRole.FAMILY_COMPANION) {
+            stopPolling()
+            manager.disconnect()
+        }
+    }
+
+    @Volatile
+    private var shareReadingsEnabled: Boolean = true
+
+    fun isShareReadingsEnabled(): Boolean = shareReadingsEnabled
+
+    /** Ustawia udostępnianie odczytów zewnętrzym aplikacjom i zapisuje preferencję. */
+    fun setShareReadings(enabled: Boolean) {
+        shareReadingsEnabled = enabled
+        prefs().edit().putBoolean(PREF_SHARE_READINGS, enabled).apply()
+    }
+
+    /** Adres URL opcjonalnego serwera chmurowego (opcjonalnie). */
+    @Volatile
+    private var syncServerUrl: String? = null
+
+    fun getSyncServerUrl(): String? = syncServerUrl
+
+    fun setSyncServerUrl(url: String?) {
+        syncServerUrl = url?.trim()?.takeIf { it.isNotBlank() }
+        prefs().edit().putString(PREF_SYNC_SERVER_URL, syncServerUrl).apply()
     }
 
     private val historyPresenter = HistoryPresenter()
@@ -254,6 +322,8 @@ class PumpController(context: Context) {
             }
         }
         _state.update { it.copy(deviceCompat = CompatChecker.checkDevice(appContext)) }
+        // Zaacytuj persistowane alerty urządzenia i udostępnianie odczytów (zdefiniowane poniżej).
+        loadDeviceAlarms()
         // Seed from persisted raw history so a restart does not re-download the whole pump log.
         // An empty table (first run after this update) deliberately triggers a full backfill.
         historyCursor = store.latestHistorySequence(HISTORY_SOURCE_ID)
@@ -544,6 +614,12 @@ class PumpController(context: Context) {
                 lastError = null,
             )
         }
+        // Udostępnianie zewnętrzym aplikacjom (xDrip+): wysyłamy ostatni odczyt.
+        if (isShareReadingsEnabled()) {
+            ReadingBroadcast.send(appContext, mgDl, trend, at)
+        }
+        // Widget na ekranie głównym aktualizujemy natychmiast po nowym odczycie.
+        GlympWidgetProvider.updateWidget(appContext)
         refreshChart()
     }
 
@@ -686,8 +762,12 @@ class PumpController(context: Context) {
         retryJob =
             scope.launch {
                 delay(RETRY_INTERVAL_MS)
-                // Brak danych dłużej niż timeout to realny alarm, także gdy pompa jest poza zasięgiem.
-                alerts.checkStaleLink(_state.value.glucoseAt?.toEpochMilli())
+                // Brak danych dluzej niż timeout to realny alarm, takze gdy pompa jest poza zasiegem.
+                alerts.checkStaleLink(
+                    lastPacketMs = _state.value.glucoseAt?.toEpochMilli(),
+                    nowMs = System.currentTimeMillis(),
+                    timeoutMin = staleLinkTimeoutMin(),
+                )
                 val cs = manager.connectionState.value
                 if (isPaired() && !userDisconnected &&
                     (cs == ConnectionState.DISCONNECTED || cs == ConnectionState.AUTH_FAILED)
@@ -797,6 +877,32 @@ class PumpController(context: Context) {
         prefs().edit().putString("language", tag).apply()
     }
 
+    /**
+     * Wczytanie persistowanych alertów oraz udostępniania odczytów. Wywoływane w [init],
+     * zanim rozpocznie się polowanie, żeby alarmy korzystały od razu z progu użytkownika.
+     */
+    private fun loadDeviceAlarms() {
+        val p = prefs()
+        reservoirWarnThresholdIu = ReservoirSensorAlarms.coerceReservoirThreshold(
+            p.getFloat(PREF_RESERVOIR_THRESHOLD_IU, ReservoirSensorAlarms.DEFAULT_RESERVOIR_THRESHOLD_IU.toFloat())
+                .toDouble(),
+        )
+        sensorMaxAgeHours = ReservoirSensorAlarms.coerceSensorMaxAgeHours(
+            p.getFloat(PREF_SENSOR_MAX_AGE_HOURS, ReservoirSensorAlarms.DEFAULT_SENSOR_MAX_AGE_HOURS.toFloat())
+                .toDouble(),
+        )
+        staleLinkTimeoutMinRaw = ReservoirSensorAlarms.coerceStaleLinkTimeout(
+            p.getLong(PREF_STALE_LINK_TIMEOUT_MIN, ReservoirSensorAlarms.DEFAULT_STALE_LINK_TIMEOUT_MIN),
+        )
+        shareReadingsEnabled = p.getBoolean(PREF_SHARE_READINGS, true)
+        syncServerUrl = p.getString(PREF_SYNC_SERVER_URL, null)
+        appRole = try {
+            AppRole.valueOf(p.getString(PREF_APP_ROLE, AppRole.PRIMARY_PUMP.name) ?: AppRole.PRIMARY_PUMP.name)
+        } catch (_: Exception) {
+            AppRole.PRIMARY_PUMP
+        }
+    }
+
 
     private companion object {
         const val POLL_INTERVAL_MS = 15_000L
@@ -807,5 +913,13 @@ class PumpController(context: Context) {
         /** Stable app-side identity for the pump's raw history log. */
         const val HISTORY_SOURCE_ID = "medtronic"
         const val PREFS = "ui_settings"
+
+        // Klucze persistencji alertów urządzenia i udostępniania (jedny z [PREFS]).
+        const val PREF_RESERVOIR_THRESHOLD_IU = "reservoir_threshold_iu"
+        const val PREF_SENSOR_MAX_AGE_HOURS = "sensor_max_age_hours"
+        const val PREF_STALE_LINK_TIMEOUT_MIN = "stale_link_timeout_min"
+        const val PREF_SHARE_READINGS = "share_readings"
+        const val PREF_SYNC_SERVER_URL = "sync_server_url"
+        const val PREF_APP_ROLE = "app_role"
     }
 }
