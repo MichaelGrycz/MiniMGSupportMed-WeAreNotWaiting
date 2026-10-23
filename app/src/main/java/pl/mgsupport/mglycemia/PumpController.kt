@@ -285,7 +285,8 @@ class PumpController(context: Context) {
 
     fun setSyncServerUrl(url: String?) {
         syncServerUrl = url?.trim()?.takeIf { it.isNotBlank() }
-        prefs().edit().putString(PREF_SYNC_SERVER_URL, syncServerUrl).apply()
+        // Pusty string (a nie usunięcie klucza) pozwala świadomie wyłączyć synchronizację.
+        prefs().edit().putString(PREF_SYNC_SERVER_URL, syncServerUrl ?: "").apply()
     }
 
     /** Kod parowania rodziny; izoluje dane na wspólnym serwerze. */
@@ -1084,7 +1085,13 @@ class PumpController(context: Context) {
             p.getLong(PREF_STALE_LINK_TIMEOUT_MIN, ReservoirSensorAlarms.DEFAULT_STALE_LINK_TIMEOUT_MIN),
         )
         shareReadingsEnabled = p.getBoolean(PREF_SHARE_READINGS, true)
-        syncServerUrl = p.getString(PREF_SYNC_SERVER_URL, null)
+        val savedServer = p.getString(PREF_SYNC_SERVER_URL, null)
+        syncServerUrl =
+            if (savedServer == null) {
+                DEFAULT_SYNC_SERVER_URL
+            } else {
+                savedServer.ifBlank { null }
+            }
         val savedFamily = p.getString(PREF_FAMILY_CODE, null)
         familyCode = if (savedFamily.isNullOrBlank()) {
             // Pierwsze uruchomienie: wygeneruj 6-cyfrowy kod parowania rodziny.
@@ -1132,6 +1139,9 @@ class PumpController(context: Context) {
         const val PREF_SHARE_READINGS = "share_readings"
         const val PREF_SYNC_SERVER_URL = "sync_server_url"
         const val PREF_FAMILY_CODE = "family_code"
+
+        /** Domyślny serwer synchronizacji rodziny (Node.js na VPS). */
+        const val DEFAULT_SYNC_SERVER_URL = "https://mgsupport.pl/mglycemia-api"
         const val PREF_APP_ROLE = "app_role"
         const val PREF_ALERT_REPEAT_MIN = "alert_repeat_min"
         const val PREF_SILENT_ALERTS = "silent_alerts"

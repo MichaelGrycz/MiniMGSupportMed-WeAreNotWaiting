@@ -1,17 +1,44 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DATA_DIR = process.env.DATA_DIR || "/var/lib/mglycemia";
+const FAMILIES_FILE = path.join(DATA_DIR, "families.json");
+const LOGS_FILE = path.join(DATA_DIR, "logs.json");
 
 app.use(express.json({ limit: "1mb" }));
 
-/**
- * Izolowane "rodziny" (kody parowania). Każdy kod ma własny najnowszy odczyt i historię,
- * więc wiele rodzin może korzystać z jednego serwera bez mieszania danych.
- */
-const families = new Map();
-const diagnosticLogs = [];
+/** Izolowane "rodziny" (kody parowania). Każdy kod ma własny odczyt i historię. */
+let families = new Map();
+let diagnosticLogs = [];
 const MAX_HISTORY = 200;
 const MAX_LOGS = 50;
+
+function loadJson(file, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function persist(file, value) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(value), "utf8");
+    fs.renameSync(tmp, file);
+  } catch (error) {
+    console.error(`[MGlycemia Server] Cannot persist ${file}:`, error.message);
+  }
+}
+
+function load() {
+  const storedFamilies = loadJson(FAMILIES_FILE, {});
+  families = new Map(Object.entries(storedFamilies));
+  diagnosticLogs = loadJson(LOGS_FILE, []);
+}
 
 function normalizeFamily(value) {
   const raw = String(value || "")
@@ -31,6 +58,8 @@ function family(code) {
   }
   return families.get(code);
 }
+
+load();
 
 // 1. Zapis telemetrii z aplikacji Android
 app.post("/api/telemetry", (req, res) => {
@@ -54,6 +83,7 @@ app.post("/api/telemetry", (req, res) => {
   state.latest = record;
   state.history.unshift(record);
   if (state.history.length > MAX_HISTORY) state.history.pop();
+  persist(FAMILIES_FILE, Object.fromEntries(families));
 
   console.log(`[Telemetry][${code}] Glucose: ${record.glucoseMgDl} mg/dL, Trend: ${record.trend}, IOB: ${record.iob}U`);
   res.json({ status: "ok", family: code, receivedAt: record.receivedAt });
@@ -67,7 +97,7 @@ app.post("/api/logs", (req, res) => {
   }
   const code = familyCode(req);
   const logEntry = {
-    id: Date.now(),
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     receivedAt: new Date().toISOString(),
     family: code,
     deviceId: deviceId || "anonymous",
@@ -75,6 +105,7 @@ app.post("/api/logs", (req, res) => {
   };
   diagnosticLogs.unshift(logEntry);
   if (diagnosticLogs.length > MAX_LOGS) diagnosticLogs.pop();
+  persist(LOGS_FILE, diagnosticLogs);
 
   console.log(`[Diagnostic Log][${code}] Received report from device: ${logEntry.deviceId}`);
   res.json({ status: "ok", family: code, logId: logEntry.id });
@@ -87,7 +118,7 @@ app.get("/api/latest", (req, res) => {
   res.json(state && state.latest ? { family: code, ...state.latest } : { family: code, status: "no_data" });
 });
 
-// 4. Prosty dashboard HTML dla rodziny (?family=123456)
+// 4. Prosty dashboard HTML dla rodziny (?family=...)
 app.get("/", (req, res) => {
   const code = familyCode(req);
   const state = families.get(code);
@@ -142,5 +173,5 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[MGlycemia Server] Running on port ${PORT}`);
+  console.log(`[MGlycemia Server] Running on port ${PORT}, data in ${DATA_DIR}`);
 });

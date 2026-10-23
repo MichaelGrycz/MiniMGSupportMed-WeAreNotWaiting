@@ -3,6 +3,13 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta57
+
+- Serwer synchronizacji rodziny działa na `mgsupport.pl/mglycemia-api` (Node.js + pm2 + Nginx).
+- Dane rodzin i logi diagnostyczne są zapisywane na dysku (`/var/lib/mglycemia`) i przetrwają restart serwera.
+- Aplikacja ma domyślny adres serwera, więc synchronizacja działa od razu po wpisaniu/zeskanowaniu kodu rodziny.
+- Wyczyszczenie pola adresu świadomie wyłącza synchronizację.
+
 ## 1.0-beta56
 
 - Tryb rodziny: skaner QR w aplikacji (ZXing embedded + kamera) — telefon rodziny może zeskanować kod zamiast wpisywać go ręcznie.
