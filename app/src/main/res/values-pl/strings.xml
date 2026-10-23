@@ -396,4 +396,5 @@
     <string name="isf_note">Używane tylko do tłumienia prognozy. Wartość ISF ustal z lekarzem.</string>
     <string name="family_code_regenerate">Wygeneruj nowy kod</string>
     <string name="family_code_rotated">Wygenerowano nowy kod rodziny</string>
+    <string name="family_code_share_text_with_server">Kod rodziny MGlikemia: %1$s\nSerwer: %2$s</string>
 </resources>

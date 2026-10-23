@@ -381,4 +381,5 @@
     <string name="isf_note">Wird nur zur Dämpfung der Prognose verwendet. Fragen Sie Ihren Arzt nach Ihrem ISF.</string>
     <string name="family_code_regenerate">Neuen Code erzeugen</string>
     <string name="family_code_rotated">Neuer Familiencode erzeugt</string>
+    <string name="family_code_share_text_with_server">MGlikemia-Familiencode: %1$s\nServer: %2$s</string>
 </resources>

@@ -18,6 +18,7 @@ const HISTORY_TTL_MS = 48 * 3600 * 1000; // historia starsza niż 48 h jest usuw
 const FAMILY_IDLE_MS = 30 * 24 * 3600 * 1000; // rodzina bez ruchu 30 dni jest usuwana
 const LOG_MAX_AGE_MS = 30 * 24 * 3600 * 1000; // logi starsze niż 30 dni są usuwane
 const PERSIST_DEBOUNCE_MS = 5_000; // zapis na dysk najwyżej co 5 s
+const MAX_TOTAL_BYTES = 20 * 1024 * 1024; // twardy budżet dyskowy (20 MB)
 
 /** Izolowane "rodziny" (kody parowania). Każdy kod ma własny odczyt i historię. */
 let families = new Map();
@@ -171,6 +172,15 @@ app.post("/api/logs", (req, res) => {
   };
   diagnosticLogs.unshift(logEntry);
   prune();
+  // Budżet dyskowy: usuwaj najstarsze logi, a gdy to nie wystarczy — odrzuć raport.
+  let estimated = fileBytes(FAMILIES_FILE) + fileBytes(LOGS_FILE) + trimmed.length;
+  while (estimated > MAX_TOTAL_BYTES && diagnosticLogs.length > 0) {
+    const removed = diagnosticLogs.pop();
+    estimated -= String(removed.report || "").length;
+  }
+  if (estimated > MAX_TOTAL_BYTES) {
+    return res.status(507).json({ error: "storage_full" });
+  }
   persist(LOGS_FILE, diagnosticLogs);
 
   console.log(`[Diagnostic Log][${code}] Received report from device: ${logEntry.deviceId}`);
@@ -241,6 +251,7 @@ app.get("/api/health", (_req, res) => {
     logs: diagnosticLogs.length,
     familiesBytes: fileBytes(FAMILIES_FILE),
     logsBytes: fileBytes(LOGS_FILE),
+    maxTotalBytes: MAX_TOTAL_BYTES,
     uptimeSeconds: Math.round(process.uptime()),
   });
 });
@@ -255,6 +266,6 @@ function shutdown(signal) {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-app.listen(PORT, () => {
-  console.log(`[MGlycemia Server] Running on port ${PORT}, data in ${DATA_DIR}`);
+app.listen(PORT, "127.0.0.1", () => {
+  console.log(`[MGlycemia Server] Running on 127.0.0.1:${PORT}, data in ${DATA_DIR}`);
 });

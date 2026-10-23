@@ -1101,13 +1101,7 @@ class PumpController(context: Context) {
             p.getLong(PREF_STALE_LINK_TIMEOUT_MIN, ReservoirSensorAlarms.DEFAULT_STALE_LINK_TIMEOUT_MIN),
         )
         shareReadingsEnabled = p.getBoolean(PREF_SHARE_READINGS, true)
-        val savedServer = p.getString(PREF_SYNC_SERVER_URL, null)
-        syncServerUrl =
-            if (savedServer == null) {
-                DEFAULT_SYNC_SERVER_URL
-            } else {
-                savedServer.ifBlank { null }
-            }
+        syncServerUrl = p.getString(PREF_SYNC_SERVER_URL, null)?.ifBlank { null }
         val savedFamily = p.getString(PREF_FAMILY_CODE, null)
         familyCode = if (savedFamily.isNullOrBlank()) {
             // Pierwsze uruchomienie: wygeneruj silny 12-znakowy kod parowania rodziny.
@@ -1155,9 +1149,6 @@ class PumpController(context: Context) {
         const val PREF_SHARE_READINGS = "share_readings"
         const val PREF_SYNC_SERVER_URL = "sync_server_url"
         const val PREF_FAMILY_CODE = "family_code"
-
-        /** Domyślny serwer synchronizacji rodziny (Node.js na VPS). */
-        const val DEFAULT_SYNC_SERVER_URL = "https://mgsupport.pl/mglycemia-api"
         const val PREF_APP_ROLE = "app_role"
         const val PREF_ALERT_REPEAT_MIN = "alert_repeat_min"
         const val PREF_SILENT_ALERTS = "silent_alerts"

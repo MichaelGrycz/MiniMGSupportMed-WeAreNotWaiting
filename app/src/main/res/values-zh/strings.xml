@@ -356,4 +356,5 @@
     <string name="isf_note">仅用于减弱预测。请咨询医生确定您的 ISF。</string>
     <string name="family_code_regenerate">生成新代码</string>
     <string name="family_code_rotated">已生成新的家庭代码</string>
+    <string name="family_code_share_text_with_server">MGlikemia 家庭代码：%1$s\n服务器：%2$s</string>
 </resources>

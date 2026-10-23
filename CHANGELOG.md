@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta59
+
+- Usunięto domyślny serwer synchronizacji: aplikacja nie wysyła danych nigdzie bez jawnego podania własnego adresu serwera.
+- QR i „Udostępnij kod” przenoszą teraz także adres serwera (self-hosted), więc telefon rodziny konfiguruje się jednym skanem.
+- Serwer: nasłuch wyłącznie na `127.0.0.1` i twardy budżet dyskowy 20 MB (ochrona przed zapchaniem).
+- Zaktualizowane `docs/PRIVACY.md` i `server/README.md`: self-hosting, brak centralnego serwera, limity danych.
+- Centralny serwer na `mgsupport.pl/mglycemia-api` został wyłączony i usunięty z VPS.
+
 ## 1.0-beta58
 
 - Kod rodziny: 12 znaków z `SecureRandom` (bez mylących 0/O, 1/I/L), przycisk „Wygeneruj nowy kod”. Stare, krótsze kody nadal działają.

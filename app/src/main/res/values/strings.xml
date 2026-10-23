@@ -390,4 +390,5 @@
     <string name="isf_note">Used only to dampen the prediction. Ask your clinician for your ISF.</string>
     <string name="family_code_regenerate">Generate new code</string>
     <string name="family_code_rotated">New family code generated</string>
+    <string name="family_code_share_text_with_server">MGlikemia family code: %1$s\nServer: %2$s</string>
 </resources>

@@ -233,9 +233,16 @@ class PumpDashboardActivity : AppCompatActivity() {
             val raw = result.contents?.trim().orEmpty()
             if (raw.isBlank()) return@registerForActivityResult
             val candidate = raw.removePrefix("MGlikemia:").removePrefix("mglycemia:")
-            val normalized = candidate.replace(Regex("[^A-Za-z0-9]"), "")
+            val parts = candidate.split('|', limit = 2)
+            val codePart = parts.getOrNull(0)?.trim().orEmpty()
+            val serverPart = parts.getOrNull(1)?.trim()
+            val normalized = codePart.replace(Regex("[^A-Za-z0-9]"), "")
             if (normalized.length in 4..16) {
                 controller.setFamilyCode(normalized)
+                if (!serverPart.isNullOrBlank()) {
+                    controller.setSyncServerUrl(serverPart)
+                    etSyncUrl.setText(serverPart)
+                }
                 familyCodeValue.text = controller.getFamilyCode()
                 etFamilyCode.setText(controller.getFamilyCode())
                 renderFamilyQr()
@@ -1195,7 +1202,14 @@ class PumpDashboardActivity : AppCompatActivity() {
 
     /** Udostępnia kod rodziny przez systemowe okno udostępniania. */
     private fun shareFamilyCode() {
-        val text = getString(R.string.family_code_share_text, controller.getFamilyCode())
+        val code = controller.getFamilyCode()
+        val server = controller.getSyncServerUrl()
+        val text =
+            if (server.isNullOrBlank()) {
+                getString(R.string.family_code_share_text, code)
+            } else {
+                getString(R.string.family_code_share_text_with_server, code, server)
+            }
         val intent =
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -1204,15 +1218,18 @@ class PumpDashboardActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(intent, getString(R.string.family_code_share)))
     }
 
-    /** Rysuje kod QR z kodem rodziny; nieudane generowanie zostawia pusty obraz. */
+    /** Rysuje kod QR z kodem rodziny i adresem serwera (jeśli ustawiony). */
     private fun renderFamilyQr() {
         val code = controller.getFamilyCode()
         if (code.isBlank()) {
             familyCodeQr.setImageDrawable(null)
             return
         }
+        val server = controller.getSyncServerUrl()
+        val payload =
+            if (server.isNullOrBlank()) "MGlikemia:$code" else "MGlikemia:$code|$server"
         val size = (168 * resources.displayMetrics.density).toInt().coerceAtLeast(168)
-        familyCodeQr.setImageBitmap(QrCode.generate("MGlikemia:$code", size))
+        familyCodeQr.setImageBitmap(QrCode.generate(payload, size))
     }
 
     private fun exportCsv() {
