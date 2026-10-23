@@ -3,6 +3,10 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta47
+
+- Oficjalna wersja z pełnym pakietem poprawek stabilności połączenia BLE, synchronizacją tożsamości po parowaniu oraz inżynieryjnym silnikiem statystyk klinicznych (CV i GMI).
+
 ## 1.0-beta46
 
 - Stabilność połączenia: usunięto błąd, w którym start aplikacji i serwisu w tle uruchamiały kilka równoległych rozgłoszeń Bluetooth jednocześnie. Teraz rozgłaszanie jest jedno i stabilne.
