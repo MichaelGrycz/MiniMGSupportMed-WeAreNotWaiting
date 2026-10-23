@@ -79,7 +79,7 @@ class PumpForegroundService : Service() {
                 val age = freshnessSuffix(s.glucoseAt)
                 val mgDl = s.glucoseMgDl
                 if (mgDl != null && age.isNotEmpty()) {
-                    getString(R.string.notif_last_reading, mgDl, age) +
+                    getString(R.string.notif_last_reading_unit, formatGlucose(mgDl, s.unit), age) +
                         " \u00b7 " + connectionLabel(s.connection)
                 } else {
                     getString(R.string.notif_status_format, connectionLabel(s.connection))
@@ -119,8 +119,16 @@ class PumpForegroundService : Service() {
         if (state.connection != ConnectionState.CONNECTED) return null
         if (state.sensorUpdating) return null
         val mgDl = state.glucoseMgDl ?: return null
-        return "$mgDl mg/dL"
+        return formatGlucose(mgDl, state.unit)
     }
+
+    /** Formatuje glikemie zgodnie z wybrana jednostka (mg/dL lub mmol/L). */
+    private fun formatGlucose(mgDl: Int, unit: GlucoseUnit): String =
+        if (unit == GlucoseUnit.MMOL) {
+            String.format(Locale.getDefault(), "%.1f mmol/L", mgDl / 18.0)
+        } else {
+            "$mgDl mg/dL"
+        }
 
     private fun connectionLabel(state: ConnectionState): String =
         getString(

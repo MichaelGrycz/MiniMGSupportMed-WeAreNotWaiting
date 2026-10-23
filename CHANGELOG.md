@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta50
+
+- Alerty: pełna konfiguracja w Ustawieniach — brak łącza (30–45 min), odstęp powtarzania (1–60 min) i tryb cichy (bez dźwięku i wibracji).
+- Diagnostyka: automatyczny upload zredagowanego logu na serwer po błędzie BLE (nie częściej niż raz na 10 min) oraz przycisk „Wyślij diagnostykę teraz”.
+- Powiadomienie statusu pokazuje cukier w wybranej jednostce (mg/dL albo mmol/L).
+- Wykres: baza (AUTO_BASAL) rysowana jako półprzezroczyste słupki na dole wykresu, wysokość proporcjonalna do podanej ilości.
+- Ustawienia alarmów i diagnostyki przetłumaczone na wszystkie 4 języki.
+
 ## 1.0-beta49
 
 - Nowy, widoczny Tryb aplikacji w Ustawieniach: „Główny telefon (z pompą)” albo „Telefon rodziny (odbiera odczyty)”. Aktywny tryb widać od razu jako plakietkę w nagłówku ekranu głównego.

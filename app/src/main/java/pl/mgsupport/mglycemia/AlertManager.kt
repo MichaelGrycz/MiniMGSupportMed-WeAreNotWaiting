@@ -43,6 +43,25 @@ class AlertManager(private val context: Context) {
 
     private val stateLock = Any()
 
+    /** Minimalny odstęp między powtórzeniami tego samego alertu (domyślnie 5 min). */
+    @Volatile
+    private var repeatIntervalMs = DEFAULT_REPEAT_INTERVAL_MS
+
+    /** Tryb cichy: alerty bez dźwięku i wibracji (osobny kanał na Androidzie 8+). */
+    @Volatile
+    private var silentAlerts = false
+
+    fun setRepeatInterval(minutes: Long) {
+        repeatIntervalMs = minutes.coerceIn(1L, 60L) * 60_000L
+    }
+
+    fun setSilentAlerts(enabled: Boolean) {
+        silentAlerts = enabled
+    }
+
+    private fun alertChannelId(): String =
+        if (silentAlerts) GLUCOSE_ALERT_SILENT_CHANNEL_ID else GLUCOSE_ALERT_CHANNEL_ID
+
     private var lastSeverity = Severity.IN_RANGE
     private var lastAlertAt = 0L
 
@@ -86,7 +105,7 @@ class AlertManager(private val context: Context) {
         val now = SystemClock.elapsedRealtime()
         synchronized(stateLock) {
             val sameSeverity = severity == lastSeverity
-            if (sameSeverity && now - lastAlertAt < REPEAT_INTERVAL_MS) return
+            if (sameSeverity && now - lastAlertAt < repeatIntervalMs) return
             lastSeverity = severity
             lastAlertAt = now
         }
@@ -94,7 +113,7 @@ class AlertManager(private val context: Context) {
         val manager = notificationManager() ?: return
         val body = messageFor(severity, mgDl, thresholds)
         val notification =
-            NotificationCompat.Builder(context, GLUCOSE_ALERT_CHANNEL_ID)
+            NotificationCompat.Builder(context, alertChannelId())
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(titleFor(severity))
                 .setContentText(body)
@@ -135,7 +154,7 @@ class AlertManager(private val context: Context) {
         if (!canPostNotifications()) return
         val now = SystemClock.elapsedRealtime()
         synchronized(reservoirLock) {
-            if (reservoirActive && now - lastReservoirAlertAt < REPEAT_INTERVAL_MS) return
+            if (reservoirActive && now - lastReservoirAlertAt < repeatIntervalMs) return
             reservoirActive = true
             lastReservoirAlertAt = now
         }
@@ -167,7 +186,7 @@ class AlertManager(private val context: Context) {
         if (!canPostNotifications()) return
         val now = SystemClock.elapsedRealtime()
         synchronized(sensorExpiryLock) {
-            if (sensorExpiryActive && now - lastSensorExpiryAlertAt < REPEAT_INTERVAL_MS) return
+            if (sensorExpiryActive && now - lastSensorExpiryAlertAt < repeatIntervalMs) return
             sensorExpiryActive = true
             lastSensorExpiryAlertAt = now
         }
@@ -187,7 +206,7 @@ class AlertManager(private val context: Context) {
         if (!canPostNotifications()) return
         val now = SystemClock.elapsedRealtime()
         synchronized(sensorExpiryLock) {
-            if (sensorExpiryActive && now - lastSensorExpiryAlertAt < REPEAT_INTERVAL_MS) return
+            if (sensorExpiryActive && now - lastSensorExpiryAlertAt < repeatIntervalMs) return
             sensorExpiryActive = true
             lastSensorExpiryAlertAt = now
         }
@@ -220,7 +239,7 @@ class AlertManager(private val context: Context) {
         if (!canPostNotifications()) return
         val now = SystemClock.elapsedRealtime()
         synchronized(staleLinkLock) {
-            if (staleLinkActive && now - lastStaleLinkAlertAt < REPEAT_INTERVAL_MS) return
+            if (staleLinkActive && now - lastStaleLinkAlertAt < repeatIntervalMs) return
             staleLinkActive = true
             lastStaleLinkAlertAt = now
         }
@@ -231,7 +250,7 @@ class AlertManager(private val context: Context) {
     private fun postDeviceAlert(notificationId: Int, title: String, body: String) {
         val manager = notificationManager() ?: return
         val notification =
-            NotificationCompat.Builder(context, GLUCOSE_ALERT_CHANNEL_ID)
+            NotificationCompat.Builder(context, alertChannelId())
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(title)
                 .setContentText(body)
@@ -314,10 +333,13 @@ class AlertManager(private val context: Context) {
         when (severity) {
             Severity.URGENT_LOW ->
                 "Glukoza $mgDl mg/dL - poniżej ${thresholds.urgentLow} mg/dL. Działaj natychmiast."
+
             Severity.LOW ->
                 "Glukoza $mgDl mg/dL - poniżej progu ${thresholds.low} mg/dL."
+
             Severity.URGENT_HIGH ->
                 "Glukoza $mgDl mg/dL - powyżej ${thresholds.urgentHigh} mg/dL. Działaj natychmiast."
+
             Severity.HIGH -> "Glukoza $mgDl mg/dL - powyżej progu ${thresholds.high} mg/dL."
             Severity.IN_RANGE -> ""
         }
@@ -360,6 +382,21 @@ class AlertManager(private val context: Context) {
                 }
         manager.createNotificationChannel(alertChannel)
 
+        // Cichy wariant kanalu: te same alerty, ale bez dzwieku i wibracji.
+        val silentChannel =
+            NotificationChannel(
+                GLUCOSE_ALERT_SILENT_CHANNEL_ID,
+                "Alerty glukozy (ciche)",
+                NotificationManager.IMPORTANCE_HIGH,
+            )
+                .apply {
+                    description = "Alerty hipo- i hiperglikemii bez dzwieku"
+                    setSound(null, null)
+                    enableVibration(false)
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                }
+        manager.createNotificationChannel(silentChannel)
+
         val statusChannel =
             NotificationChannel(
                 STATUS_CHANNEL_ID,
@@ -377,6 +414,7 @@ class AlertManager(private val context: Context) {
 
     companion object {
         const val GLUCOSE_ALERT_CHANNEL_ID = "glucose_alerts"
+        const val GLUCOSE_ALERT_SILENT_CHANNEL_ID = "glucose_alerts_silent"
         const val STATUS_CHANNEL_ID = "pump_status"
 
         const val ALERT_NOTIFICATION_ID = 1000
@@ -386,6 +424,6 @@ class AlertManager(private val context: Context) {
         const val STALE_LINK_NOTIFICATION_ID = 1004
 
         private const val STATUS_TITLE = "MinimedOpen"
-        private const val REPEAT_INTERVAL_MS = 5 * 60 * 1000L
+        private const val DEFAULT_REPEAT_INTERVAL_MS = 5 * 60 * 1000L
     }
 }

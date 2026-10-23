@@ -287,6 +287,37 @@ class PumpController(context: Context) {
         prefs().edit().putString(PREF_SYNC_SERVER_URL, syncServerUrl).apply()
     }
 
+    @Volatile
+    private var alertRepeatMin: Long = 5L
+
+    @Volatile
+    private var silentAlertsEnabled: Boolean = false
+
+    fun alertRepeatMinutes(): Long = alertRepeatMin
+
+    fun isSilentAlertsEnabled(): Boolean = silentAlertsEnabled
+
+    /** Odstep powtarzania alertu (1-60 min), stosowany od razu i zapisywany. */
+    fun setAlertRepeatMin(minutes: Long) {
+        alertRepeatMin = minutes.coerceIn(1L, 60L)
+        alerts.setRepeatInterval(alertRepeatMin)
+        prefs().edit().putLong(PREF_ALERT_REPEAT_MIN, alertRepeatMin).apply()
+    }
+
+    /** Tryb cichy alertow (bez dzwieku i wibracji), stosowany od razu i zapisywany. */
+    fun setSilentAlerts(enabled: Boolean) {
+        silentAlertsEnabled = enabled
+        alerts.setSilentAlerts(enabled)
+        prefs().edit().putBoolean(PREF_SILENT_ALERTS, enabled).apply()
+    }
+
+    /** Reczne wyslanie raportu diagnostycznego na serwer (gdy URL jest ustawiony). */
+    fun sendDiagnosticsNow() {
+        val url = syncServerUrl
+        if (url.isNullOrBlank()) return
+        scope.launch { TelemetryUploader.uploadDiagnosticReport(appContext, url, _state.value.log) }
+    }
+
     private val historyPresenter = HistoryPresenter()
     private val durableBackup = DurableBackup(appContext, store)
 
@@ -385,11 +416,12 @@ class PumpController(context: Context) {
                 if (fault != null) {
                     _state.update { it.copy(lastError = faultText(fault)) }
                     appendLog(appContext.getString(R.string.log_fault, fault))
+                    maybeUploadDiagnostics()
                 }
             }
         }
         _state.update { it.copy(deviceCompat = CompatChecker.checkDevice(appContext)) }
-        // Zaacytuj persistowane alerty urządzenia i udostępnianie odczytów (zdefiniowane poniżej).
+        // Wczytaj persistowane alerty urzadzenia i udostepnianie odczytow (zdefiniowane ponizej).
         loadDeviceAlarms()
         // Telefon rodziny po starcie od razu pobiera odczyty z serwera (bez BLE).
         if (appRole == AppRole.FAMILY_COMPANION) {
@@ -887,6 +919,21 @@ class PumpController(context: Context) {
         _state.update { it.copy(lastError = "$what: ${e.message ?: appContext.getString(R.string.read_error)}") }
     }
 
+    @Volatile
+    private var lastDiagUploadAt = 0L
+
+    /** Automatyczny upload logu po bledzie BLE, nie czesciej niz raz na 10 minut. */
+    private fun maybeUploadDiagnostics() {
+        val url = syncServerUrl ?: return
+        if (url.isBlank()) return
+        val now = System.currentTimeMillis()
+        if (now - lastDiagUploadAt < 10 * 60_000L) return
+        lastDiagUploadAt = now
+        scope.launch {
+            TelemetryUploader.uploadDiagnosticReport(appContext, url, _state.value.log)
+        }
+    }
+
     /**
      * Sensor warm-up / update. The pump answers with SG 0, which is a normal state rather than a read
      * fault: keep the last known value on screen, drop any stale CGM error banner, and log it once.
@@ -990,6 +1037,10 @@ class PumpController(context: Context) {
         } catch (_: Exception) {
             AppRole.PRIMARY_PUMP
         }
+        alertRepeatMin = p.getLong(PREF_ALERT_REPEAT_MIN, 5L).coerceIn(1L, 60L)
+        silentAlertsEnabled = p.getBoolean(PREF_SILENT_ALERTS, false)
+        alerts.setRepeatInterval(alertRepeatMin)
+        alerts.setSilentAlerts(silentAlertsEnabled)
     }
 
 
@@ -1010,6 +1061,8 @@ class PumpController(context: Context) {
         const val PREF_SHARE_READINGS = "share_readings"
         const val PREF_SYNC_SERVER_URL = "sync_server_url"
         const val PREF_APP_ROLE = "app_role"
+        const val PREF_ALERT_REPEAT_MIN = "alert_repeat_min"
+        const val PREF_SILENT_ALERTS = "silent_alerts"
         const val COMPANION_POLL_INTERVAL_MS = 30_000L
     }
 }

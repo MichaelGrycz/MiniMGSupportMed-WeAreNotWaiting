@@ -327,4 +327,14 @@
     <string name="role_badge_primary">Pump</string>
     <string name="role_badge_companion">Family</string>
     <string name="role_saved">App mode saved</string>
+    <!-- Device alarm settings -->
+    <string name="alarm_reservoir_label">Low reservoir (U)</string>
+    <string name="alarm_sensor_age_label">Sensor life (hours)</string>
+    <string name="alarm_stale_link_label">No link (min)</string>
+    <string name="alarm_repeat_label">Repeat alert (min)</string>
+    <string name="alarm_silent_label">Silent alerts (no sound or vibration)</string>
+    <string name="diag_send_now">Send diagnostics now</string>
+    <string name="diag_need_server">Set the sync server address first.</string>
+    <string name="diag_sending">Sending diagnostic report…</string>
+    <string name="notif_last_reading_unit">Last reading: %1$s · %2$s</string>
 </resources>

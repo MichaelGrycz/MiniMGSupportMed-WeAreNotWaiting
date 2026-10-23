@@ -333,4 +333,14 @@
     <string name="role_badge_primary">Pompa</string>
     <string name="role_badge_companion">Rodzina</string>
     <string name="role_saved">Tryb aplikacji zapisany</string>
+    <!-- Device alarm settings -->
+    <string name="alarm_reservoir_label">Niski zbiornik (j.)</string>
+    <string name="alarm_sensor_age_label">Życie sensora (godz.)</string>
+    <string name="alarm_stale_link_label">Brak łącza (min)</string>
+    <string name="alarm_repeat_label">Powtarzaj alert (min)</string>
+    <string name="alarm_silent_label">Ciche alerty (bez dźwięku i wibracji)</string>
+    <string name="diag_send_now">Wyślij diagnostykę teraz</string>
+    <string name="diag_need_server">Najpierw ustaw adres serwera synchronizacji.</string>
+    <string name="diag_sending">Wysyłanie raportu diagnostycznego…</string>
+    <string name="notif_last_reading_unit">Ostatni odczyt: %1$s · %2$s</string>
 </resources>

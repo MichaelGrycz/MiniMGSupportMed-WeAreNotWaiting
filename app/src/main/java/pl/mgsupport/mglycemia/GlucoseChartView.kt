@@ -169,6 +169,13 @@ class GlucoseChartView @JvmOverloads constructor(
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
     private val eventPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    /** Polprzezroczyste slupki bazy rysowane na dole wykresu. */
+    private val basalBarPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0x55818CF8
+            style = Paint.Style.FILL
+        }
     private val eventHits = mutableListOf<Pair<RectF, List<ChartInsulinEvent>>>()
     private var markerCache: List<ChartEventGroup> = emptyList()
     private var markerCacheKey: Triple<Long, Long, Int>? = null
@@ -722,6 +729,8 @@ class GlucoseChartView @JvmOverloads constructor(
                         )
                     canvas.drawPath(areaPath, areaPaint)
                     canvas.drawPath(linePath, linePaint)
+                    // Slupki bazy (AUTO_BASAL) na dole wykresu: wysokosc = podana ilosc.
+                    drawBasalBars(canvas, ::xFor)
                 }
             }
 
@@ -804,6 +813,29 @@ class GlucoseChartView @JvmOverloads constructor(
 
                 drawTooltip(canvas, sx, sel)
             }
+        }
+    }
+
+    /** Rysuje slupki bazy (AUTO_BASAL) na dole wykresu, proporcjonalnie do podanej ilosci. */
+    private fun drawBasalBars(canvas: Canvas, xFor: (Long) -> Float) {
+        val groups = markerCache.filter { it.lane == ChartEventLane.BASAL }
+        if (groups.isEmpty()) return
+        val measured =
+            groups.map { group ->
+                group to
+                    group.events.sumOf { event ->
+                        if (event.units.isFinite() && event.units > 0) event.units else 0.0
+                    }
+            }
+        val maxUnits = measured.maxOfOrNull { it.second } ?: 0.0
+        if (maxUnits <= 0.0) return
+        val maxHeight = plotRect.height() * 0.22f
+        val half = dp(2.2f)
+        for ((group, units) in measured) {
+            val x = xFor(group.timestampMs)
+            if (x < plotRect.left || x > plotRect.right) continue
+            val h = (maxHeight * (units / maxUnits).toFloat()).coerceAtLeast(dp(2f))
+            canvas.drawRect(x - half, plotRect.bottom, x + half, plotRect.bottom - h, basalBarPaint)
         }
     }
 

@@ -293,4 +293,14 @@
     <string name="role_badge_primary">泵</string>
     <string name="role_badge_companion">家庭</string>
     <string name="role_saved">应用模式已保存</string>
+    <!-- Device alarm settings -->
+    <string name="alarm_reservoir_label">低药量（U）</string>
+    <string name="alarm_sensor_age_label">传感器寿命（小时）</string>
+    <string name="alarm_stale_link_label">无连接（分钟）</string>
+    <string name="alarm_repeat_label">重复提醒（分钟）</string>
+    <string name="alarm_silent_label">静音提醒（无声音和振动）</string>
+    <string name="diag_send_now">立即发送诊断</string>
+    <string name="diag_need_server">请先设置同步服务器地址。</string>
+    <string name="diag_sending">正在发送诊断报告…</string>
+    <string name="notif_last_reading_unit">最后读数：%1$s · %2$s</string>
 </resources>

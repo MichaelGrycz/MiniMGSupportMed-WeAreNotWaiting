@@ -202,6 +202,9 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var etUrgentHigh: EditText
     private lateinit var etReservoirThreshold: EditText
     private lateinit var etSensorMaxHours: EditText
+    private lateinit var etStaleLinkMin: EditText
+    private lateinit var etAlertRepeatMin: EditText
+    private lateinit var switchSilentAlerts: MaterialSwitch
     private lateinit var dbStatsText: TextView
     private lateinit var btnToggleLogs: Button
     private lateinit var logsContainer: View
@@ -378,6 +381,9 @@ class PumpDashboardActivity : AppCompatActivity() {
         etUrgentHigh = findViewById(R.id.etUrgentHigh)
         etReservoirThreshold = findViewById(R.id.etReservoirThreshold)
         etSensorMaxHours = findViewById(R.id.etSensorMaxHours)
+        etStaleLinkMin = findViewById(R.id.etStaleLinkMin)
+        etAlertRepeatMin = findViewById(R.id.etAlertRepeatMin)
+        switchSilentAlerts = findViewById(R.id.switchSilentAlerts)
         roleBadge = findViewById(R.id.roleBadge)
         btnRolePrimary = findViewById(R.id.btnRolePrimary)
         btnRoleCompanion = findViewById(R.id.btnRoleCompanion)
@@ -687,6 +693,10 @@ class PumpDashboardActivity : AppCompatActivity() {
         switchShareReadings.setOnCheckedChangeListener { _, checked ->
             controller.setShareReadings(checked)
         }
+        switchSilentAlerts.isChecked = controller.isSilentAlertsEnabled()
+        switchSilentAlerts.setOnCheckedChangeListener { _, checked ->
+            controller.setSilentAlerts(checked)
+        }
         etSyncUrl.setText(controller.getSyncServerUrl() ?: "")
         btnSaveSyncUrl.setOnClickListener {
             controller.setSyncServerUrl(etSyncUrl.text.toString())
@@ -701,6 +711,14 @@ class PumpDashboardActivity : AppCompatActivity() {
         btnToggleLogs.setOnClickListener {
             logsExpanded = !logsExpanded
             updateLogsVisibility()
+        }
+        findViewById<Button>(R.id.btnSendDiagnostics).setOnClickListener {
+            if (controller.getSyncServerUrl().isNullOrBlank()) {
+                Toast.makeText(this, getString(R.string.diag_need_server), Toast.LENGTH_LONG).show()
+            } else {
+                controller.sendDiagnosticsNow()
+                Toast.makeText(this, getString(R.string.diag_sending), Toast.LENGTH_SHORT).show()
+            }
         }
         findViewById<Button>(R.id.btnCopyLogs).setOnClickListener { copyLogsToClipboard() }
         findViewById<Button>(R.id.btnClearLogs).setOnClickListener { controller.clearLog() }
@@ -853,6 +871,8 @@ class PumpDashboardActivity : AppCompatActivity() {
         etUrgentHigh.setText(t.urgentHigh.toString())
         etReservoirThreshold.setText(controller.reservoirThresholdIu().toInt().toString())
         etSensorMaxHours.setText(controller.sensorMaxAgeHoursHours().toInt().toString())
+        etStaleLinkMin.setText(controller.staleLinkTimeoutMin().toString())
+        etAlertRepeatMin.setText(controller.alertRepeatMinutes().toString())
     }
 
     private fun saveThresholds() {
@@ -883,6 +903,12 @@ class PumpDashboardActivity : AppCompatActivity() {
 
         val sensorVal = etSensorMaxHours.text.toString().toDoubleOrNull()
         if (sensorVal != null) controller.setSensorMaxAgeHours(sensorVal)
+
+        val staleVal = etStaleLinkMin.text.toString().toLongOrNull()
+        if (staleVal != null) controller.setStaleLinkTimeoutMin(staleVal)
+
+        val repeatVal = etAlertRepeatMin.text.toString().toLongOrNull()
+        if (repeatVal != null) controller.setAlertRepeatMin(repeatVal)
 
         Toast.makeText(this, getString(R.string.thresholds_saved), Toast.LENGTH_SHORT).show()
     }

@@ -2422,7 +2422,7 @@
                                 <TextView
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:text="Niski zbiornik (j.)"
+                  android:text="@string/alarm_reservoir_label"
                   android:textColor="@color/text_secondary"
                   android:textSize="11sp"
                   android:textStyle="bold"
@@ -2452,7 +2452,7 @@
                                 <TextView
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:text="Życie sensora (godz.)"
+                  android:text="@string/alarm_sensor_age_label"
                   android:textColor="@color/text_secondary"
                   android:textSize="11sp"
                   android:textStyle="bold"
@@ -2472,6 +2472,82 @@
                 />
                             </LinearLayout>
                         </LinearLayout>
+
+                        <LinearLayout
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="8dp"
+              android:orientation="horizontal"
+            >
+                            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:orientation="vertical"
+              >
+                                <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="@string/alarm_stale_link_label"
+                  android:textColor="@color/text_secondary"
+                  android:textSize="11sp"
+                  android:textStyle="bold"
+                />
+                                <EditText
+                  android:id="@+id/etStaleLinkMin"
+                  android:layout_width="match_parent"
+                  android:layout_height="42dp"
+                  android:layout_marginTop="4dp"
+                  android:background="@drawable/bg_input_field"
+                  android:gravity="center"
+                  android:hint="30"
+                  android:inputType="number"
+                  android:textColor="@color/text_primary"
+                  android:textSize="14sp"
+                  android:textStyle="bold"
+                />
+                            </LinearLayout>
+                            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:orientation="vertical"
+              >
+                                <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="@string/alarm_repeat_label"
+                  android:textColor="@color/text_secondary"
+                  android:textSize="11sp"
+                  android:textStyle="bold"
+                />
+                                <EditText
+                  android:id="@+id/etAlertRepeatMin"
+                  android:layout_width="match_parent"
+                  android:layout_height="42dp"
+                  android:layout_marginTop="4dp"
+                  android:background="@drawable/bg_input_field"
+                  android:gravity="center"
+                  android:hint="5"
+                  android:inputType="number"
+                  android:textColor="@color/text_primary"
+                  android:textSize="14sp"
+                  android:textStyle="bold"
+                />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+              android:id="@+id/switchSilentAlerts"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="10dp"
+              android:text="@string/alarm_silent_label"
+              android:textColor="@color/text_primary"
+              android:textSize="13sp"
+            />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -2749,6 +2825,23 @@
               android:textColor="@color/text_secondary"
               app:cornerRadius="12dp"
               app:strokeColor="@color/border_subtle"
+            />
+
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnSendDiagnostics"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="8dp"
+              android:paddingTop="10dp"
+              android:paddingBottom="10dp"
+              android:gravity="center"
+              android:maxLines="2"
+              android:text="@string/diag_send_now"
+              android:textColor="@color/accent_primary_bright"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/accent_primary"
             />
 
                         <!-- Hidden Logs Panel -->

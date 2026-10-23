@@ -316,4 +316,14 @@
     <string name="role_badge_primary">Pumpe</string>
     <string name="role_badge_companion">Familie</string>
     <string name="role_saved">App-Modus gespeichert</string>
+    <!-- Device alarm settings -->
+    <string name="alarm_reservoir_label">Niedriger Vorrat (U)</string>
+    <string name="alarm_sensor_age_label">Sensorlebensdauer (Std.)</string>
+    <string name="alarm_stale_link_label">Keine Verbindung (Min.)</string>
+    <string name="alarm_repeat_label">Alarm wiederholen (Min.)</string>
+    <string name="alarm_silent_label">Stille Alarme (ohne Ton und Vibration)</string>
+    <string name="diag_send_now">Diagnose jetzt senden</string>
+    <string name="diag_need_server">Lege zuerst die Sync-Serveradresse fest.</string>
+    <string name="diag_sending">Diagnosebericht wird gesendet…</string>
+    <string name="notif_last_reading_unit">Letzter Wert: %1$s · %2$s</string>
 </resources>
