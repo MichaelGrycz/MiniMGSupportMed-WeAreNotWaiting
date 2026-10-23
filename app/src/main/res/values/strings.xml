@@ -388,4 +388,6 @@
     <string name="family_code_scan_invalid">That is not a valid family code</string>
     <string name="isf_label">Insulin sensitivity (mg/dL per 1 U)</string>
     <string name="isf_note">Used only to dampen the prediction. Ask your clinician for your ISF.</string>
+    <string name="family_code_regenerate">Generate new code</string>
+    <string name="family_code_rotated">New family code generated</string>
 </resources>

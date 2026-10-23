@@ -379,4 +379,6 @@
     <string name="family_code_scan_invalid">Das ist kein gültiger Familiencode</string>
     <string name="isf_label">Insulinempfindlichkeit (mg/dL pro 1 U)</string>
     <string name="isf_note">Wird nur zur Dämpfung der Prognose verwendet. Fragen Sie Ihren Arzt nach Ihrem ISF.</string>
+    <string name="family_code_regenerate">Neuen Code erzeugen</string>
+    <string name="family_code_rotated">Neuer Familiencode erzeugt</string>
 </resources>

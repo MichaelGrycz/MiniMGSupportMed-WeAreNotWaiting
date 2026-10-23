@@ -303,6 +303,22 @@ class PumpController(context: Context) {
         prefs().edit().putString(PREF_FAMILY_CODE, normalized).apply()
     }
 
+    /** Nowy, 12-znakowy kod z kryptograficznie bezpiecznego źródła (bez znaków mylących). */
+    private fun newFamilyCode(): String {
+        val alphabet = "abcdefghjkmnpqrstuvwxyz23456789"
+        val random = java.security.SecureRandom()
+        return buildString(12) {
+            repeat(12) { append(alphabet[random.nextInt(alphabet.length)]) }
+        }
+    }
+
+    /** Generuje i zapisuje nowy kod rodziny; zwraca go do odświeżenia UI/QR. */
+    fun rotateFamilyCode(): String {
+        val generated = newFamilyCode()
+        setFamilyCode(generated)
+        return familyCode
+    }
+
     @Volatile
     private var alertRepeatMin: Long = 5L
 
@@ -1094,8 +1110,8 @@ class PumpController(context: Context) {
             }
         val savedFamily = p.getString(PREF_FAMILY_CODE, null)
         familyCode = if (savedFamily.isNullOrBlank()) {
-            // Pierwsze uruchomienie: wygeneruj 6-cyfrowy kod parowania rodziny.
-            val generated = (100000 + java.security.SecureRandom().nextInt(900000)).toString()
+            // Pierwsze uruchomienie: wygeneruj silny 12-znakowy kod parowania rodziny.
+            val generated = newFamilyCode()
             p.edit().putString(PREF_FAMILY_CODE, generated).apply()
             generated
         } else {

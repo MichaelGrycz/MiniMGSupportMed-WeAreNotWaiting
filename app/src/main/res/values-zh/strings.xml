@@ -354,4 +354,6 @@
     <string name="family_code_scan_invalid">这不是有效的家庭代码</string>
     <string name="isf_label">胰岛素敏感度（mg/dL / 1 U）</string>
     <string name="isf_note">仅用于减弱预测。请咨询医生确定您的 ISF。</string>
+    <string name="family_code_regenerate">生成新代码</string>
+    <string name="family_code_rotated">已生成新的家庭代码</string>
 </resources>

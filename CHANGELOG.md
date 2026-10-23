@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta58
+
+- Kod rodziny: 12 znaków z `SecureRandom` (bez mylących 0/O, 1/I/L), przycisk „Wygeneruj nowy kod”. Stare, krótsze kody nadal działają.
+- Serwer: rate limiting 30 zapytań/min na IP (burst 20), limit rozmiaru raportu diagnostycznego 200 KB.
+- Serwer: twarde limity danych — 120 odczytów na rodzinę, 48 h historii, 500 rodzin, 30 logów, czyszczenie po 30 dniach bezczynności.
+- Serwer: zapis na dysk z debounce 5 s i flush przy SIGTERM; `/api/health` pokazuje rozmiary plików.
+- Migracja: stare rodziny bez `updatedAt` nie są usuwane przy starcie.
+
 ## 1.0-beta57
 
 - Serwer synchronizacji rodziny działa na `mgsupport.pl/mglycemia-api` (Node.js + pm2 + Nginx).

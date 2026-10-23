@@ -225,6 +225,7 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var familyCodeQr: ImageView
     private lateinit var switchShowPrediction: MaterialSwitch
     private lateinit var btnScanFamilyCode: Button
+    private lateinit var btnRegenerateFamilyCode: Button
     private lateinit var etIsf: EditText
 
     private val scanLauncher =
@@ -422,6 +423,7 @@ class PumpDashboardActivity : AppCompatActivity() {
         etFamilyCode = findViewById(R.id.etFamilyCode)
         btnShareFamilyCode = findViewById(R.id.btnShareFamilyCode)
         btnScanFamilyCode = findViewById(R.id.btnScanFamilyCode)
+        btnRegenerateFamilyCode = findViewById(R.id.btnRegenerateFamilyCode)
         familyCodeQr = findViewById(R.id.familyCodeQr)
         switchShowPrediction = findViewById(R.id.switchShowPrediction)
         etIsf = findViewById(R.id.etIsf)
@@ -757,6 +759,13 @@ class PumpDashboardActivity : AppCompatActivity() {
                     setOrientationLocked(false)
                 },
             )
+        }
+        btnRegenerateFamilyCode.setOnClickListener {
+            controller.rotateFamilyCode()
+            familyCodeValue.text = controller.getFamilyCode()
+            etFamilyCode.setText(controller.getFamilyCode())
+            renderFamilyQr()
+            Toast.makeText(this, getString(R.string.family_code_rotated), Toast.LENGTH_SHORT).show()
         }
         btnSaveSyncUrl.setOnClickListener {
             val code = etFamilyCode.text.toString().trim()

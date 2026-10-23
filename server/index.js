@@ -9,11 +9,20 @@ const LOGS_FILE = path.join(DATA_DIR, "logs.json");
 
 app.use(express.json({ limit: "1mb" }));
 
+// Twarde limity, żeby dane nie rosły bez końca.
+const MAX_HISTORY = 120; // ostatnie odczyty na rodzinę
+const MAX_FAMILIES = 500; // maksymalna liczba rodzin na serwerze
+const MAX_LOGS = 30; // ostatnie raporty diagnostyczne
+const MAX_LOG_CHARS = 200_000; // maks. długość pojedynczego raportu
+const HISTORY_TTL_MS = 48 * 3600 * 1000; // historia starsza niż 48 h jest usuwana
+const FAMILY_IDLE_MS = 30 * 24 * 3600 * 1000; // rodzina bez ruchu 30 dni jest usuwana
+const LOG_MAX_AGE_MS = 30 * 24 * 3600 * 1000; // logi starsze niż 30 dni są usuwane
+const PERSIST_DEBOUNCE_MS = 5_000; // zapis na dysk najwyżej co 5 s
+
 /** Izolowane "rodziny" (kody parowania). Każdy kod ma własny odczyt i historię. */
 let families = new Map();
 let diagnosticLogs = [];
-const MAX_HISTORY = 200;
-const MAX_LOGS = 50;
+let persistTimer = null;
 
 function loadJson(file, fallback) {
   try {
@@ -34,10 +43,27 @@ function persist(file, value) {
   }
 }
 
+function persistFamiliesNow() {
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  persist(FAMILIES_FILE, Object.fromEntries(families));
+}
+
+function schedulePersistFamilies() {
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    persist(FAMILIES_FILE, Object.fromEntries(families));
+  }, PERSIST_DEBOUNCE_MS);
+}
+
 function load() {
   const storedFamilies = loadJson(FAMILIES_FILE, {});
   families = new Map(Object.entries(storedFamilies));
   diagnosticLogs = loadJson(LOGS_FILE, []);
+  prune();
 }
 
 function normalizeFamily(value) {
@@ -54,9 +80,47 @@ function familyCode(req) {
 
 function family(code) {
   if (!families.has(code)) {
-    families.set(code, { latest: null, history: [] });
+    families.set(code, { latest: null, history: [], updatedAt: Date.now() });
   }
   return families.get(code);
+}
+
+function prune() {
+  const now = Date.now();
+  for (const [code, state] of families) {
+    if (!state || typeof state !== "object") {
+      families.delete(code);
+      continue;
+    }
+    if (!Array.isArray(state.history)) state.history = [];
+    // Migracja starych danych: brak updatedAt nie może usuwać istniejącej rodziny.
+    if (!Number.isFinite(Number(state.updatedAt)) || Number(state.updatedAt) <= 0) {
+      state.updatedAt = Number((state.latest && state.latest.timestampMs) || Date.now());
+    }
+    state.history = state.history
+      .filter((entry) => now - Number(entry.timestampMs || 0) < HISTORY_TTL_MS)
+      .slice(0, MAX_HISTORY);
+    if (now - Number(state.updatedAt || 0) > FAMILY_IDLE_MS) {
+      families.delete(code);
+    }
+  }
+  if (families.size > MAX_FAMILIES) {
+    const oldest = [...families.entries()]
+      .sort((a, b) => Number(a[1].updatedAt || 0) - Number(b[1].updatedAt || 0))
+      .slice(0, families.size - MAX_FAMILIES);
+    for (const [code] of oldest) families.delete(code);
+  }
+  diagnosticLogs = diagnosticLogs
+    .filter((entry) => now - Date.parse(entry.receivedAt || 0) < LOG_MAX_AGE_MS)
+    .slice(0, MAX_LOGS);
+}
+
+function fileBytes(file) {
+  try {
+    return fs.statSync(file).size;
+  } catch (_) {
+    return 0;
+  }
 }
 
 load();
@@ -82,33 +146,35 @@ app.post("/api/telemetry", (req, res) => {
   };
   state.latest = record;
   state.history.unshift(record);
-  if (state.history.length > MAX_HISTORY) state.history.pop();
-  persist(FAMILIES_FILE, Object.fromEntries(families));
+  state.updatedAt = Date.now();
+  prune();
+  schedulePersistFamilies();
 
   console.log(`[Telemetry][${code}] Glucose: ${record.glucoseMgDl} mg/dL, Trend: ${record.trend}, IOB: ${record.iob}U`);
   res.json({ status: "ok", family: code, receivedAt: record.receivedAt });
 });
 
-// 2. Automatyczny upload logów diagnostycznych z aplikacji w razie błędu BLE
+// 2. Automatyczny upload logów diagnostycznych (przycinany i limitowany)
 app.post("/api/logs", (req, res) => {
   const { deviceId, report } = req.body;
   if (!report) {
     return res.status(400).json({ error: "Missing report" });
   }
   const code = familyCode(req);
+  const trimmed = String(report).slice(0, MAX_LOG_CHARS);
   const logEntry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     receivedAt: new Date().toISOString(),
     family: code,
     deviceId: deviceId || "anonymous",
-    report,
+    report: trimmed,
   };
   diagnosticLogs.unshift(logEntry);
-  if (diagnosticLogs.length > MAX_LOGS) diagnosticLogs.pop();
+  prune();
   persist(LOGS_FILE, diagnosticLogs);
 
   console.log(`[Diagnostic Log][${code}] Received report from device: ${logEntry.deviceId}`);
-  res.json({ status: "ok", family: code, logId: logEntry.id });
+  res.json({ status: "ok", family: code, logId: logEntry.id, truncated: trimmed.length < String(report).length });
 });
 
 // 3. Pobranie najnowszego odczytu dla danej rodziny
@@ -169,8 +235,25 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", families: families.size, uptimeSeconds: Math.round(process.uptime()) });
+  res.json({
+    status: "ok",
+    families: families.size,
+    logs: diagnosticLogs.length,
+    familiesBytes: fileBytes(FAMILIES_FILE),
+    logsBytes: fileBytes(LOGS_FILE),
+    uptimeSeconds: Math.round(process.uptime()),
+  });
 });
+
+function shutdown(signal) {
+  persistFamiliesNow();
+  persist(LOGS_FILE, diagnosticLogs);
+  console.log(`[MGlycemia Server] ${signal}: data flushed`);
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 app.listen(PORT, () => {
   console.log(`[MGlycemia Server] Running on port ${PORT}, data in ${DATA_DIR}`);

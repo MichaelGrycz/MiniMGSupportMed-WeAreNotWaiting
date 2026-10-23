@@ -2785,6 +2785,20 @@
               app:strokeColor="@color/accent_primary"
             />
 
+                        <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnRegenerateFamilyCode"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:minHeight="48dp"
+              android:layout_marginTop="8dp"
+              android:maxLines="2"
+              android:text="@string/family_code_regenerate"
+              android:textColor="@color/text_secondary"
+              app:cornerRadius="12dp"
+              app:strokeColor="@color/border_subtle"
+            />
+
                         <ImageView
               android:id="@+id/familyCodeQr"
               android:layout_width="180dp"
