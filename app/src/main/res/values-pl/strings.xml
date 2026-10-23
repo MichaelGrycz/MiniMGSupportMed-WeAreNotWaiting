@@ -201,7 +201,7 @@
     <string name="safety_disclaimer_title">Ważna informacja (tylko odczyt)</string>
     <string
     name="safety_disclaimer_body"
-  >MGlikemia to eksperymentalny, niekomercyjny projekt open source (GPL-3.0), a nie certyfikowany wyrób medyczny. Działa tylko do odczytu: nigdy nie wysyła poleceń dawkowania ani nie zmienia ustawień pompy. Pokazuje dane, które pompa już wysyła, i nie zastępuje pompy, sensora, zaleceń lekarskich ani decyzji terapeutycznych. Używasz na własną odpowiedzialność.</string>
+  >MGlikemia to eksperymentalny, niekomercyjny projekt open source (GPL-3.0). Działa tylko do odczytu: nigdy nie wysyła poleceń dawkowania ani nie zmienia ustawień pompy. Pokazuje dane, które pompa już wysyła, i nie zastępuje pompy, sensora, zaleceń lekarskich ani decyzji o dawkowaniu. Alert może nie zadziałać. Używasz na własną odpowiedzialność.</string>
     <string name="credits_title">Wykonanie aplikacji</string>
     <string name="credits_author">Wykonał: MGSupport Michał Grycz</string>
     <string name="credits_link">Zobacz usługi MGSupport</string>

@@ -7,9 +7,9 @@ niego i wysyła dane, które aplikacja odczytuje i zapisuje lokalnie.
 Aplikacja jest **tylko do odczytu**. Nie wysyła do pompy żadnych poleceń i nie
 zmienia jej ustawień.
 
-**Status projektu:** eksperymentalny, niekomercyjny projekt hobbystyczny. To nie jest
-certyfikowany wyrób medyczny. Nie zastępuje pompy, sensora, zaleceń lekarskich ani
-decyzji terapeutycznych i nie służy do ustalania dawek insuliny.
+**Status projektu:** eksperymentalny, niekomercyjny projekt hobbystyczny. Nie zastępuje
+pompy, sensora, zaleceń lekarskich ani decyzji o dawkowaniu i nie służy do ustalania
+dawek insuliny.
 
 Nazwa: **MGlikemia** po polsku, **MGlycemia** w pozostałych językach.
 
@@ -87,8 +87,8 @@ Szczegóły: [docs/RELEASE.md](docs/RELEASE.md).
 GNU GPL 3.0. Informacja o projektach, z których kod pochodzi, jest w pliku
 [NOTICE](NOTICE). ## Zastrzeżenia
 
-Projekt jest eksperymentalny i niekomercyjny. Nie jest certyfikowanym wyrobem medycznym
-(CE/MDR), nie zastępuje pompy, sensora ani opieki medycznej i nie służy do podejmowania
+Projekt jest eksperymentalny i niekomercyjny. Nie przechodził certyfikacji ani oceny
+klinicznej, nie zastępuje pompy, sensora ani opieki medycznej i nie służy do podejmowania
 decyzji o dawkowaniu insuliny. Używasz go na własną odpowiedzialność. Zasady komunikacji
 opisywania projektu: [docs/POSITIONING.md](docs/POSITIONING.md).
 

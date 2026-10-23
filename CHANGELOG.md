@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta64
+
+- Usunięto sformułowanie „niecertyfikowany wyrób medyczny” z aplikacji i strony. Zastąpił je neutralny opis: projekt eksperymentalny, niekomercyjny, nie zastępuje pompy, sensora, zaleceń lekarza ani decyzji o dawkowaniu.
+- Disclaimer mówi wprost, że alert może nie zadziałać.
+- `docs/POSITIONING.md` wyjaśnia, dlaczego nie należy pisać „niecertyfikowany wyrób medyczny”: to jednocześnie przypisuje status wyrobu i przyznaje brak certyfikacji.
+
 ## 1.0-beta63
 
 - Ujednolicony język: aplikacja i strona jasno mówią, że to eksperymentalny, niekomercyjny projekt i niecertyfikowany wyrób medyczny. Usunięto sformułowania „monitorowanie” i „statystyki kliniczne”.

@@ -198,7 +198,7 @@
     <string name="safety_disclaimer_title">Wichtiger Hinweis (nur Lesen)</string>
     <string
     name="safety_disclaimer_body"
-  >MGlycemia ist ein experimentelles, nicht kommerzielles Open-Source-Projekt (GPL-3.0) und kein zertifiziertes Medizinprodukt. Es arbeitet ausschließlich lesend: keine Dosierungsbefehle, keine Änderung der Pumpeneinstellungen. Es zeigt Daten, die die Pumpe bereits sendet, und ersetzt weder Pumpe, Sensor, ärztliche Beratung noch Therapieentscheidungen. Nutzung auf eigene Verantwortung.</string>
+  >MGlycemia ist ein experimentelles, nicht kommerzielles Open-Source-Projekt (GPL-3.0). Es arbeitet ausschließlich lesend: keine Dosierungsbefehle, keine Änderung der Pumpeneinstellungen. Es zeigt Daten, die die Pumpe bereits sendet, und ersetzt weder Pumpe, Sensor, ärztliche Beratung noch Dosierungsentscheidungen. Alarme können ausfallen. Nutzung auf eigene Verantwortung.</string>
 
     <string name="notif_channel_status">Pumpenstatus</string>
     <string name="notif_connecting">Verbinde mit Pumpe…</string>

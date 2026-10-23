@@ -195,7 +195,7 @@
     <string name="safety_disclaimer_title">Important notice (read-only)</string>
     <string
     name="safety_disclaimer_body"
-  >MGlycemia is an experimental, non-commercial open-source project (GPL-3.0), not a certified medical device. It is read-only: it never sends dosing commands or changes pump settings. It displays data the pump already sends and is not a substitute for the pump, the sensor, medical advice or therapy decisions. Use at your own risk.</string>
+  >MGlycemia is an experimental, non-commercial open-source project (GPL-3.0). It is read-only: it never sends dosing commands or changes pump settings. It displays data the pump already sends and is not a substitute for the pump, the sensor, medical advice or dosing decisions. Alerts may fail. Use at your own risk.</string>
     <string name="credits_title">App credits</string>
     <string name="credits_author">Created by MGSupport Michał Grycz</string>
     <string name="credits_link">View MGSupport services</string>

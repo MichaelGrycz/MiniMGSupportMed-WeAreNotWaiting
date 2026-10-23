@@ -191,7 +191,7 @@
     <string name="safety_disclaimer_title">重要提示（只读）</string>
     <string
     name="safety_disclaimer_body"
-  >MGlycemia 是一个实验性、非商业的开源项目（GPL-3.0），不是经过认证的医疗器械。它仅以只读方式工作：绝不发送给药指令，也不更改泵的设置。它显示泵已发送的数据，不能替代泵、传感器、医疗建议或治疗决策。使用风险自负。</string>
+  >MGlycemia 是一个实验性、非商业的开源项目（GPL-3.0）。它仅以只读方式工作：绝不发送给药指令，也不更改泵的设置。它显示泵已发送的数据，不能替代泵、传感器、医疗建议或给药决策。警报可能失效。使用风险自负。</string>
 
     <string name="notif_channel_status">泵状态</string>
     <string name="notif_connecting">正在连接泵…</string>

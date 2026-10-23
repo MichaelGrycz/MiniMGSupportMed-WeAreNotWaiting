@@ -7,8 +7,8 @@ dystrybucji publicznej (strona, GitHub, firma) skonsultuj to z osobą od regulac
 ## Status projektu (jedno zdanie)
 
 Eksperymentalny, niekomercyjny projekt open source (GPL-3.0), który **pokazuje dane,
-jakie pompa już wysyła**. Nie jest certyfikowanym wyrobem medycznym, nie zastępuje pompy,
-sensora, zaleceń lekarza ani decyzji terapeutycznych i nie służy do ustalania dawek insuliny.
+jakie pompa już wysyła**. Nie zastępuje pompy, sensora, zaleceń lekarza ani decyzji
+o dawkowaniu i nie służy do ustalania dawek insuliny.
 
 ## Dlaczego to ważne
 
@@ -23,17 +23,23 @@ albo „ostrzega przed hipoglikemią” **przeczą** zdaniu „to nie jest wyró
 i osłabiają obronę. Dlatego język musi być spójny w aplikacji, na stronie, w README
 i w postach.
 
+**Nie używaj sformułowania „niecertyfikowany wyrób medyczny”** w tekstach dla użytkownika.
+To najgorsze z obu światów: jednocześnie przypisuje projektowi status wyrobu medycznego
+i przyznaje brak certyfikacji. Neutralny opis funkcji („pokazuje dane, które pompa wysyła”)
+plus jasne granice („nie zastępuje…”, „nie służy do dawkowania”, „alert może nie zadziałać”)
+jest bezpieczniejszy i nie zamyka drogi na przyszłość.
+
 ## Mów tak / nie mów tak
 
-| Mów                                         | Nie mów                                                 |
-| ------------------------------------------- | ------------------------------------------------------- |
-| „Pokazuje odczyty, które pompa już wysyła”  | „Monitoruje cukier” / „monitorowanie glikemii”          |
-| „Podgląd danych z pompy”                    | „Zastępuje CGM” / „zastępuje sensor”                    |
-| „Próg alertu to informacja, nie decyzja”    | „Ostrzega przed hipoglikemią” / „chroni przed spadkiem” |
-| „Eksperymentalny, niecertyfikowany projekt” | „Wyrób medyczny” / „certyfikowana aplikacja”            |
-| „Nie służy do ustalania dawek insuliny”     | „Pomoże dobrać dawkę” / „wskazuje, ile podać”           |
-| „Używasz na własną odpowiedzialność”        | „Bezpieczna” / „niezawodna”                             |
-| „Dane zostają w telefonie”                  | „Twoje zdrowie pod kontrolą”                            |
+| Mów                                        | Nie mów                                                 |
+| ------------------------------------------ | ------------------------------------------------------- |
+| „Pokazuje odczyty, które pompa już wysyła” | „Monitoruje cukier” / „monitorowanie glikemii”          |
+| „Podgląd danych z pompy”                   | „Zastępuje CGM” / „zastępuje sensor”                    |
+| „Próg alertu to informacja, nie decyzja”   | „Ostrzega przed hipoglikemią” / „chroni przed spadkiem” |
+| „Eksperymentalny, niekomercyjny projekt”   | „Wyrób medyczny” / „certyfikowana aplikacja”            |
+| „Nie służy do ustalania dawek insuliny”    | „Pomoże dobrać dawkę” / „wskazuje, ile podać”           |
+| „Używasz na własną odpowiedzialność”       | „Bezpieczna” / „niezawodna”                             |
+| „Dane zostają w telefonie”                 | „Twoje zdrowie pod kontrolą”                            |
 
 Dodatkowo: nie obiecuj, że alert zadziała. Napisz wprost, że **może nie zadziałać**
 (np. przy braku połączenia, uśpieniu telefonu, braku uprawnień) i nie można na nim
@@ -61,9 +67,8 @@ polegać jak na funkcji bezpieczeństwa.
 > wymaga własnego serwera. Apka tylko czyta, nie wysyła nic do pompy i nie zmienia w niej
 > ustawień.
 >
-> WAŻNE: to eksperymentalny, niekomercyjny projekt. Nie jest certyfikowanym wyrobem
-> medycznym i nie zastępuje pompy, sensora ani zaleceń lekarza. Nie służy do ustalania
-> dawek insuliny. Używacie na własną odpowiedzialność.
+> WAŻNE: to eksperymentalny, niekomercyjny projekt. Nie zastępuje pompy, sensora ani
+> zaleceń lekarza. Nie służy do ustalania dawek insuliny. Używacie na własną odpowiedzialność.
 >
 > Na razie wysyłam APK na priv. Napisz, jaką masz pompę, model telefonu i wersję Androida.
 > Instalujesz poza sklepem, więc Android pokaże ostrzeżenie Play Protect.
