@@ -69,6 +69,13 @@ enum class MedtronicConnectionFault {
      * Working assumption from desk research; exact live behavior is confirmed in 48.A2 (Sec. 7).
      */
     BOUND_ELSEWHERE_SUSPECTED,
+
+    /**
+     * No pump connected at all within the first-pair window. Distinct from
+     * [BOUND_ELSEWHERE_SUSPECTED]: here nothing arrived, so the advice is about the pump's pairing
+     * screen and its single mobile-device slot, not about a link that came and went.
+     */
+    PAIRING_TIMEOUT,
 }
 
 /**
@@ -239,6 +246,9 @@ class MedtronicBleConnectionManager(
 
         override fun onPumpDisconnected(status: Int) = worker.post { onCentralDisconnected(status) }
         override fun onDiagnostic(line: String) {
+            // Also to logcat: a tester cannot hand over the in-app log, but `adb logcat` can be pulled
+            // off the device. Debug-only, because Timber has no tree in release builds.
+            Timber.d("%s", line)
             diagnosticSink?.invoke(line)
             // ATT reads/writes (incl. the 2A50/CCCD probes) are signs of life: anything moving
             // through the GATT server restarts the link-up stall clock. Runs on the binder thread,
@@ -611,8 +621,8 @@ class MedtronicBleConnectionManager(
             worker.post {
                 val state = _connectionState.value
                 if (state == ConnectionState.CONNECTING || state == ConnectionState.SCANNING) {
-                    Timber.w("No pump connected after %d ms; pump may be bound to another phone", pairingWaitMs)
-                    _fault.value = MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED
+                    Timber.w("No pump connected after %d ms", pairingWaitMs)
+                    _fault.value = MedtronicConnectionFault.PAIRING_TIMEOUT
                 }
             }
         }

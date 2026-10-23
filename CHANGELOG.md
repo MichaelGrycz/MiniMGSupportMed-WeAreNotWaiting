@@ -3,6 +3,12 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta46
+
+- Stabilność połączenia: usunięto błąd, w którym start aplikacji i serwisu w tle uruchamiały kilka równoległych rozgłoszeń Bluetooth jednocześnie. Teraz rozgłaszanie jest jedno i stabilne.
+- Stabilność parowania: 30-sekundowy timer ponownego łączenia nie przerywa już trwającego parowania ani odkrywania usług.
+- Poprawka tożsamości: zapis nazwy urządzenia („Mobile NNNNNN”) po parowaniu jest teraz natychmiastowy (synchroniczny), dzięki czemu szybki restart aplikacji nie gubi nowo przypisanej tożsamości.
+
 ## 1.0-beta45
 
 - Parowanie: log z Redmi Note 13 Pro pokazał, że telefon nie ma żadnego starego wpisu parowania (`bondedDevices count=0`), a samo parowanie przechodzi czysto. Poprzednia teoria o zaległym wpisie w telefonie była błędna.

@@ -189,6 +189,7 @@ class PumpController(context: Context) {
     /** Set while the pump reports "no sensor value" so the technical log isn't flooded. */
     @Volatile
     private var sensorNotReadyLogged = false
+
     @Volatile
     private var userDisconnected = false
     private var historyJob: Job? = null
@@ -216,6 +217,15 @@ class PumpController(context: Context) {
                     startPolling()
                 } else {
                     stopPolling()
+                    if (cs == ConnectionState.CONNECTING ||
+                        cs == ConnectionState.RECONNECTING ||
+                        cs == ConnectionState.AUTHENTICATING
+                    ) {
+                        // A session is already in progress (pairing + DIS discovery takes 24-44 s);
+                        // letting the 30 s retry timer fire mid-handshake resets the session and
+                        // rotates the advertised RPA underneath the pump.
+                        retryJob?.cancel()
+                    }
                     // A sensor-update banner would be stale once the link is gone.
                     if (cs == ConnectionState.DISCONNECTED) {
                         _state.update {
@@ -294,10 +304,10 @@ class PumpController(context: Context) {
         val fault = manager.fault.value
         val needsFreshIdentity =
             fault == MedtronicConnectionFault.PAIRING_FAILED ||
-                    fault == MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED ||
-                    // An explicit "pair new pump" on an existing installation replaces that pump entry,
-                    // so a fresh identity avoids authenticating against the old keys.
-                    credentials.isPaired()
+                fault == MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED ||
+                // An explicit "pair new pump" on an existing installation replaces that pump entry,
+                // so a fresh identity avoids authenticating against the old keys.
+                credentials.isPaired()
         val name =
             if (needsFreshIdentity) {
                 PumpIdentity.rotate(appContext).also {
@@ -678,8 +688,9 @@ class PumpController(context: Context) {
                 delay(RETRY_INTERVAL_MS)
                 // Brak danych dłużej niż timeout to realny alarm, także gdy pompa jest poza zasięgiem.
                 alerts.checkStaleLink(_state.value.glucoseAt?.toEpochMilli())
+                val cs = manager.connectionState.value
                 if (isPaired() && !userDisconnected &&
-                    manager.connectionState.value != ConnectionState.CONNECTED
+                    (cs == ConnectionState.DISCONNECTED || cs == ConnectionState.AUTH_FAILED)
                 ) {
                     appendLog(appContext.getString(R.string.log_auto_reconnect))
                     manager.reconnectIfPaired()
@@ -698,6 +709,7 @@ class PumpController(context: Context) {
                 MedtronicConnectionFault.AUTH_FAILED -> R.string.fault_auth_failed
                 MedtronicConnectionFault.PAIRING_FAILED -> R.string.fault_pairing_failed
                 MedtronicConnectionFault.BOUND_ELSEWHERE_SUSPECTED -> R.string.fault_bound_elsewhere
+                MedtronicConnectionFault.PAIRING_TIMEOUT -> R.string.fault_pairing_timeout
             },
         )
 
@@ -723,7 +735,7 @@ class PumpController(context: Context) {
         sensorNotReadyLogged = true
         appendLog(
             appContext.getString(R.string.log_sensor_updating) +
-                    " (${e.phase.name}, remaining=${e.remainingMinutes?.toString() ?: "?"} min)",
+                " (${e.phase.name}, remaining=${e.remainingMinutes?.toString() ?: "?"} min)",
         )
     }
 

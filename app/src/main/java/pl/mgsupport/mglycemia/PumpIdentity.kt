@@ -37,7 +37,9 @@ object PumpIdentity {
     }
 
     private fun persist(prefs: android.content.SharedPreferences, name: String): String {
-        prefs.edit().putString(KEY_NAME, name).apply()
+        // Synchronous commit: if the process is killed or upgraded right after rotation, an async
+        // apply() can be lost, leaving the phone advertising an older name than the one just paired.
+        prefs.edit().putString(KEY_NAME, name).commit()
         return name
     }
 

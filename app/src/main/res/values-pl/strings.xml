@@ -285,6 +285,9 @@
     <string
     name="fault_bound_elsewhere"
   >Pompa łączy się i zrywa połączenie, zanim zacznie wysyłać dane. Spójrz na ekran pompy: jeśli pyta o dodanie urządzenia, potwierdź to. Jeśli pytania nie ma, usuń wpis „Mobile …” z listy urządzeń mobilnych w pompie i sparuj od nowa.</string>
+    <string
+    name="fault_pairing_timeout"
+  >Pompa nie zgłosiła się w ciągu minuty. W pompie wybierz parowanie nowego urządzenia i sprawdź, czy wpis „Mobile …” nie zajmuje jedynego miejsca. Nazwa pokazywana przez aplikację zmienia się przy każdym parowaniu.</string>
     <string name="log_sensor_updating">CGM: sensor nie podaje wartości (rozgrzewanie lub aktualizacja)</string>
     <string name="log_sensor_ready">CGM: odczyty wróciły</string>
     <string name="read_error">błąd odczytu</string>

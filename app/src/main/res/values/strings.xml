@@ -279,6 +279,9 @@
     <string
     name="fault_bound_elsewhere"
   >The pump connects and drops the link before it starts sending data. Look at the pump screen: if it asks about adding a device, confirm it. If there is no prompt, remove the Mobile … entry from the pump’s mobile devices list and pair again.</string>
+    <string
+    name="fault_pairing_timeout"
+  >The pump did not show up within a minute. In the pump, choose to pair a new device and check that a Mobile … entry is not holding the only slot. The name shown in the app changes on every pairing attempt.</string>
     <string name="log_sensor_updating">CGM: sensor reports no value (warm-up or sensor update)</string>
     <string name="log_sensor_ready">CGM: readings are back</string>
     <string name="read_error">read error</string>

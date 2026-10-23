@@ -251,6 +251,9 @@
     <string
     name="fault_bound_elsewhere"
   >泵已连接，但在开始发送数据前就断开了。请看泵的屏幕：如果询问是否添加设备，请确认。如果没有提示，请从泵的移动设备列表中删除“Mobile …”，然后重新配对。</string>
+    <string
+    name="fault_pairing_timeout"
+  >泵在一分钟内没有响应。请在泵上选择配对新设备，并确认“Mobile …”条目没有占用唯一的位置。应用显示的名称每次配对都会变化。</string>
     <string name="log_sensor_updating">CGM：传感器暂无读数（预热或更新中）</string>
     <string name="log_sensor_ready">CGM：读数已恢复</string>
     <string name="read_error">读取错误</string>

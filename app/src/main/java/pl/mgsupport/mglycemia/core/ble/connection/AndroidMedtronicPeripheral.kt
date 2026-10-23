@@ -136,7 +136,17 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             // GATT table before the services land.
             pendingAdvertise = mode to localName
             openGattServer()
+        } else if (pendingAdvertise != null || pendingServices.isNotEmpty()) {
+            // A second start() arrived before onServiceAdded finished (e.g. Application.onCreate +
+            // ForegroundService.onCreate). Coalesce into the pending slot instead of starting a
+            // parallel advertising set before the services exist.
+            pendingAdvertise = mode to localName
         } else {
+            // A repeat start must not leave the previous advertising set running. Every call to
+            // startAdvertising() registers a NEW set on the controller, and a radio holds only a few
+            // of them, so tapping "pair" a few times used to leave several identical "Mobile …"
+            // advertisers on air at once (seen in an HCI log: handles 1, 2 and 3 all enabled).
+            stopAdvertising()
             startAdvertising(mode, localName)
         }
     }
@@ -408,10 +418,11 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
         sake.addDescriptor(
             BluetoothGattDescriptor(
                 MedtronicProtocol.CCCD_UUID,
-                // Wymagamy szyfrowania, żeby pompa zainicjowała parowanie SMP przed subskrypcją.
-                // Bez tego telefon bez bondu (Galaxy S24) nigdy nie dostaje zapisu CCCD, a pompa
-                // odchodzi około 7 s po odczycie deskryptora.
-                BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED or
+                // Include the base READ/WRITE bits (0x11) alongside the ENCRYPTED bits (0x22) for 0x33.
+                // Passing 0x22 alone made Android 15/16's Rust GATT shim register AttPermissions(0x0).
+                BluetoothGattDescriptor.PERMISSION_READ or
+                    BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED or
+                    BluetoothGattDescriptor.PERMISSION_WRITE or
                     BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED,
             ),
         )

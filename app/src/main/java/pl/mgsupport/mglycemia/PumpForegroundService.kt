@@ -48,10 +48,6 @@ class PumpForegroundService : Service() {
             }
         ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(getString(R.string.notif_connecting)), type)
 
-        if (controller.isPaired()) {
-            controller.reconnect()
-        }
-
         job =
             scope.launch {
                 controller.state.collectLatest { s -> notify(buildNotification(statusText(s), s)) }
@@ -59,8 +55,10 @@ class PumpForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Called again after MY_PACKAGE_REPLACED / BOOT_COMPLETED: reconnect an already-paired pump.
-        if (controller.isPaired() && controller.state.value.connection != ConnectionState.CONNECTED) {
+        // Only kick off a reconnect when idle: starting the service while a session is already in
+        // CONNECTING / AUTHENTICATING / RECONNECTING used to reset the session and restart
+        // advertising mid-handshake.
+        if (controller.isPaired() && controller.state.value.connection == ConnectionState.DISCONNECTED) {
             controller.reconnect()
         }
         return START_STICKY
