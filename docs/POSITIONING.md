@@ -2,7 +2,7 @@
 
 Ten dokument ustala, **jak mówić o projekcie**, żeby nie składać obietnic medycznych
 i nie wchodzić w rolę wytwórcy wyrobu medycznego. Nie jest poradą prawną — przy
-dystrybucji publicznej (Google Play, sklep, firma) skonsultuj to z osobą od regulacji MDR.
+dystrybucji publicznej (strona, GitHub, firma) skonsultuj to z osobą od regulacji MDR.
 
 ## Status projektu (jedno zdanie)
 
@@ -25,15 +25,15 @@ i w postach.
 
 ## Mów tak / nie mów tak
 
-| Mów | Nie mów |
-|---|---|
-| „Pokazuje odczyty, które pompa już wysyła” | „Monitoruje cukier” / „monitorowanie glikemii” |
-| „Podgląd danych z pompy” | „Zastępuje CGM” / „zastępuje sensor” |
-| „Próg alertu to informacja, nie decyzja” | „Ostrzega przed hipoglikemią” / „chroni przed spadkiem” |
-| „Eksperymentalny, niecertyfikowany projekt” | „Wyrób medyczny” / „certyfikowana aplikacja” |
-| „Nie służy do ustalania dawek insuliny” | „Pomoże dobrać dawkę” / „wskazuje, ile podać” |
-| „Używasz na własną odpowiedzialność” | „Bezpieczna” / „niezawodna” |
-| „Dane zostają w telefonie” | „Twoje zdrowie pod kontrolą” |
+| Mów                                         | Nie mów                                                 |
+| ------------------------------------------- | ------------------------------------------------------- |
+| „Pokazuje odczyty, które pompa już wysyła”  | „Monitoruje cukier” / „monitorowanie glikemii”          |
+| „Podgląd danych z pompy”                    | „Zastępuje CGM” / „zastępuje sensor”                    |
+| „Próg alertu to informacja, nie decyzja”    | „Ostrzega przed hipoglikemią” / „chroni przed spadkiem” |
+| „Eksperymentalny, niecertyfikowany projekt” | „Wyrób medyczny” / „certyfikowana aplikacja”            |
+| „Nie służy do ustalania dawek insuliny”     | „Pomoże dobrać dawkę” / „wskazuje, ile podać”           |
+| „Używasz na własną odpowiedzialność”        | „Bezpieczna” / „niezawodna”                             |
+| „Dane zostają w telefonie”                  | „Twoje zdrowie pod kontrolą”                            |
 
 Dodatkowo: nie obiecuj, że alert zadziała. Napisz wprost, że **może nie zadziałać**
 (np. przy braku połączenia, uśpieniu telefonu, braku uprawnień) i nie można na nim
@@ -68,8 +68,7 @@ polegać jak na funkcji bezpieczeństwa.
 > Na razie wysyłam APK na priv. Napisz, jaką masz pompę, model telefonu i wersję Androida.
 > Instalujesz poza sklepem, więc Android pokaże ostrzeżenie Play Protect.
 >
-> Kod jest publiczny (GPL-3.0). O Google Play pomyślę po testach — najpierw musi to przejść
-> przez ludzi, którzy naprawdę noszą pompę.
+> Kod jest publiczny (GPL-3.0). Dystrybucja: strona i GitHub Releases — bez Google Play.
 >
 > Szukam testerów z 780G, 770G i 680G. Najbardziej takich, którzy napiszą „wysypało się
 > o 14:32, po zmianie sensora”, a nie „nie działa”. Dorzućcie zrzut ekranu, model telefonu
@@ -85,27 +84,28 @@ polegać jak na funkcji bezpieczeństwa.
 
 > Dzięki, zgadzam się — decyduje przeznaczenie i funkcje, nie brak zapisu do pompy.
 > Na razie to niekomercyjny projekt testowy, bez obietnic terapeutycznych i bez doradzania
-> dawek. Zanim wejdę do sklepu, chcę to poukładać regulacyjnie — chętnie pogadam na priv.
+> dawek. Na razie zostaje dystrybucja poza sklepem; chętnie pogadam na priv o formalnych granicach.
 
 Nie dyskutuj publicznie o kwalifikacji prawnej. Przyznaj rację co do zasady, przenieś
 rozmowę na priv.
 
-## Checklista przed Google Play / publiczną dystrybucją
+## Zasady dystrybucji (bez Google Play)
 
-- [ ] Decyzja o pozycjonowaniu: nadal projekt eksperymentalny czy produkt komercyjny.
-- [ ] Konsultacja MDR (URPL / jednostka notyfikowana / doradca): czy to SaMD i jaka klasa.
-- [ ] Jeśli tak: QMS (ISO 13485), ocena kliniczna, risk management (ISO 14971),
-      PMS/PMCF, UDI/EUDAMED, PRRC, oznaczenie CE.
-- [ ] Polityka Google Play dla aplikacji zdrowotnych + formularz Data safety.
-- [ ] Polityka prywatności pod publicznym URL-em (jest: `docs/PRIVACY.md`).
-- [ ] Spójny język: aplikacja, strona, README, sklep, posty — bez obietnic medycznych.
+Decyzja: **nie publikujemy w Google Play**. Projekt zostaje tak, jak jest — strona,
+GitHub Releases i testy na priv.
+
+- [ ] APK tylko ze strony i GitHub Releases; testerzy dostają plik na priv.
+- [ ] Żadnych płatności, reklam ani darowizn „na rozwój”.
+- [ ] Spójny język: aplikacja, strona, README, posty — bez obietnic medycznych.
 - [ ] Jasna informacja, że alert może nie zadziałać i nie jest funkcją bezpieczeństwa.
-- [ ] Brak płatności, reklam i darowizn „na rozwój”, dopóki status prawny jest nieuregulowany.
+- [ ] Polityka prywatności pod publicznym URL-em (jest: `docs/PRIVACY.md`).
+- [ ] Jeśli decyzja o sklepie kiedykolwiek się zmieni — **najpierw** konsultacja MDR
+      (SaMD, klasa, QMS, ocena kliniczna, CE), potem sklep.
 
 ## Czego nie robić
 
 - Nie pisz „to nie jest wyrób medyczny” jednym zdaniem i nie obiecuj jednocześnie
   monitorowania i ochrony przed hipoglikemią.
 - Nie dodawaj funkcji doradzających dawki insuliny — to zmienia przeznaczenie i klasę ryzyka.
-- Nie publikuj w sklepie „po cichu”, licząc, że nikt nie zauważy.
+- Nie zmieniaj decyzji o sklepie po cichu; jeśli kiedyś — najpierw MDR.
 - Nie usuwaj disclaimerów, żeby UI wyglądał „czyściej”.
