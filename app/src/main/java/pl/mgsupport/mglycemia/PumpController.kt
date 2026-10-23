@@ -308,6 +308,19 @@ class PumpController(context: Context) {
     @Volatile
     private var silentAlertsEnabled: Boolean = false
 
+    /** Czy pokazywać prognozę 30 min (pomoc wizualna, nie porada medyczna). */
+    @Volatile
+    private var showPrediction: Boolean = true
+
+    fun isPredictionEnabled(): Boolean = showPrediction
+
+    fun setPredictionEnabled(enabled: Boolean) {
+        showPrediction = enabled
+        prefs().edit().putBoolean(PREF_SHOW_PREDICTION, enabled).apply()
+        // Natychmiast przelicz stan, żeby strefa prognozy zniknęła bez czekania na nowy odczyt.
+        scope.launch { recomputeDerived() }
+    }
+
     fun alertRepeatMinutes(): Long = alertRepeatMin
 
     fun isSilentAlertsEnabled(): Boolean = silentAlertsEnabled
@@ -826,7 +839,12 @@ class PumpController(context: Context) {
 
         // Prognoza z ostatnich 20 minut surowych odczytów (nie z downsamplowanego wykresu).
         val recentForForecast = store.queryGlucose(nowMs - 20 * 60_000L, nowMs)
-        val predicted = GlucoseForecast.predict30(recentForForecast, nowMs)
+        val predicted =
+            if (showPrediction) {
+                GlucoseForecast.predict30(recentForForecast, nowMs, s.iob?.toDouble())
+            } else {
+                null
+            }
 
         _state.update {
             it.copy(
@@ -1064,6 +1082,7 @@ class PumpController(context: Context) {
         }
         alertRepeatMin = p.getLong(PREF_ALERT_REPEAT_MIN, 5L).coerceIn(1L, 60L)
         silentAlertsEnabled = p.getBoolean(PREF_SILENT_ALERTS, false)
+        showPrediction = p.getBoolean(PREF_SHOW_PREDICTION, true)
         alerts.setRepeatInterval(alertRepeatMin)
         alerts.setSilentAlerts(silentAlertsEnabled)
     }
@@ -1089,6 +1108,7 @@ class PumpController(context: Context) {
         const val PREF_APP_ROLE = "app_role"
         const val PREF_ALERT_REPEAT_MIN = "alert_repeat_min"
         const val PREF_SILENT_ALERTS = "silent_alerts"
+        const val PREF_SHOW_PREDICTION = "show_prediction"
         const val COMPANION_POLL_INTERVAL_MS = 30_000L
     }
 }

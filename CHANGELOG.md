@@ -3,6 +3,14 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/aplikacja/MGlikemia
 
+## 1.0-beta55
+
+- Prognoza: opcjonalna (przełącznik w Ustawieniach) i wyraźnie opisana jako pomoc wizualna, nie porada medyczna.
+- Prognoza: ostrożne tłumienie wzrostu przez aktywną insulinę (IOB) — każda jednostka obniża 30-minutowy wzrost o ok. 5 mg/dL, ale nigdy nie tworzy sztucznego spadku.
+- Prognoza: etykieta na wykresie mówi teraz „Prognoza 30 min”.
+- Tryb rodziny: kod QR z kodem parowania (ZXing core) obok kodu i przycisku udostępniania.
+- Testy: dodane przypadki tłumienia przez IOB.
+
 ## 1.0-beta54
 
 - Wykres: strefa prognozy skaluje się z wybranym oknem — przy 1h jest szeroka, przy 6h/12h/24h zwęża się do czytelnego minimum, zamiast zawsze zajmować tyle samo miejsca.

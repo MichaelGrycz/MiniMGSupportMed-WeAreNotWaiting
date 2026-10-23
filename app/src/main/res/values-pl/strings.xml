@@ -63,7 +63,7 @@
     <string name="chart_hint">Rozsuń 2 palcami, aby przybliżyć · Przesuwaj w bok · Dotknij punktu po szczegóły</string>
     <string name="chart_empty_title">Brak pomiarów glikemii w tym okresie</string>
     <string name="chart_empty_subtitle">Połącz pompę lub wybierz szerszy zakres czasu poniżej</string>
-    <string name="chart_prediction_30min">30 min</string>
+    <string name="chart_prediction_30min">Prognoza 30 min</string>
     <string name="btn_zoom_in">Przybliż</string>
     <string name="btn_zoom_out">Oddal</string>
     <string name="btn_zoom_reset">1:1 Na żywo</string>
@@ -383,4 +383,10 @@
     <string name="family_code_invalid">Kod musi mieć 4–16 liter lub cyfr</string>
     <string name="family_code_share_text">Kod rodziny MGlikemia: %1$s</string>
     <string name="family_code_saved">Kod rodziny zapisany</string>
+    <string name="prediction_section">Prognoza</string>
+    <string name="prediction_toggle">Pokaż prognozę 30 min</string>
+    <string
+    name="prediction_disclaimer"
+  >Pomoc wizualna, nie porada medyczna. Używa ostrożnego szacunku IOB, a nie Twojej osobistej wrażliwości na insulinę.</string>
+    <string name="family_code_qr_desc">Zeskanuj ten kod telefonem rodziny</string>
 </resources>

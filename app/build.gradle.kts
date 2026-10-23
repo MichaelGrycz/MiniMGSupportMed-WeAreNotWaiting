@@ -13,8 +13,8 @@ android {
         applicationId = "pl.mgsupport.mglycemia"
         minSdk = 24
         targetSdk = 36
-        versionCode = 55
-        val appVersionName = "1.0-beta54"
+        versionCode = 56
+        val appVersionName = "1.0-beta55"
         versionName = appVersionName
 
         // Installer and launcher show the version, so testers can tell builds apart at a glance.
@@ -65,6 +65,7 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
+    implementation(libs.zxing.core)
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)

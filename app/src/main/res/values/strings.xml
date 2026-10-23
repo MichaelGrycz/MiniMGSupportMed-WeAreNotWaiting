@@ -63,7 +63,7 @@
     <string name="chart_hint">Pinch to zoom · Drag to pan · Tap point for details</string>
     <string name="chart_empty_title">No glucose readings in this period</string>
     <string name="chart_empty_subtitle">Connect your pump or select a wider time range</string>
-    <string name="chart_prediction_30min">30 min</string>
+    <string name="chart_prediction_30min">Forecast 30 min</string>
     <string name="btn_zoom_in">Zoom in</string>
     <string name="btn_zoom_out">Zoom out</string>
     <string name="btn_zoom_reset">Live 1:1</string>
@@ -377,4 +377,10 @@
     <string name="family_code_invalid">Code must be 4–16 letters or digits</string>
     <string name="family_code_share_text">MGlikemia family code: %1$s</string>
     <string name="family_code_saved">Family code saved</string>
+    <string name="prediction_section">Prediction</string>
+    <string name="prediction_toggle">Show 30-minute prediction</string>
+    <string
+    name="prediction_disclaimer"
+  >Visual aid, not medical advice. Uses a cautious IOB estimate, not your personal insulin sensitivity.</string>
+    <string name="family_code_qr_desc">Scan this code with the family phone</string>
 </resources>

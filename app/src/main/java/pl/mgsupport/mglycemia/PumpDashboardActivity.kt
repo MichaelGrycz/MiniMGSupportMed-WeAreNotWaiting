@@ -220,6 +220,8 @@ class PumpDashboardActivity : AppCompatActivity() {
     private lateinit var familyCodeValue: TextView
     private lateinit var etFamilyCode: EditText
     private lateinit var btnShareFamilyCode: Button
+    private lateinit var familyCodeQr: ImageView
+    private lateinit var switchShowPrediction: MaterialSwitch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -398,6 +400,8 @@ class PumpDashboardActivity : AppCompatActivity() {
         familyCodeValue = findViewById(R.id.familyCodeValue)
         etFamilyCode = findViewById(R.id.etFamilyCode)
         btnShareFamilyCode = findViewById(R.id.btnShareFamilyCode)
+        familyCodeQr = findViewById(R.id.familyCodeQr)
+        switchShowPrediction = findViewById(R.id.switchShowPrediction)
         dbStatsText = findViewById(R.id.dbStatsText)
         btnToggleLogs = findViewById(R.id.btnToggleLogs)
         logsContainer = findViewById(R.id.logsContainer)
@@ -715,6 +719,11 @@ class PumpDashboardActivity : AppCompatActivity() {
         etSyncUrl.setText(controller.getSyncServerUrl() ?: "")
         familyCodeValue.text = controller.getFamilyCode()
         etFamilyCode.setText(controller.getFamilyCode())
+        renderFamilyQr()
+        switchShowPrediction.isChecked = controller.isPredictionEnabled()
+        switchShowPrediction.setOnCheckedChangeListener { _, checked ->
+            controller.setPredictionEnabled(checked)
+        }
         btnShareFamilyCode.setOnClickListener { shareFamilyCode() }
         btnSaveSyncUrl.setOnClickListener {
             val code = etFamilyCode.text.toString().trim()
@@ -728,6 +737,7 @@ class PumpDashboardActivity : AppCompatActivity() {
             if (code.isNotEmpty()) controller.setFamilyCode(code)
             familyCodeValue.text = controller.getFamilyCode()
             etFamilyCode.setText(controller.getFamilyCode())
+            renderFamilyQr()
             Toast.makeText(this, getString(R.string.family_code_saved), Toast.LENGTH_SHORT).show()
         }
         updateRoleUi()
@@ -1145,6 +1155,17 @@ class PumpDashboardActivity : AppCompatActivity() {
                 putExtra(Intent.EXTRA_TEXT, text)
             }
         startActivity(Intent.createChooser(intent, getString(R.string.family_code_share)))
+    }
+
+    /** Rysuje kod QR z kodem rodziny; nieudane generowanie zostawia pusty obraz. */
+    private fun renderFamilyQr() {
+        val code = controller.getFamilyCode()
+        if (code.isBlank()) {
+            familyCodeQr.setImageDrawable(null)
+            return
+        }
+        val size = (168 * resources.displayMetrics.density).toInt().coerceAtLeast(168)
+        familyCodeQr.setImageBitmap(QrCode.generate("MGlikemia:$code", size))
     }
 
     private fun exportCsv() {

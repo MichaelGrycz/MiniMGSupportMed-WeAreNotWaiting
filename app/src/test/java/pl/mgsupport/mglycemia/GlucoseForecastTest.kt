@@ -48,4 +48,24 @@ class GlucoseForecastTest {
         val predicted = GlucoseForecast.predict30(points, now)
         assertTrue(predicted != null && predicted!! <= 400)
     }
+
+    @Test
+    fun `rising forecast is damped by active insulin`() {
+        val points = (0..4).map { i -> (now - (4 - i) * step) to (120 + i * 6) }
+        val withoutIob = GlucoseForecast.predict30(points, now)
+        val withIob = GlucoseForecast.predict30(points, now, iob = 2.0)
+        assertTrue(withIob != null && withoutIob != null)
+        assertTrue(withIob!! < withoutIob!!)
+        // Ostrożne tłumienie nie może zamienić wzrostu w sztuczny spadek.
+        assertTrue(withIob >= 144)
+    }
+
+    @Test
+    fun `falling forecast is not changed by active insulin`() {
+        val points = (0..4).map { i -> (now - (4 - i) * step) to (160 - i * 6) }
+        assertEquals(
+            GlucoseForecast.predict30(points, now),
+            GlucoseForecast.predict30(points, now, iob = 2.0),
+        )
+    }
 }

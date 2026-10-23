@@ -2563,6 +2563,35 @@
               android:textSize="13sp"
             />
 
+                        <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="14dp"
+              android:text="@string/prediction_section"
+              android:textColor="@color/accent_primary_bright"
+              android:textSize="12sp"
+              android:textStyle="bold"
+            />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+              android:id="@+id/switchShowPrediction"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="6dp"
+              android:text="@string/prediction_toggle"
+              android:textColor="@color/text_primary"
+              android:textSize="13sp"
+            />
+
+                        <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="2dp"
+              android:text="@string/prediction_disclaimer"
+              android:textColor="@color/text_muted"
+              android:textSize="11sp"
+            />
+
                         <com.google.android.material.button.MaterialButton
               android:id="@+id/btnSaveThresholds"
               style="@style/Widget.Material3.Button.OutlinedButton"
@@ -2705,6 +2734,28 @@
               android:textColor="@color/text_secondary"
               app:cornerRadius="12dp"
               app:strokeColor="@color/border_subtle"
+            />
+
+                        <ImageView
+              android:id="@+id/familyCodeQr"
+              android:layout_width="180dp"
+              android:layout_height="180dp"
+              android:layout_marginTop="10dp"
+              android:layout_gravity="center_horizontal"
+              android:background="@android:color/white"
+              android:contentDescription="@string/family_code_qr_desc"
+              android:padding="6dp"
+              android:scaleType="fitCenter"
+            />
+
+                        <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="4dp"
+              android:gravity="center"
+              android:text="@string/family_code_qr_desc"
+              android:textColor="@color/text_secondary"
+              android:textSize="11sp"
             />
 
                         <com.google.android.material.materialswitch.MaterialSwitch

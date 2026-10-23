@@ -63,7 +63,7 @@
     <string name="chart_hint">Zum Zoomen kneifen · Zum Verschieben ziehen · Punkt antippen für Details</string>
     <string name="chart_empty_title">Keine Glukosewerte in diesem Zeitraum</string>
     <string name="chart_empty_subtitle">Verbinden Sie Ihre Pumpe oder wählen Sie einen größeren Zeitraum</string>
-    <string name="chart_prediction_30min">30 Min.</string>
+    <string name="chart_prediction_30min">Prognose 30 Min.</string>
     <string name="btn_zoom_in">Vergrößern</string>
     <string name="btn_zoom_out">Verkleinern</string>
     <string name="btn_zoom_reset">Live 1:1</string>
@@ -368,4 +368,10 @@
     <string name="family_code_invalid">Der Code muss 4–16 Buchstaben oder Ziffern haben</string>
     <string name="family_code_share_text">MGlikemia-Familiencode: %1$s</string>
     <string name="family_code_saved">Familiencode gespeichert</string>
+    <string name="prediction_section">Prognose</string>
+    <string name="prediction_toggle">30-Minuten-Prognose anzeigen</string>
+    <string
+    name="prediction_disclaimer"
+  >Visuelle Hilfe, keine medizinische Beratung. Nutzt eine vorsichtige IOB-Schätzung, nicht Ihre persönliche Insulinempfindlichkeit.</string>
+    <string name="family_code_qr_desc">Diesen Code mit dem Familientelefon scannen</string>
 </resources>

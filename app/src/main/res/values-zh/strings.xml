@@ -61,7 +61,7 @@
     <string name="chart_hint">双指缩放 · 拖动平移 · 点击数据点查看详情</string>
     <string name="chart_empty_title">此时间段内无血糖读数</string>
     <string name="chart_empty_subtitle">连接您的泵或选择更广的时间范围</string>
-    <string name="chart_prediction_30min">30 分钟</string>
+    <string name="chart_prediction_30min">预测 30 分钟</string>
     <string name="btn_zoom_in">放大</string>
     <string name="btn_zoom_out">缩小</string>
     <string name="btn_zoom_reset">实时 1:1</string>
@@ -343,4 +343,10 @@
     <string name="family_code_invalid">代码必须是 4–16 个字母或数字</string>
     <string name="family_code_share_text">MGlikemia 家庭代码：%1$s</string>
     <string name="family_code_saved">家庭代码已保存</string>
+    <string name="prediction_section">预测</string>
+    <string name="prediction_toggle">显示 30 分钟预测</string>
+    <string
+    name="prediction_disclaimer"
+  >仅作视觉参考，非医疗建议。使用谨慎的 IOB 估算，而非您的个人胰岛素敏感度。</string>
+    <string name="family_code_qr_desc">用家庭手机扫描此代码</string>
 </resources>
