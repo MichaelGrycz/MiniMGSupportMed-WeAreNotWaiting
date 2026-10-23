@@ -552,6 +552,14 @@ class AndroidMedtronicPeripheral(context: Context) : MedtronicPeripheral {
             )
             @Suppress("DEPRECATION")
             respondWithStoredBlob(device, requestId, offset, reply)
+
+            if (isSakeCccd && reply.size >= 2 && (reply[0].toInt() and 0x01) != 0) {
+                if (sakeCccdValue.contentEquals(byteArrayOf(0x00, 0x00))) {
+                    sakeCccdValue = reply.copyOf(2)
+                    diag("CCCD read confirmed subscription (0x0100); triggering SAKE start")
+                    listener?.onSakeSubscribed()
+                }
+            }
         }
 
         override fun onDescriptorWriteRequest(

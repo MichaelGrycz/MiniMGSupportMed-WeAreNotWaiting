@@ -3,6 +3,10 @@
 Pełna, zawsze aktualna wersja znajduje się na stronie pobierania:
 https://mgsupport.pl/pobierz/minimgsupportmed
 
+## 1.0-beta29
+
+- Parowanie BLE: Naprawiono kluczowy problem ze stosem pomp MiniMed — część centrali (w tym na Xiaomi/Redmi i Samsungu) po połączeniu jedynie odczytuje stan deskryptora CCCD (`2902`) i oczekuje natychmiastowego startu SAKE, zamiast pisać do niego jawne żądanie subskrypcji. Teraz odczyt `01 00` przez pompę natychmiast uruchamia wysłanie ramki powitalnej SAKE.
+
 ## 1.0-beta28
 
 - Pulpit jest teraz zwięzły: stan sensora i wiek odczytu mieszczą się w jednej linii,
